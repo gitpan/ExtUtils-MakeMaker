@@ -16,12 +16,13 @@ BEGIN {
 use strict;
 use Config;
 
-use Test::More tests => 46;
+use Test::More tests => 48;
 use MakeMaker::Test::Utils;
 use File::Find;
 use File::Spec;
 
 my $perl = which_perl();
+my $Is_VMS = $^O eq 'VMS';
 
 my $root_dir = 't';
 
@@ -142,30 +143,45 @@ like( $install_out, qr/^Writing /m );
 
 ok( -r 'dummy-install',     '  install dir created' );
 my %files = ();
-find( sub { $files{$_} = $File::Find::name; }, 'dummy-install' );
-ok( $files{'Dummy.pm'},     '  Dummy.pm installed' );
-ok( $files{'Liar.pm'},      '  Liar.pm installed'  );
+find( sub { 
+    # do it case-insensitive for non-case preserving OSs
+    $files{lc $_} = $File::Find::name; 
+}, 'dummy-install' );
+ok( $files{'dummy.pm'},     '  Dummy.pm installed' );
+ok( $files{'liar.pm'},      '  Liar.pm installed'  );
 ok( $files{'.packlist'},    '  packlist created'   );
 ok( $files{'perllocal.pod'},'  perllocal.pod created' );
 
 
-$install_out = `$make install PREFIX=elsewhere`;
-is( $?, 0, 'install with PREFIX override' ) || diag $install_out;
-like( $install_out, qr/^Installing /m );
-like( $install_out, qr/^Writing /m );
+SKIP: {
+    skip "VMS install targets do not preserve PREFIX", 8 if $Is_VMS;
 
-ok( -r 'elsewhere',     '  install dir created' );
-%files = ();
-find( sub { $files{$_} = $File::Find::name; }, 'elsewhere' );
-ok( $files{'Dummy.pm'},     '  Dummy.pm installed' );
-ok( $files{'Liar.pm'},      '  Liar.pm installed'  );
-ok( $files{'.packlist'},    '  packlist created'   );
-ok( $files{'perllocal.pod'},'  perllocal.pod created' );
+    $install_out = `$make install PREFIX=elsewhere`;
+    is( $?, 0, 'install with PREFIX override' ) || diag $install_out;
+    like( $install_out, qr/^Installing /m );
+    like( $install_out, qr/^Writing /m );
 
+    ok( -r 'elsewhere',     '  install dir created' );
+    %files = ();
+    find( sub { $files{$_} = $File::Find::name; }, 'elsewhere' );
+    ok( $files{'Dummy.pm'},     '  Dummy.pm installed' );
+    ok( $files{'Liar.pm'},      '  Liar.pm installed'  );
+    ok( $files{'.packlist'},    '  packlist created'   );
+    ok( $files{'perllocal.pod'},'  perllocal.pod created' );
+}
 
 
 my $dist_test_out = `$make disttest`;
 is( $?, 0, 'disttest' ) || diag($dist_test_out);
+
+# Test META.yml generation
+use ExtUtils::Manifest qw(maniread);
+ok( -f 'META.yml',    'META.yml written' );
+my $manifest = maniread();
+# VMS is non-case preserving, so we can't know what the MANIFEST will
+# look like. :(
+_normalize($manifest);
+is( $manifest->{'meta.yml'}, 'Module meta-data in YAML' );
 
 
 # Make sure init_dirscan doesn't go into the distdir
@@ -188,3 +204,13 @@ is( $?, 0, 'realclean' ) || diag($realclean_out);
 
 open(STDERR, ">&SAVERR") or die $!;
 close SAVERR;
+
+
+sub _normalize {
+    my $hash = shift;
+
+    while(my($k,$v) = each %$hash) {
+        delete $hash->{$k};
+        $hash->{lc $k} = $v;
+    }
+}

@@ -3,6 +3,7 @@ package ExtUtils::MM_Any;
 use strict;
 use vars qw($VERSION @ISA);
 $VERSION = 0.04;
+@ISA = qw(File::Spec);
 
 use Config;
 use File::Spec;
@@ -41,91 +42,23 @@ B<THIS MAY BE TEMPORARY!>
 These are methods which are by their nature cross-platform and should
 always be cross-platform.
 
-=head2 File::Spec wrappers  B<DEPRECATED>
+=head2 File::Spec wrappers
 
-The following methods are deprecated wrappers around File::Spec
-functions.  They exist from before File::Spec did and in fact are from
-which File::Spec sprang.
-
-With the exception of catfile(), they are all deprecated.  Please use
-File::Spec directly.
+ExtUtils::MM_Any is a subclass of File::Spec.  The methods noted here
+override File::Spec.
 
 =over 4
 
-=item canonpath
-
-=cut
-
-sub canonpath {
-    shift;
-    return File::Spec->canonpath(@_);;
-}
-
-=item catdir
-
-=cut
-
-sub catdir {
-    shift;
-    return File::Spec->catdir(@_);
-}
-
 =item catfile
 
-This catfile() fixes a bug in File::Spec <= 0.83.  Please use it inside
-MakeMaker instead of using File::Spec's directly.
+File::Spec <= 0.83 has a bug where the file part of catfile is not
+canonicalized.  This override fixes that bug.
 
 =cut
 
 sub catfile {
-    shift;
-    # File::Spec <= 0.83 has a bug where the file part of catfile is
-    # not canonicalized.
-    return File::Spec->canonpath(File::Spec->catfile(@_));
-}
-
-=item curdir
-
-=cut
-
-my $Curdir = File::Spec->curdir;
-sub curdir {
-    return $Curdir;
-}
-
-=item file_name_is_absolute
-
-=cut
-
-sub file_name_is_absolute {
-    shift;
-    return File::Spec->file_name_is_absolute(@_);
-}
-
-=item path
-
-=cut
-
-sub path {
-    return File::Spec->path();
-}
-
-=item rootdir
-
-=cut
-
-my $Rootdir = File::Spec->rootdir;
-sub rootdir {
-    return $Rootdir;
-}
-
-=item updir
-
-=cut
-
-my $Updir = File::Spec->updir;
-sub updir {
-    return $Updir;
+    my $self = shift;
+    return $self->canonpath($self->SUPER::catfile(@_));
 }
 
 =back
@@ -153,6 +86,8 @@ $self->max_exec_len being careful to take into account macro expansion.
 
 $cmd should include any switches and repeated initial arguments.
 
+If no @args are given, no @cmds will be returned.
+
 Pairs of arguments will always be preserved in a single command, this
 is a heuristic for things like pm_to_blib and pod2man which work on
 pairs of arguments.  This makes things like this safe:
@@ -165,25 +100,80 @@ pairs of arguments.  This makes things like this safe:
 sub split_command {
     my($self, $cmd, @args) = @_;
 
+    my @cmds = ();
+    return(@cmds) unless @args;
+
     # If the command was given as a here-doc, there's probably a trailing
     # newline.
     chomp $cmd;
 
-    my $len_left = $self->max_exec_len - length $cmd;
-    $len_left = int($len_left * 0.80);  # set aside 20% for macro expansion.
-
-    my @cmds = ();
+    # set aside 20% for macro expansion.
+    my $len_left = int($self->max_exec_len * 0.80);
+    $len_left -= length $self->_expand_macros($cmd);
 
     do {
         my $arg_str = '';
-        while( @args && $len_left > length $arg_str ) {
+        my @next_args;
+        while( @next_args = splice(@args, 0, 2) ) {
             # Two at a time to preserve pairs.
-            $arg_str .= "\t  ". join ' ', splice(@args, 0, 2), "\n";
+            my $next_arg_str = "\t  ". join ' ', @next_args, "\n";
+
+            if( !length $arg_str ) {
+                $arg_str .= $next_arg_str
+            }
+            elsif( length($arg_str) + length($next_arg_str) > $len_left ) {
+                unshift @args, @next_args;
+                last;
+            }
+            else {
+                $arg_str .= $next_arg_str;
+            }
         }
         chop $arg_str;
 
         push @cmds, $self->escape_newlines("$cmd\n$arg_str");
     } while @args;
+
+    return @cmds;
+}
+
+
+sub _expand_macros {
+    my($self, $cmd) = @_;
+
+    $cmd =~ s{\$\((\w+)\)}{
+        defined $self->{$1} ? $self->{$1} : "\$($1)"
+    }e;
+    return $cmd;
+}
+
+
+=item B<echo>
+
+    my @commands = $MM->echo($text);
+    my @commands = $MM->echo($text, $file);
+    my @commands = $MM->echo($text, $file, $appending);
+
+Generates a set of @commands which print the $text to a $file.
+
+If $file is not given, output goes to STDOUT.
+
+If $appending is true the $file will be appended to rather than
+overwritten.
+
+=cut
+
+sub echo {
+    my($self, $text, $file, $appending) = @_;
+    $appending ||= 0;
+
+    my @cmds = map { '$(NOECHO) $(ECHO) '.$self->quote_literal($_) } 
+               split /\n/, $text;
+    if( $file ) {
+        my $redirect = $appending ? '>>' : '>';
+        $cmds[0] .= " $redirect $file";
+        $_ .= " >> $file" foreach @cmds[1..$#cmds];
+    }
 
     return @cmds;
 }
@@ -334,15 +324,15 @@ sub manifypods_target {
 manifypods : pure_all $dependencies
 END
 
-    my @man1_cmds = $self->split_command(<<'CMD', %{$self->{MAN1PODS}});
-	$(NOECHO) $(POD2MAN_EXE) --section=1 --perm_rw=$(PERM_RW)
+    my @man_cmds;
+    foreach my $section (qw(1 3)) {
+        my $pods = $self->{"MAN${section}PODS"};
+        push @man_cmds, $self->split_command(<<CMD, %$pods);
+	\$(NOECHO) \$(POD2MAN_EXE) --section=$section --perm_rw=\$(PERM_RW)
 CMD
+    }
 
-    my @man3_cmds = $self->split_command(<<'CMD', %{$self->{MAN3PODS}});
-	$(NOECHO) $(POD2MAN_EXE) --section=3 --perm_rw=$(PERM_RW)
-CMD
-
-    $manify .= join '', map { "$_\n" } @man1_cmds, @man3_cmds;
+    $manify .= join '', map { "$_\n" } @man_cmds;
 
     return $manify;
 }
@@ -472,9 +462,9 @@ installation.
 
 sub libscan {
     my($self,$path) = @_;
-    my($dirs,$file) = (File::Spec->splitpath($path))[1,2];
+    my($dirs,$file) = ($self->splitpath($path))[1,2];
     return '' if grep /^RCS|CVS|SCCS|\.svn$/, 
-                     File::Spec->splitdir($dirs), $file;
+                     $self->splitdir($dirs), $file;
 
     return $path;
 }
@@ -520,6 +510,74 @@ all :: pure_all
 MAKE_EXT
 
 }
+
+
+=item metafile_target
+
+    my $target = $mm->metafile_target;
+
+Generate the metafile target.
+
+Writes the file META.yml, YAML encoded meta-data about the module.  The
+format follows Module::Build's as closely as possible.  Additionally, we
+include:
+
+    version_from
+    installdirs
+
+=cut
+
+sub metafile_target {
+    my $self = shift;
+
+    my $prereq_pm = '';
+    while( my($mod, $ver) = each %{$self->{PREREQ_PM}} ) {
+        $prereq_pm .= sprintf "    %-30s %s\n", "$mod:", $ver;
+    }
+    
+    my $meta = <<YAML;
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         $self->{DISTNAME}
+version:      $self->{VERSION}
+version_from: $self->{VERSION_FROM}
+installdirs:  $self->{INSTALLDIRS}
+requires:
+$prereq_pm
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version $ExtUtils::MakeMaker::VERSION
+YAML
+
+    my @write_meta = $self->echo($meta, 'META.yml');
+    return sprintf <<'MAKE_FRAG', join "\n\t", @write_meta;
+metafile :
+	%s
+MAKE_FRAG
+
+}
+
+
+=item metafile_addtomanifest_target
+
+  my $target = $mm->metafile_addtomanifest_target
+
+Adds the META.yml file to the MANIFEST.
+
+=cut
+
+sub metafile_addtomanifest_target {
+    my $self = shift;
+
+    my $add_meta = $self->oneliner(<<'CODE', ['-MExtUtils::Manifest=maniadd']);
+maniadd({q{META.yml} => q{Module meta-data in YAML}});
+CODE
+
+    return sprintf <<'MAKE_FRAG', $add_meta;
+metafile_addtomanifest:
+	$(NOECHO) %s
+MAKE_FRAG
+
+}
+
 
 =back
 

@@ -17,8 +17,6 @@ See ExtUtils::MM_Unix for a documentation of the methods provided
 there. This package overrides the implementation of these methods, not
 the semantics.
 
-=over 4
-
 =cut 
 
 use Config;
@@ -167,34 +165,36 @@ Adjustments are made for Borland's quirks needing -L to come first.
 sub init_others {
     my ($self) = @_;
 
-    $self->{'TOUCH'}    ||= '$(PERLRUN) -MExtUtils::Command -e touch';
-    $self->{'CHMOD'}    ||= '$(PERLRUN) -MExtUtils::Command -e chmod'; 
-    $self->{'CP'}       ||= '$(PERLRUN) -MExtUtils::Command -e cp';
-    $self->{'RM_F'}     ||= '$(PERLRUN) -MExtUtils::Command -e rm_f';
-    $self->{'RM_RF'}    ||= '$(PERLRUN) -MExtUtils::Command -e rm_rf';
-    $self->{'MV'}       ||= '$(PERLRUN) -MExtUtils::Command -e mv';
-    $self->{'NOOP'}     ||= 'rem';
-    $self->{'TEST_F'}   ||= '$(PERLRUN) -MExtUtils::Command -e test_f';
-    $self->{'DEV_NULL'} ||= '> NUL';
+    # Used in favor of echo because echo won't strip quotes. :(
+    $self->{ECHO}     ||= '$(PERLRUN) -le "print qq{@ARGV}"';
+    $self->{TOUCH}    ||= '$(PERLRUN) -MExtUtils::Command -e touch';
+    $self->{CHMOD}    ||= '$(PERLRUN) -MExtUtils::Command -e chmod'; 
+    $self->{CP}       ||= '$(PERLRUN) -MExtUtils::Command -e cp';
+    $self->{RM_F}     ||= '$(PERLRUN) -MExtUtils::Command -e rm_f';
+    $self->{RM_RF}    ||= '$(PERLRUN) -MExtUtils::Command -e rm_rf';
+    $self->{MV}       ||= '$(PERLRUN) -MExtUtils::Command -e mv';
+    $self->{NOOP}     ||= 'rem';
+    $self->{TEST_F}   ||= '$(PERLRUN) -MExtUtils::Command -e test_f';
+    $self->{DEV_NULL} ||= '> NUL';
 
     # technically speaking, these should be in init_main()
-    $self->{'LD'}     ||= $Config{'ld'} || 'link';
-    $self->{'AR'}     ||= $Config{'ar'} || 'lib';
+    $self->{LD}     ||= $Config{ld} || 'link';
+    $self->{AR}     ||= $Config{ar} || 'lib';
 
     $self->SUPER::init_others;
 
-    $self->{'LDLOADLIBS'} ||= $Config{'libs'};
+    $self->{LDLOADLIBS} ||= $Config{libs};
     # -Lfoo must come first for Borland, so we put it in LDDLFLAGS
     if ($BORLAND) {
-        my $libs = $self->{'LDLOADLIBS'};
+        my $libs = $self->{LDLOADLIBS};
         my $libpath = '';
         while ($libs =~ s/(?:^|\s)(("?)-L.+?\2)(?:\s|$)/ /) {
             $libpath .= ' ' if length $libpath;
             $libpath .= $1;
         }
-        $self->{'LDLOADLIBS'} = $libs;
-        $self->{'LDDLFLAGS'} ||= $Config{'lddlflags'};
-        $self->{'LDDLFLAGS'} .= " $libpath";
+        $self->{LDLOADLIBS} = $libs;
+        $self->{LDDLFLAGS} ||= $Config{lddlflags};
+        $self->{LDDLFLAGS} .= " $libpath";
     }
 
     return 1;
@@ -278,12 +278,12 @@ q{	$(AR) }.($BORLAND ? '$@ $(OBJECT:^"+")'
 			  : ($GCC ? '-ru $@ $(OBJECT)'
 			          : '-out:$@ $(OBJECT)')).q{
 	$(CHMOD) $(PERM_RWX) $@
-	$(NOECHO) echo "$(EXTRALIBS)" > $(INST_ARCHAUTODIR)\extralibs.ld
+	$(NOECHO) $(ECHO) "$(EXTRALIBS)" > $(INST_ARCHAUTODIR)\extralibs.ld
 };
 
     # Old mechanism - still available:
     push @m, <<'MAKE_FRAG' if $self->{PERL_SRC} && $self->{EXTRALIBS};
-	$(NOECHO) echo "$(EXTRALIBS)" >> $(PERL_SRC)\ext.libs
+	$(NOECHO) $(ECHO) "$(EXTRALIBS)" >> $(PERL_SRC)\ext.libs
 MAKE_FRAG
 
     push @m, "\n", $self->dir_target('$(INST_ARCHAUTODIR)');

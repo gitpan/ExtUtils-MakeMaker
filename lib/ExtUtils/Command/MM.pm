@@ -7,8 +7,11 @@ require Exporter;
 use vars qw($VERSION @ISA @EXPORT);
 @ISA = qw(Exporter);
 
-@EXPORT  = qw(test_harness pod2man);
-$VERSION = '0.01';
+@EXPORT  = qw(test_harness pod2man perllocal_install uninstall 
+              warn_if_old_packlist);
+$VERSION = '0.02';
+
+my $Is_VMS = $^O eq 'VMS';
 
 =head1 NAME
 
@@ -155,7 +158,11 @@ PACKLIST_WARNING
     perl "-MExtUtils::Command::MM" -e perllocal_install 
         <type> <module name> <key> <value> ...
 
-Generates a fragment of POD suitable for appending to perllocal.pod.
+    # VMS only, key/value pairs come on STDIN
+    perl "-MExtUtils::Command::MM" -e perllocal_install
+        <type> <module name> < <key> <value> ...
+
+Prints a fragment of POD suitable for appending to perllocal.pod.
 Arguments are read from @ARGV.
 
 'type' is the type of what you're installing.  Usually 'Module'.
@@ -175,26 +182,35 @@ Key/value pairs are extra information about the module.  Fields include:
 sub perllocal_install {
     my($type, $name) = splice(@ARGV, 0, 2);
 
-    printf <<POD, scalar localtime;
-=head2 %s: C<$type> L<$name|$name>
+    # VMS feeds args as a piped file on STDIN since it usually can't
+    # fit all the args on a single command line.
+    @ARGV = split /\|/, <STDIN> if $Is_VMS;
 
-=over 4
-
+    my $pod;
+    $pod = sprintf <<POD, scalar localtime;
+ =head2 %s: C<$type> L<$name|$name>
+ 
+ =over 4
+ 
 POD
 
     do {
         my($key, $val) = splice(@ARGV, 0, 2);
 
-        print <<POD
-=item *
-
-C<$key: $val>
-
+        $pod .= <<POD
+ =item *
+ 
+ C<$key: $val>
+ 
 POD
 
     } while(@ARGV);
 
-    print "=back\n\n";
+    $pod .= "=back\n\n";
+    $pod =~ s/^ //mg;
+    print $pod;
+
+    return 1;
 }
 
 =item B<uninstall>
