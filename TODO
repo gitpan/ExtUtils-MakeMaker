@@ -26,5 +26,3 @@ Fix find_perl on Amiga trg@privat.utfors.se
 
 Fix appending of .. when DIRS contains directories not immediately
 below the cwd.
-
-Integrate bleadperl 16033
