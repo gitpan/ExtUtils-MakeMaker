@@ -1,7 +1,9 @@
+.patch
 Changes
 MANIFEST			This list of files
 Makefile.PL
 NOTES
+PATCHING
 README
 TODO
 bin/instmodsh
@@ -39,7 +41,9 @@ t/basic.t
 t/Command.t
 t/INST.t
 t/INST_PREFIX.t
+t/Install.t
 t/Installed.t
+t/Liblist.t
 t/MM_BeOS.t
 t/MM_Cygwin.t
 t/MM_NW5.t
@@ -55,9 +59,13 @@ t/lib/MakeMaker/Test/Utils.pm
 t/lib/Test/Builder.pm
 t/lib/Test/More.pm
 t/lib/Test/Simple.pm
+t/lib/TieIn.pm
 t/lib/TieOut.pm
+t/oneliner.t
 t/prefixify.t
 t/problems.t
+t/prompt.t
+t/split_command.t
 t/testlib.t
 t/VERSION_FROM.t
 t/writemakefile_args.t

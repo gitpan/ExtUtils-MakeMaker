@@ -14,10 +14,12 @@ BEGIN {
 }
 
 use strict;
-use Test::More tests => 17;
+use Config;
+
+use Test::More tests => 46;
 use MakeMaker::Test::Utils;
+use File::Find;
 use File::Spec;
-use TieOut;
 
 my $perl = which_perl();
 
@@ -93,16 +95,74 @@ my $make = make_run();
 
 END { unlink 'MANIFEST'; }
 
+
+`$make ppd`;
+is( $?, 0,                      '  exited normally' );
+ok( open(PPD, 'Big-Dummy.ppd'), '  .ppd file generated' );
+my $ppd_html;
+{ local $/; $ppd_html = <PPD> }
+close PPD;
+like( $ppd_html, qr{^<SOFTPKG NAME="Big-Dummy" VERSION="0,01,0,0">}m, 
+                                                           '  <SOFTPKG>' );
+like( $ppd_html, qr{^\s*<TITLE>Big-Dummy</TITLE>}m,        '  <TITLE>'   );
+like( $ppd_html, qr{^\s*<ABSTRACT>Try "our" hot dog's</ABSTRACT>}m,         
+                                                           '  <ABSTRACT>');
+like( $ppd_html, 
+      qr{^\s*<AUTHOR>Michael G Schwern &lt;schwern\@pobox.com&gt;</AUTHOR>}m,
+                                                           '  <AUTHOR>'  );
+like( $ppd_html, qr{^\s*<IMPLEMENTATION>}m,          '  <IMPLEMENTATION>');
+like( $ppd_html, qr{^\s*<DEPENDENCY NAME="strict" VERSION="0,0,0,0" />}m,
+                                                           '  <DEPENDENCY>' );
+like( $ppd_html, qr{^\s*<OS NAME="$Config{osname}" />}m,
+                                                           '  <OS>'      );
+like( $ppd_html, qr{^\s*<ARCHITECTURE NAME="$Config{archname}" />}m,  
+                                                           '  <ARCHITECTURE>');
+like( $ppd_html, qr{^\s*<CODEBASE HREF="" />}m,            '  <CODEBASE>');
+like( $ppd_html, qr{^\s*</IMPLEMENTATION>}m,           '  </IMPLEMENTATION>');
+like( $ppd_html, qr{^\s*</SOFTPKG>}m,                      '  </SOFTPKG>');
+END { unlink 'Big-Dummy.ppd' }
+
+
 my $test_out = `$make test`;
 like( $test_out, qr/All tests successful/, 'make test' );
-is( $?, 0 );
+is( $?, 0,                                 '  exited normally' );
 
 # Test 'make test TEST_VERBOSE=1'
 my $make_test_verbose = make_macro($make, 'test', TEST_VERBOSE => 1);
 $test_out = `$make_test_verbose`;
 like( $test_out, qr/ok \d+ - TEST_VERBOSE/, 'TEST_VERBOSE' );
-like( $test_out, qr/All tests successful/, '  successful' );
-is( $?, 0 );
+like( $test_out, qr/All tests successful/,  '  successful' );
+is( $?, 0,                                  '  exited normally' );
+
+
+my $install_out = `$make install`;
+is( $?, 0, 'install' ) || diag $install_out;
+like( $install_out, qr/^Installing /m );
+like( $install_out, qr/^Writing /m );
+
+ok( -r 'dummy-install',     '  install dir created' );
+my %files = ();
+find( sub { $files{$_} = $File::Find::name; }, 'dummy-install' );
+ok( $files{'Dummy.pm'},     '  Dummy.pm installed' );
+ok( $files{'Liar.pm'},      '  Liar.pm installed'  );
+ok( $files{'.packlist'},    '  packlist created'   );
+ok( $files{'perllocal.pod'},'  perllocal.pod created' );
+
+
+$install_out = `$make install PREFIX=elsewhere`;
+is( $?, 0, 'install with PREFIX override' ) || diag $install_out;
+like( $install_out, qr/^Installing /m );
+like( $install_out, qr/^Writing /m );
+
+ok( -r 'elsewhere',     '  install dir created' );
+%files = ();
+find( sub { $files{$_} = $File::Find::name; }, 'elsewhere' );
+ok( $files{'Dummy.pm'},     '  Dummy.pm installed' );
+ok( $files{'Liar.pm'},      '  Liar.pm installed'  );
+ok( $files{'.packlist'},    '  packlist created'   );
+ok( $files{'perllocal.pod'},'  perllocal.pod created' );
+
+
 
 my $dist_test_out = `$make disttest`;
 is( $?, 0, 'disttest' ) || diag($dist_test_out);
@@ -114,8 +174,7 @@ is( $?, 0, 'disttest' ) || diag($dist_test_out);
 cmp_ok( $?, '==', 0, 'Makefile.PL exited with zero' ) ||
   diag(@mpl_out);
 
-ok( grep(/^Writing $makefile for Big::Dummy/, 
-         @mpl_out) == 1,
+ok( grep(/^Writing $makefile for Big::Dummy/, @mpl_out) == 1,
                                 'init_dirscan skipped distdir') || 
   diag(@mpl_out);
 

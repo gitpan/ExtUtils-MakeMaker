@@ -15,7 +15,7 @@ use Test::More;
 
 BEGIN {
 	if ($^O =~ /cygwin/i) {
-		plan tests => 13;
+		plan tests => 11;
 	} else {
 		plan skip_all => "This is not cygwin";
 	}
@@ -47,10 +47,9 @@ delete $args->{CFLAGS};
 # ExtUtils::MM_Cygwin::cflags() calls this, fake the output
 {
     local $SIG{__WARN__} = sub { 
-        # no warnings 'redefine';
         warn @_ unless $_[0] =~ /^Subroutine .* redefined/;
     };
-    sub ExtUtils::MM_Unix::cflags { return $_[1] };
+    *ExtUtils::MM_Unix::cflags = sub { return $_[1] };
 }
 
 # respects the config setting, should ignore whitespace around equal sign
@@ -74,31 +73,19 @@ $args = bless({
 	MAN1PODS => {},
     MAKEFILE => 'Makefile',
 }, 'MM');
-like( $args->manifypods(), qr/pure_all\n\tnoecho/,
+unlike( $args->manifypods(), qr/foo/,
 	'manifypods() should return without PODS values set' );
 
-$args->{MAN3PODS} = { foo => 1 };
-my $out = tie *STDOUT, 'FakeOut';
-{
-    local $SIG{__WARN__} = sub {
-        # no warnings 'redefine';
-        warn @_ unless $_[0] =~ /used only once/;
-    };
-    no warnings 'once';
-    local *MM::perl_script = sub { return };
-    my $res = $args->manifypods();
-    like( $$out, qr/could not locate your pod2man/,
-          '... should warn if pod2man cannot be located' );
-    like( $res, qr/POD2MAN_EXE = -S pod2man/,
-          '... should use default pod2man target' );
-    like( $res, qr/pure_all.+foo/, '... should add MAN3PODS targets' );
-}
+$args->{MAN3PODS} = { foo => 'foo.1' };
+my $res = $args->manifypods();
+like( $res, qr/pure_all.*foo.*foo.1/s, '... should add MAN3PODS targets' );
+
 
 SKIP: {
     skip "Only relevent in the core", 2 unless $ENV{PERL_CORE};
     $args->{PERL_SRC} = File::Spec->updir;
     $args->{MAN1PODS} = { bar => 1 };
-    $$out = '';
+    my $out = tie *STDOUT, 'FakeOut';
     $res = $args->manifypods();
     is( $$out, '', '... should not warn if PERL_SRC provided' );
     like( $res, qr/bar \\\n\t1 \\\n\tfoo/,

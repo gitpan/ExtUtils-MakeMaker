@@ -1,9 +1,5 @@
-Document prompt()
-
 Shorten manifypods so it fits in < 200 character command line (like
 pm_to_blib).
-
-Cleanup manifypods so it uses Pod::Man instead of pod2man.
 
 Rethink MM_Win32 tests.
 
@@ -18,8 +14,6 @@ Move instmodsh to utils/ in the core.
 Handle config files (ie. /etc) and their special PREFIX needs
 (ie. PREFIX=/usr, INSTALLCONFIGDIR=/etc).
 
-Fix Win32 when perl is installed in C:\Program Files
-
 Make sure PDL builds
 
 Fix find_perl on Amiga trg@privat.utfors.se
@@ -33,10 +27,29 @@ Document "make install UNINST=1"
 
 Remove tar -I Sun-ism from instmodsh.
 
-find_perl has 2>&1-ism which will fail on Win95.
-
 Consider adding a timeout option to prompt() and env variable.
 
 Remove the dogmatic "always use h2xs" from the docs and replace with
 something a bit more sensible.  References to ModuleMaker and perhaps
 a small Makefile.PL tutorial.
+
+Unify VMS->find_perl
+
+Consider if VMS->find_perl needs to have pieces put into maybe_command()
+
+Consider if shell escaping all macro data is a good idea.
+
+Have 'make distdir' spit out a META.yml file.
+
+Move Win32->init_others() ExtUtils::Command overrides into MM_Any.
+
+Figure out and document the 4th arg to ExtUtils::Install::install()
+
+Consider if adding a nativize() routine to replace macify() and
+fixpath() is useful.
+
+Add "MAXCMDLEN" variable to set how long shell commands can be.
+
+Adapt code like manifypods and pm_to_blib to use "MAXCMDLEN".
+
+ExtUtils::Install is a disaster.
