@@ -1,13 +1,10 @@
-MakeMaker 5.13/5.14/5.15 are bug fix releases
+MakeMaker 5.16 comes with small enhancements and small bug fixes.
 
-Mainly for AIX and HPUX.
-
-And it brings VMS support up to date. Thanks, Charles!
-
-And finally a workaround for the AutoSplit bug, that it doesn't accept
-// within the path.
+Delightful the new VERSION_FROM macro. Parses a named file and
+computes the VERSION number from there. Much nicer than the old
+approach that left VERSION as an exercise for the developer.
 
 For details see the Changes file.
 
-December 22, 1995
+January 5, 1996
 andreas

@@ -1,3 +1,42 @@
+=head2 v5.16 January 5, 1996 by Andreas Koenig
+
+VERSION_FROM can be a filename that is parsed to determine VERSION.
+
+Packlist support enabled again: the rewriting of the packlist file
+should now be AFS clean. (Read two of them, write one). Packlist is
+now written with 'make' not only with 'make install'.
+
+INSTALLARCHLIB was computed wrong since $(PREFIX) is now a Makefile
+macro. A check within MakeMaker, if the directory
+"$self->{INSTALLARCHLIB}" existed was always negativ, because the
+string contained literally '$(PREFIX)'
+
+MakeMaker now doesn't include files with [:#] in their names into the
+Makefile at all. Previous versions warned about such files but
+accepted them nonetheless. But all make(1) implementations croak on
+such files, so we skip them now.
+
+realclean didn't delete the Makefile.aperl.
+
+As VMS needs a space after an '@' in a Makefile line and HP croaks
+sometimes IF there is a space, introduced the attribute MAKE_NO_ECHO
+which is set to '@' on UNIX and can be set to '@ ' on VMS.
+
+Included a biggish patch by Charles into MM_VMS.
+
+$(MAKE_APERL_FILE) replaces several occurrences of hardcoded
+"Makefile.aperl".
+
+A Chip Salzenberg patch against prepending "./" if not needed.
+
+Another Chip Salzenberg patch to add the -I switches to the pod2man
+call.
+
+Added INST_DYNAMIC_DEP, a macro that may hold additional dependencies
+to INST_DYNAMIC (was an ad-hoc need for Tk). It is used as
+
+    dynamic_lib => { INST_DYNAMIC_DEP => "../pTk/libpTk.a" }
+
 =head2 v5.15 December 22, 1995 by Andreas Koenig
 
 Made PREFIX work also for INSTALLMAN1DIR, and applied Ilya's PREFIX

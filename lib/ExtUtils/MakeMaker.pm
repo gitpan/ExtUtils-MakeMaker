@@ -56,10 +56,10 @@ sub warndirectuse {
 
 package ExtUtils::MakeMaker;
 
-# Last edited $Date: 1995/12/22 19:47:52 $ by Andreas Koenig
-# $Id: MakeMaker.pm,v 1.129 1995/12/22 19:47:52 k Exp $
+# Last edited $Date: 1996/01/05 20:40:47 $ by Andreas Koenig
+# $Id: MakeMaker.pm,v 1.135 1996/01/05 20:40:47 k Exp $
 
-$Version = $VERSION = "5.15";
+$Version = $VERSION = "5.16";
 
 $ExtUtils::MakeMaker::Version_OK = 4.13;	# Makefiles older than $Version_OK will die
 			# (Will be checked from MakeMaker version 4.13 onwards)
@@ -936,11 +936,17 @@ EOM
 	$self->{INSTALLARCHLIB} = VMS::Filespec::unixpath($self->{INSTALLARCHLIB})
 	   if $Is_VMS;
 	$self->{INSTALLARCHLIB} =~ s/\Q$installprivlib\E/$self->{INSTALLPRIVLIB}/;
-	if (-d $self->{INSTALLARCHLIB}) {
-	    print STDOUT "Defaulting INSTALLARCHLIB to $self->{INSTALLARCHLIB}\n";
+
+	# It's a pain to be so friendly to the user. I wish we wouldn't have been so nice.
+	# Now we have '$(PREFIX)' in the string, and the directory won't exist
+	my($installarchlib);
+	($installarchlib = $self->{INSTALLARCHLIB}) =~ s/\$\(PREFIX\)/$self->{PREFIX}/;
+	if (-d $installarchlib) {
 	} else {
+	    print STDOUT "Directory $self->{INSTALLARCHLIB} not found, thusly\n" if $Verbose;
 	    $self->{INSTALLARCHLIB} = $self->{INSTALLPRIVLIB};
 	}
+	print STDOUT "Defaulting INSTALLARCHLIB to $self->{INSTALLARCHLIB}\n" if $Verbose;
     }
 
     $self->{INSTALLPRIVLIB} ||= $Config::Config{installprivlib};
@@ -1000,6 +1006,25 @@ EOM
 	unless (-f $self->catfile("$self->{PERL_LIB}","Exporter.pm"));
 
     ($self->{DISTNAME}=$self->{NAME}) =~ s#(::)#-#g unless $self->{DISTNAME};
+    if ($self->{VERSION_FROM}){
+	local *PM;
+	open PM, $self->{VERSION_FROM} or die "Could not open '$self->{VERSION_FROM}' (attribute VERSION_FROM): $!";
+	while (<PM>) {
+	    chop;
+	    next unless /\$([\w:]*\bVERSION)\b.*=/;
+	    local $ExtUtils::MakeMaker::module_version_variable = $1;
+	    my($eval) = "$_;";
+	    eval $eval;
+	    die "Could not eval '$eval': $@" if $@;
+	    if ($self->{VERSION} = $$ExtUtils::MakeMaker::module_version_variable){
+		print "Setting VERSION to $self->{VERSION}\n" if $Verbose;
+	    } else {
+		print "WARNING: Setting VERSION via file '$self->{VERSION_FROM}' failed\n";
+	    }
+	    last;
+	}
+	close PM;
+    }
     $self->{VERSION} = "0.10" unless $self->{VERSION};
     ($self->{VERSION_SYM} = $self->{VERSION}) =~ s/\W/_/g;
 
@@ -1302,6 +1327,7 @@ sub init_others {	# --- Initialize Other Attributes
     $self->{FIRST_MAKEFILE} ||= "Makefile";
     $self->{MAKEFILE} ||= $self->{FIRST_MAKEFILE};
     $self->{MAKE_APERL_FILE} ||= "Makefile.aperl";
+    $self->{NOECHO} ||= '@';
     $self->{RM_F}  ||= "rm -f";
     $self->{RM_RF} ||= "rm -rf";
     $self->{TOUCH} ||= "touch";
@@ -1331,7 +1357,8 @@ in these dirs:
 	    my $abs;
 	    if ($self->file_name_is_absolute($name)) {
 		$abs = $name;
-	    } elsif ($name =~ m|/|) { # file_name_contains_path
+	    } elsif (($name =~ m|/|) && ($name !~ m|^\.{1,2}/|)) {
+		# name is a path that does not begin with dot or dotdot
 		$abs = $self->catfile(".", $name);
 	    } else {
 		$abs = $self->catfile($dir, $name);
@@ -1500,6 +1527,11 @@ BASEEXT = $self->{BASEEXT}
 ROOTEXT = $self->{ROOTEXT}
 DLBASE  = $self->{DLBASE}
 ";
+
+    push @m, "
+VERSION_FROM = $self->{VERSION_FROM}
+" if defined $self->{VERSION_FROM};
+
     push @m, "
 INC = $self->{INC}
 DEFINE = $self->{DEFINE}
@@ -1538,7 +1570,7 @@ makemakerdflt: all
 MYEXTLIB = $self->{MYEXTLIB}
 
 # Where is the Config information that we are using/depend on
-CONFIGDEP = \$(PERL_ARCHLIB)/Config.pm \$(PERL_INC)/config.h
+CONFIGDEP = \$(PERL_ARCHLIB)/Config.pm \$(PERL_INC)/config.h \$(VERSION_FROM)
 ";
 
     push @m, '
@@ -1884,8 +1916,8 @@ sub dist {
     my($compress) = $attribs{COMPRESS} || 'compress';   # eg gzip
     my($suffix)   = $attribs{SUFFIX}   || 'Z';          # eg gz
     my($shar)     = $attribs{SHAR}     || 'shar';       # eg "shar --gzip"
-    my($preop)    = $attribs{PREOP}    || '@true';      # eg update MANIFEST
-    my($postop)   = $attribs{POSTOP}   || '@true';      # eg remove the distdir
+    my($preop)    = $attribs{PREOP}    || "$self->{NOECHO}true"; # eg update MANIFEST
+    my($postop)   = $attribs{POSTOP}   || "$self->{NOECHO}true"; # eg remove the distdir
     my($ci)       = $attribs{CI}       || 'ci -u';
     my($rcs_label)= $attribs{RCS_LABEL}|| 'rcs -Nv$(VERSION_SYM): -q';
     my($dist_cp)  = $attribs{DIST_CP}  || 'best';
@@ -2007,7 +2039,7 @@ sub top_targets {
     }
     my(@m);
     push @m, '
-all ::	config $(INST_PM) subdirs linkext manifypods
+all ::	config $(INST_PM) subdirs linkext manifypods reorg_packlist
 
 subdirs :: $(MYEXTLIB)
 
@@ -2048,7 +2080,7 @@ help:
 
     push @m, q{
 Version_check:
-	@$(PERL) -I$(PERL_ARCHLIB) -I$(PERL_LIB) \
+	}.$self->{NOECHO}.q{$(PERL) -I$(PERL_ARCHLIB) -I$(PERL_LIB) \
 		-e 'use ExtUtils::MakeMaker qw($$Version &Version_check);' \
 		-e '&Version_check("$(MM_VERSION)")'
 };
@@ -2138,19 +2170,19 @@ BOOTSTRAP = '."$self->{BASEEXT}.bs".'
 # we use touch to prevent make continually trying to remake it.
 # The DynaLoader only reads a non-empty file.
 $(BOOTSTRAP): '."$self->{MAKEFILE} $self->{BOOTDEP}".' $(INST_ARCHAUTODIR)/.exists
-	@ echo "Running Mkbootstrap for $(NAME) ($(BSLOADLIBS))"
-	@ $(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" \
+	'.$self->{NOECHO}.'echo "Running Mkbootstrap for $(NAME) ($(BSLOADLIBS))"
+	'.$self->{NOECHO}.'$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" \
 		-e \'use ExtUtils::Mkbootstrap;\' \
 		-e \'Mkbootstrap("$(BASEEXT)","$(BSLOADLIBS)");\'
-	@ $(TOUCH) $(BOOTSTRAP)
+	'.$self->{NOECHO}.'$(TOUCH) $(BOOTSTRAP)
 	$(CHMOD) 644 $@
-	@echo $@ >> $(INST_ARCHAUTODIR)/.packlist
+	'.$self->{NOECHO}.'echo $@ >> $(INST_ARCHAUTODIR)/.packlist
 
 $(INST_BOOT): $(BOOTSTRAP) $(INST_ARCHAUTODIR)/.exists
-	@ '.$self->{RM_RF}.' $(INST_BOOT)
+	'."$self->{NOECHO}$self->{RM_RF}".' $(INST_BOOT)
 	-'.$self->{CP}.' $(BOOTSTRAP) $(INST_BOOT)
 	$(CHMOD) 644 $@
-	@echo $@ >> $(INST_ARCHAUTODIR)/.packlist
+	'.$self->{NOECHO}.'echo $@ >> $(INST_ARCHAUTODIR)/.packlist
 ';
 }
 
@@ -2165,6 +2197,7 @@ sub dynamic_lib {
     return '' unless $self->has_link_code;
 
     my($otherldflags) = $attribs{OTHERLDFLAGS} || "";
+    my($inst_dynamic_dep) = $attribs{INST_DYNAMIC_DEP} || "";
     my($armaybe) = $attribs{ARMAYBE} || $self->{ARMAYBE} || ":";
     my($ldfrom) = '$(LDFROM)';
     my($osname) = $Config::Config{osname};
@@ -2175,8 +2208,9 @@ sub dynamic_lib {
 # from $(OBJECT) and possibly $(MYEXTLIB).
 ARMAYBE = '.$armaybe.'
 OTHERLDFLAGS = '.$otherldflags.'
+INST_DYNAMIC_DEP = '.$inst_dynamic_dep.'
 
-$(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)/.exists $(EXPORT_LIST) $(PERL_ARCHIVE)
+$(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)/.exists $(EXPORT_LIST) $(PERL_ARCHIVE) $(INST_DYNAMIC_DEP)
 ');
     if ($armaybe ne ':'){
 	$ldfrom = 'tmp$(LIB_EXT)';
@@ -2188,7 +2222,7 @@ $(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)/.exists 
 		' $(OTHERLDFLAGS) $(MYEXTLIB) $(LDLOADLIBS) $(EXPORT_LIST) $(PERL_ARCHIVE)');
     push @m, '
 	$(CHMOD) 755 $@
-	@echo $@ >> $(INST_ARCHAUTODIR)/.packlist
+	'.$self->{NOECHO}.'echo $@ >> $(INST_ARCHAUTODIR)/.packlist
 ';
 
     push @m, $self->dir_target('$(INST_ARCHAUTODIR)');
@@ -2228,20 +2262,19 @@ $(INST_STATIC): $(OBJECT) $(MYEXTLIB) $(INST_ARCHAUTODIR)/.exists
 END
     # If this extension has it's own library (eg SDBM_File)
     # then copy that to $(INST_STATIC) and add $(OBJECT) into it.
-    push(@m, "	$self->{CP} \$(MYEXTLIB) \$\@\n") if $self->{MYEXTLIB};
+    push(@m, "\t$self->{CP} \$(MYEXTLIB) \$\@\n") if $self->{MYEXTLIB};
 
-    push(@m, <<'END');
-	$(AR) cr $@ $(OBJECT) && $(RANLIB) $@
-	@echo "$(EXTRALIBS)" > $(INST_ARCHAUTODIR)/extralibs.ld
+    push @m, 
+q{	$(AR) cr $@ $(OBJECT) && $(RANLIB) $@
+	}.$self->{NOECHO}.q{echo "$(EXTRALIBS)" > $(INST_ARCHAUTODIR)/extralibs.ld
 	$(CHMOD) 755 $@
-	@echo $@ >> $(INST_ARCHAUTODIR)/.packlist
-END
+	}.$self->{NOECHO}.q{echo $@ >> $(INST_ARCHAUTODIR)/.packlist
+};
 
 # Old mechanism - still available:
 
-    push(@m, <<'END') if $self->{PERL_SRC};
-	@ echo "$(EXTRALIBS)" >> $(PERL_SRC)/ext.libs
-END
+    push @m, "\t$self->{NOECHO}".q{echo "$(EXTRALIBS)" >> $(PERL_SRC)/ext.libs}."\n\n"
+	if $self->{PERL_SRC};
 
     push @m, $self->dir_target('$(INST_ARCHAUTODIR)');
     join('', "\n",@m);
@@ -2278,17 +2311,19 @@ sub installpm_x { # called by installpm per file
 	ExtUtils::MakeMaker::TieAtt::warndirectuse((caller(0))[3]);
 	$self = $ExtUtils::MakeMaker::Parent[-1];
     }
-    warn "Warning: Most probably 'make' will have problems processing this file: $inst\n"
-	if $inst =~ m![:#]!;
+    if ($inst =~ m,[:\#],){
+	warn "Warning: 'make' would have problems processing this file: '$inst', SKIPPED\n";
+	return '';
+    }
     my($instdir) = $inst =~ m|(.*)/|;
     my(@m);
     push(@m,"
 $inst: $dist $self->{MAKEFILE} $instdir/.exists \$(INST_ARCHAUTODIR)/.exists
-".'	@'.$self->{RM_F}.' $@
-	$(UMASK_NULL) && '."$self->{CP} $dist".' $@
-	@echo $@ >> $(INST_ARCHAUTODIR)/.packlist
+	$self->{NOECHO}$self->{RM_F}".' $@
+	$(UMASK_NULL) && '."$self->{CP} $dist \$\@
+	$self->{NOECHO}echo ".'$@ >> $(INST_ARCHAUTODIR)/.packlist
 ');
-    push(@m, "\t\@\$(AUTOSPLITFILE) \$@ $splitlib/auto\n")
+    push(@m, "\t$self->{NOECHO}\$(AUTOSPLITFILE) \$@ $splitlib/auto\n")
 	if ($splitlib and $inst =~ m/\.pm$/);
 
     push @m, $self->dir_target($instdir);
@@ -2325,7 +2360,7 @@ qq[POD2MAN_EXE = $pod2man_exe\n],
 q[POD2MAN = $(PERL) -we '%m=@ARGV;for (keys %m){' \\
 -e 'next if -e $$m{$$_} && -M $$m{$$_} < -M $$_ && -M $$m{$$_} < -M "].$self->{MAKEFILE}.q[";' \\
 -e 'print "Installing $$m{$$_}\n";' \\
--e 'system("$$^X $(POD2MAN_EXE) $$_>$$m{$$_}")==0 or warn "Couldn\\047t install $$m{$$_}\n";' \\
+-e 'system("$$^X \\"-I$(PERL_ARCHLIB)\\" \\"-I$(PERL_LIB)\\" $(POD2MAN_EXE) $$_>$$m{$$_}")==0 or warn "Couldn\\047t install $$m{$$_}\n";' \\
 -e 'chmod 0644, $$m{$$_} or warn "chmod 644 $$m{$$_}: $$!\n";}'
 ];
     push @m, "\nmanifypods : ";
@@ -2333,7 +2368,7 @@ q[POD2MAN = $(PERL) -we '%m=@ARGV;for (keys %m){' \\
 
     push(@m,"\n");
     if (%{$self->{MAN1PODS}} || %{$self->{MAN3PODS}}) {
-	push @m, "\t\@\$(POD2MAN) \\\n\t";
+	push @m, "\t$self->{NOECHO}\$(POD2MAN) \\\n\t";
 	push @m, join " \\\n\t", %{$self->{MAN1PODS}}, %{$self->{MAN3PODS}};
     }
     join('', @m);
@@ -2444,7 +2479,7 @@ sub subdir_x {
     qq{
 
 subdirs ::
-	\@-cd $subdir && \$(MAKE) all \$(PASTHRU)
+	$self->{NOECHO}-cd $subdir && \$(MAKE) all \$(PASTHRU)
 
 };
 }
@@ -2471,7 +2506,7 @@ clean ::
 
     my(@otherfiles) = values %{$self->{XS}}; # .c files from *.xs files
     push(@otherfiles, $attribs{FILES}) if $attribs{FILES};
-    push(@otherfiles, qw[./blib Makeaperlfile $(INST_ARCHAUTODIR)/extralibs.all
+    push(@otherfiles, qw[./blib $(MAKE_APERL_FILE) $(INST_ARCHAUTODIR)/extralibs.all
 			 perlmain.c mon.out core so_locations
 			 *~ */*~ */*/*~
 			 *$(OBJ_EXT) *$(LIB_EXT)
@@ -2636,8 +2671,8 @@ sub install {
     my(@m);
     push @m, q{
 doc_install ::
-	@ echo Appending installation info to $(INSTALLARCHLIB)/perllocal.pod
-	@ $(PERL) -I$(INST_ARCHLIB) -I$(INST_LIB) -I$(PERL_ARCHLIB) -I$(PERL_LIB)  \\
+	}.$self->{NOECHO}.q{echo Appending installation info to $(INSTALLARCHLIB)/perllocal.pod
+	}.$self->{NOECHO}.q{$(PERL) -I$(INST_ARCHLIB) -I$(INST_LIB) -I$(PERL_ARCHLIB) -I$(PERL_LIB)  \\
 		-e "use ExtUtils::MakeMaker; MY->new({})->writedoc('Module', '$(NAME)', \\
 		'LINKTYPE=$(LINKTYPE)', 'VERSION=$(VERSION)', 'XS_VERSION=$(XS_VERSION)', \\
 		'EXE_FILES=$(EXE_FILES)')" >> $(INSTALLARCHLIB)/perllocal.pod
@@ -2652,25 +2687,35 @@ pure_install ::
     push(@m, map("\tcd $_ && test -f $self->{MAKEFILE} && \$(MAKE) install\n",
 		 @{$self->{DIR}}));
 
-    push(@m, "\t\@\$(PERL) \"-I\$(PERL_ARCHLIB)\" \"-I\$(PERL_LIB)\" -e 'require File::Path;' \\
-	-e '\$\$message = q[ You do not have permissions to install into];' \\
-	-e 'File::Path::mkpath(\@ARGV);' \\
-	-e 'foreach (\@ARGV){ die qq{ \$\$message \$\$_\\n} unless -w \$\$_}' \\
-	    \$(INSTALLPRIVLIB) \$(INSTALLARCHLIB)
-	\$(MAKE) INST_LIB=\$(INSTALLPRIVLIB) INST_ARCHLIB=\$(INSTALLARCHLIB) INST_EXE=\$(INSTALLBIN) INST_MAN1DIR=\$(INSTALLMAN1DIR) INST_MAN3DIR=\$(INSTALLMAN3DIR) all
-");
+    push(@m, "\t$self->{NOECHO}".q{$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -e 'require File::Path;' \
+	-e '$$message = q[ You do not have permissions to install into];' \
+	-e 'File::Path::mkpath(@ARGV);' \
+	-e 'foreach (@ARGV){ die qq{ $$message $$_\\n} unless -w $$_}' \
+	    $(INSTALLPRIVLIB) $(INSTALLARCHLIB)
+	$(MAKE) INST_LIB=$(INSTALLPRIVLIB) INST_ARCHLIB=$(INSTALLARCHLIB) \
+	    INST_EXE=$(INSTALLBIN) INST_MAN1DIR=$(INSTALLMAN1DIR) \
+	    INST_MAN3DIR=$(INSTALLMAN3DIR) all
 
-# .packlist is not supported in this MakeMaker, because it needs a serious fix. -i.bak
-# is not allowed in an environment, with afs, we have to read here, write there, and I
-# don't have time to fix it today -> TODO
-# The following line was executed with MMs up to 5.10:
-#	\@\$(PERL) -i.bak -lne 'print unless \$\$seen{ \$\$_ }++' \$(PERL_ARCHLIB)/auto/\$(FULLEXT)/.packlist
+reorg_packlist:
+	}.$self->{NOECHO}.q{$(PERL) -ne 'BEGIN{die "Need 2 arguments to reorg .packlist" unless @ARGV==2;' \
+	    -e '$$out=$$ARGV[1]; shift @ARGV while @ARGV && ! -f $$ARGV[0]; exit unless @ARGV;}' \
+	    -e 'push @lines, $$_ unless $$seen{$$_}++;' \
+	    -e 'END{open STDOUT, ">$$out" or die "Cannot write to $$out: $$!";' \
+	    -e 'print @lines;}' $(PERL_ARCHLIB)/auto/$(FULLEXT)/.packlist \
+		$(INST_ARCHAUTODIR)/.packlist
+});
 
+# From MM 5.16:
 
-    push @m, '
+    push @m, q[
+# Comment on .packlist rewrite above:
+# Read both .packlist files: the old one in PERL_ARCHLIB/auto/FULLEXT, and the new one
+# in INSTARCHAUTODIR. Don't croak if they are missing. Write to the one
+# in INSTARCHAUTODIR. 
+
 #### UNINSTALL IS STILL EXPERIMENTAL ####
 uninstall ::
-';
+];
 
     push(@m, map("\tcd $_ && test -f $self->{MAKEFILE} && \$(MAKE) uninstall\n",
 		 @{$self->{DIR}}));
@@ -2723,10 +2768,10 @@ $(OBJECT) : $(PERL_HDRS)
 # We do NOT just update config.h because that is not sufficient.
 # An out of date config.h is not fatal but complains loudly!
 $(PERL_INC)/config.h: $(PERL_SRC)/config.sh
-	-@echo "Warning: $(PERL_INC)/config.h out of date with $(PERL_SRC)/config.sh"; false
+	-'.$self->{NOECHO}.'echo "Warning: $(PERL_INC)/config.h out of date with $(PERL_SRC)/config.sh"; false
 
 $(PERL_ARCHLIB)/Config.pm: $(PERL_SRC)/config.sh
-	@echo "Warning: $(PERL_ARCHLIB)/Config.pm may be out of date with $(PERL_SRC)/config.sh"
+	'.$self->{NOECHO}.'echo "Warning: $(PERL_ARCHLIB)/Config.pm may be out of date with $(PERL_SRC)/config.sh"
 	cd $(PERL_SRC) && $(MAKE) lib/Config.pm
 ') if $self->{PERL_SRC};
 
@@ -2753,13 +2798,13 @@ $(OBJECT) : $(FIRST_MAKEFILE)
 # We take a very conservative approach here, but it\'s worth it.
 # We move Makefile to Makefile.old here to avoid gnu make looping.
 '.$self->{MAKEFILE}.' :	Makefile.PL $(CONFIGDEP)
-	@echo "Makefile out-of-date with respect to $?"
-	@echo "Cleaning current config before rebuilding Makefile..."
-	-@mv '."$self->{MAKEFILE} $self->{MAKEFILE}.old".'
+	'.$self->{NOECHO}.'echo "Makefile out-of-date with respect to $?"
+	'.$self->{NOECHO}.'echo "Cleaning current config before rebuilding Makefile..."
+	-'.$self->{NOECHO}.'mv '."$self->{MAKEFILE} $self->{MAKEFILE}.old".'
 	-$(MAKE) -f '.$self->{MAKEFILE}.'.old clean >/dev/null 2>&1 || true
 	$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" Makefile.PL '."@ARGV".'
-	@echo ">>> Your Makefile has been rebuilt. <<<"
-	@echo ">>> Please rerun the make command.  <<<"; false
+	'.$self->{NOECHO}.'echo ">>> Your Makefile has been rebuilt. <<<"
+	'.$self->{NOECHO}.'echo ">>> Please rerun the make command.  <<<"; false
 ';
 
     join "", @m;
@@ -2818,9 +2863,9 @@ TEST_TYPE=test_\$(LINKTYPE)
 
 test :: \$(TEST_TYPE)
 ");
-    push(@m, map("\t\@cd $_ && test -f $self->{MAKEFILE} && \$(MAKE) test \$(PASTHRU)\n",
+    push(@m, map("\t$self->{NOECHO}cd $_ && test -f $self->{MAKEFILE} && \$(MAKE) test \$(PASTHRU)\n",
 		 @{$self->{DIR}}));
-    push(@m, "\t\@echo 'No tests defined for \$(NAME) extension.'\n")
+    push(@m, "\t$self->{NOECHO}echo 'No tests defined for \$(NAME) extension.'\n")
 	unless $tests or -f "test.pl" or @{$self->{DIR}};
     push(@m, "\n");
 
@@ -2893,11 +2938,11 @@ FULLPERL      = $self->{FULLPERL}
     unless ($self->{MAKEAPERL}) {
 	push @m, q{
 $(MAP_TARGET) :: $(MAKE_APERL_FILE)
-	$(MAKE) -f Makefile.aperl static $@
+	$(MAKE) -f $(MAKE_APERL_FILE) static $@
 
 $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE)
-	@ echo Writing \"Makefile.aperl\" for this $(MAP_TARGET)
-	@ $(PERL) -I$(INST_ARCHLIB) -I$(INST_LIB) -I$(PERL_ARCHLIB) -I$(PERL_LIB) \
+	}.$self->{NOECHO}.q{echo Writing \"$(MAKE_APERL_FILE)\" for this $(MAP_TARGET)
+	}.$self->{NOECHO}.q{$(PERL) -I$(INST_ARCHLIB) -I$(INST_LIB) -I$(PERL_ARCHLIB) -I$(PERL_LIB) \
 		Makefile.PL DIR=}, $dir, q{ \
 		MAKEFILE=$(MAKE_APERL_FILE) LINKTYPE=static \
 		MAKEAPERL=1 NORECURS=1 CCCDLFLAGS=};
@@ -2990,8 +3035,8 @@ MAP_LIBPERL = $libperl
 
     push @m, "
 \$(INST_ARCHAUTODIR)/extralibs.all: \$(INST_ARCHAUTODIR)/.exists ".join(" \\\n\t", @$extra)."
-	\@ $self->{RM_F} \$\@
-	\@ \$(TOUCH) \$\@
+	$self->{NOECHO}$self->{RM_F} \$\@
+	$self->{NOECHO}\$(TOUCH) \$\@
 ";
 
     my $catfile;
@@ -3002,10 +3047,10 @@ MAP_LIBPERL = $libperl
     push @m, "
 \$(MAP_TARGET) :: $tmp/perlmain\$(OBJ_EXT) \$(MAP_LIBPERL) \$(MAP_STATIC) \$(INST_ARCHAUTODIR)/extralibs.all
 	\$(MAP_LINKCMD) -o \$\@ $tmp/perlmain\$(OBJ_EXT) \$(MAP_LIBPERL) \$(MAP_STATIC) `cat \$(INST_ARCHAUTODIR)/extralibs.all` \$(MAP_PRELIBS)
-	@ echo 'To install the new \"\$(MAP_TARGET)\" binary, call'
-	@ echo '    make -f $makefilename inst_perl MAP_TARGET=\$(MAP_TARGET)'
-	@ echo 'To remove the intermediate files say'
-	@ echo '    make -f $makefilename map_clean'
+	$self->{NOECHO}echo 'To install the new \"\$(MAP_TARGET)\" binary, call'
+	$self->{NOECHO}echo '    make -f $makefilename inst_perl MAP_TARGET=\$(MAP_TARGET)'
+	$self->{NOECHO}echo 'To remove the intermediate files say'
+	$self->{NOECHO}echo '    make -f $makefilename map_clean'
 
 $tmp/perlmain\$(OBJ_EXT): $tmp/perlmain.c
 ";
@@ -3013,8 +3058,8 @@ $tmp/perlmain\$(OBJ_EXT): $tmp/perlmain.c
 
     push @m, qq{
 $tmp/perlmain.c: $makefilename}, q{
-	@ echo Writing $@
-	@ $(PERL) $(MAP_PERLINC) -e 'use ExtUtils::Miniperl; \\
+	}.$self->{NOECHO}.q{echo Writing $@
+	}.$self->{NOECHO}.q{$(PERL) $(MAP_PERLINC) -e 'use ExtUtils::Miniperl; \\
 		writemain(grep s#.*/auto/##, qw|$(MAP_STATIC)|)' > $@.tmp && mv $@.tmp $@
 
 };
@@ -3022,8 +3067,8 @@ $tmp/perlmain.c: $makefilename}, q{
 # We write EXTRA outside the perl program to have it eval'd by the shell
     push @m, q{
 doc_inst_perl:
-	@ echo Appending installation info to $(INSTALLARCHLIB)/perllocal.pod
-	@ $(FULLPERL) -e 'use ExtUtils::MakeMaker; MY->new->writedoc("Perl binary",' \\
+	}.$self->{NOECHO}.q{echo Appending installation info to $(INSTALLARCHLIB)/perllocal.pod
+	}.$self->{NOECHO}.q{$(FULLPERL) -e 'use ExtUtils::MakeMaker; MY->new->writedoc("Perl binary",' \\
 		-e '"$(MAP_TARGET)", "MAP_STATIC=$(MAP_STATIC)",' \\
 		-e '"MAP_EXTRA=@ARGV", "MAP_LIBPERL=$(MAP_LIBPERL)")' \\
 		-- `cat $(INST_ARCHAUTODIR)/extralibs.all` >> $(INSTALLARCHLIB)/perllocal.pod
@@ -3106,9 +3151,9 @@ sub dir_target {
 	next if $self->{DIR_TARGET}{$self}{$dir}++;
 	push @m, "
 $dir/.exists :: \$(PERL)
-	\@\$(MKPATH) $dir
-	\@\$(TOUCH) $dir/.exists
-	\@-\$(CHMOD) 755 $dir
+	$self->{NOECHO}\$(MKPATH) $dir
+	$self->{NOECHO}\$(TOUCH) $dir/.exists
+	$self->{NOECHO}-\$(CHMOD) 755 $dir
 ";
     }
     join "", @m;
@@ -3917,6 +3962,34 @@ typemap has lowest precedence.
 Your version number for distributing the package.  This defaults to
 0.1.
 
+=item VERSION_FROM
+
+Instead of specifying the VERSION in the Makefile.PL you can let
+MakeMaker parse a file to determine the version number. The parsing
+routine requires that the file named by VERSION_FROM contains one
+single line to compute the version number. The first line in the file
+that contains the regular expression
+
+    /(\$[\w:]*\bVERSION)\b.*=/
+
+will be evaluated with eval() and the value of the named variable
+B<after> the eval() will be assigned to the VERSION attribute of the
+MakeMaker object. The following lines will be parsed o.k.:
+
+    $VERSION = '1.00';
+    ( $VERSION ) = '$Revision: 1.135 $ ' =~ /\$Revision:\s+([^\s]+)/;
+    $FOO::VERSION = '1.10';
+
+but these will fail:
+
+    my $VERSION = '1.01';
+    local $VERSION = '1.02';
+    local $FOO::VERSION = '1.30';
+
+The file named in VERSION_FROM is added as a dependency to Makefile to
+guarantee, that the Makefile contains the correct VERSION macro after
+a change of the file.
+
 =item XS
 
 Hashref of .xs files. MakeMaker will default this.  e.g.
@@ -3970,7 +4043,7 @@ links the rest. Default is 'best'.
 
 =item dynamic_lib
 
-  {ARMAYBE => 'ar', OTHERLDFLAGS => '...'}
+  {ARMAYBE => 'ar', OTHERLDFLAGS => '...', INST_DYNAMIC_DEP => '...'}
 
 =item installpm
 
