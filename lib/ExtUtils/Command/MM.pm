@@ -9,7 +9,7 @@ use vars qw($VERSION @ISA @EXPORT);
 
 @EXPORT  = qw(test_harness pod2man perllocal_install uninstall 
               warn_if_old_packlist);
-$VERSION = '0.04_01';
+$VERSION = '0.04_07';
 
 my $Is_VMS = $^O eq 'VMS';
 
@@ -168,9 +168,9 @@ PACKLIST_WARNING
     perl "-MExtUtils::Command::MM" -e perllocal_install 
         <type> <module name> <key> <value> ...
 
-    # VMS only, key/value pairs come on STDIN
+    # VMS only, key|value pairs come on STDIN
     perl "-MExtUtils::Command::MM" -e perllocal_install
-        <type> <module name> < <key> <value> ...
+        <type> <module name> < <key>|<value> ...
 
 Prints a fragment of POD suitable for appending to perllocal.pod.
 Arguments are read from @ARGV.

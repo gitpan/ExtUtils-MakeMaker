@@ -20,7 +20,7 @@ use vars qw($VERSION @ISA
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
-$VERSION = '1.46_06';
+$VERSION = '1.46_07';
 
 require ExtUtils::MM_Any;
 @ISA = qw(ExtUtils::MM_Any);
@@ -870,7 +870,7 @@ $(BOOTSTRAP) : $(FIRST_MAKEFILE) $(BOOTDEP) $(INST_ARCHAUTODIR)$(DFSEP).exists
 
 $(INST_BOOT) : $(BOOTSTRAP) $(INST_ARCHAUTODIR)$(DFSEP).exists
 	$(NOECHO) $(RM_RF) %s
-	$(IGNORE)$(CP) $(BOOTSTRAP) %s
+	- $(CP) $(BOOTSTRAP) %s
 	$(CHMOD) $(PERM_RW) %s
 MAKE_FRAG
 }
@@ -1136,13 +1136,13 @@ eval 'exec $interpreter $arg -S \$0 \${1+"\$\@"}'
 
         chmod 0666, $file_bak;
         unlink $file_bak;
-	unless ( rename($file, $file_bak) ) {	
+	unless ( _rename($file, $file_bak) ) {	
 	    warn "Can't rename $file to $file_bak: $!";
 	    next;
 	}
-	unless ( rename($file_new, $file) ) {	
+	unless ( _rename($file_new, $file) ) {	
 	    warn "Can't rename $file_new to $file: $!";
-	    unless ( rename($file_bak, $file) ) {
+	    unless ( _rename($file_bak, $file) ) {
 	        warn "Can't rename $file_bak back to $file either: $!";
 		warn "Leaving $file renamed as $file_bak\n";
 	    }
@@ -1154,6 +1154,22 @@ eval 'exec $interpreter $arg -S \$0 \${1+"\$\@"}'
 	system("$Config{'eunicefix'} $file") if $Config{'eunicefix'} ne ':';;
     }
 }
+
+
+sub _rename {
+    my($old, $new) = @_;
+
+    foreach my $file ($old, $new) {
+        if( $Is_VMS and basename($file) !~ /\./ ) {
+            # rename() in 5.8.0 on VMS will not rename a file if it
+            # does not contain a dot yet it returns success.
+            $file = "$file.";
+        }
+    }
+
+    return rename($old, $new);
+}
+
 
 =item force (o)
 
@@ -1658,7 +1674,7 @@ EOP
 Initializes EXTRALIBS, BSLOADLIBS, LDLOADLIBS, LIBS, LD_RUN_PATH, LD,
 OBJECT, BOOTDEP, PERLMAINCC, LDFROM, LINKTYPE, SHELL, NOOP,
 FIRST_MAKEFILE, MAKEFILE_OLD, NOECHO, RM_F, RM_RF, TEST_F,
-TOUCH, CP, MV, CHMOD, UMASK_NULL, ECHO, ECHO_N, IGNORE
+TOUCH, CP, MV, CHMOD, UMASK_NULL, ECHO, ECHO_N
 
 =cut
 
@@ -1712,9 +1728,6 @@ sub init_others {	# --- Initialize Other Attributes
 
     $self->{NOOP}               ||= '$(SHELL) -c true';
     $self->{NOECHO}             = '@' unless defined $self->{NOECHO};
-
-    # Using $(IGNORE) instead of '-' makes bsdmake and MMS happy.
-    $self->{IGNORE}             = '-' unless defined $self->{IGNORE};
 
     $self->{FIRST_MAKEFILE}     ||= $self->{MAKEFILE} || 'Makefile';
     $self->{MAKEFILE}           ||= $self->{FIRST_MAKEFILE};
@@ -2077,8 +2090,8 @@ pure_vendor_install ::
 
 doc_perl_install ::
 	$(NOECHO) $(ECHO) Appending installation info to $(DESTINSTALLARCHLIB)/perllocal.pod
-	$(IGNORE)$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
-	$(IGNORE)$(NOECHO) $(DOC_INSTALL) \
+	-$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
+	-$(NOECHO) $(DOC_INSTALL) \
 		"Module" "$(NAME)" \
 		"installed into" "$(INSTALLPRIVLIB)" \
 		LINKTYPE "$(LINKTYPE)" \
@@ -2088,8 +2101,8 @@ doc_perl_install ::
 
 doc_site_install ::
 	$(NOECHO) $(ECHO) Appending installation info to $(DESTINSTALLARCHLIB)/perllocal.pod
-	$(IGNORE)$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
-	$(IGNORE)$(NOECHO) $(DOC_INSTALL) \
+	-$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
+	-$(NOECHO) $(DOC_INSTALL) \
 		"Module" "$(NAME)" \
 		"installed into" "$(INSTALLSITELIB)" \
 		LINKTYPE "$(LINKTYPE)" \
@@ -2099,8 +2112,8 @@ doc_site_install ::
 
 doc_vendor_install ::
 	$(NOECHO) $(ECHO) Appending installation info to $(DESTINSTALLARCHLIB)/perllocal.pod
-	$(IGNORE)$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
-	$(IGNORE)$(NOECHO) $(DOC_INSTALL) \
+	-$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
+	-$(NOECHO) $(DOC_INSTALL) \
 		"Module" "$(NAME)" \
 		"installed into" "$(INSTALLVENDORLIB)" \
 		LINKTYPE "$(LINKTYPE)" \
@@ -2179,7 +2192,7 @@ realclean ::
 	$(NOECHO) $(RM_F) %s
 	$(CP) %s %s
 	$(FIXIN) %s
-	$(IGNORE)$(NOECHO) $(CHMOD) $(PERM_RWX) %s
+	-$(NOECHO) $(CHMOD) $(PERM_RWX) %s
 
 MAKE
 
@@ -2466,8 +2479,8 @@ $tmp/perlmain.c: $makefilename}, q{
     push @m, q{
 doc_inst_perl:
 	$(NOECHO) $(ECHO) Appending installation info to $(DESTINSTALLARCHLIB)/perllocal.pod
-	$(IGNORE)$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
-	$(IGNORE)$(NOECHO) $(DOC_INSTALL) \
+	-$(NOECHO) $(MKPATH) $(DESTINSTALLARCHLIB)
+	-$(NOECHO) $(DOC_INSTALL) \
 		"Perl binary" "$(MAP_TARGET)" \
 		MAP_STATIC "$(MAP_STATIC)" \
 		MAP_EXTRA "`cat $(INST_ARCHAUTODIR)/extralibs.all`" \
@@ -2517,9 +2530,9 @@ $(OBJECT) : $(FIRST_MAKEFILE)
 $(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP)
 	$(NOECHO) $(ECHO) "Makefile out-of-date with respect to %s"
 	$(NOECHO) $(ECHO) "Cleaning current config before rebuilding Makefile..."
-	$(IGNORE)$(NOECHO) $(RM_F) $(MAKEFILE_OLD)
-	$(IGNORE)$(NOECHO) $(MV)   $(FIRST_MAKEFILE) $(MAKEFILE_OLD)
-	$(IGNORE)$(MAKE) $(USEMAKEFILE) $(MAKEFILE_OLD) clean $(DEV_NULL)
+	-$(NOECHO) $(RM_F) $(MAKEFILE_OLD)
+	-$(NOECHO) $(MV)   $(FIRST_MAKEFILE) $(MAKEFILE_OLD)
+	- $(MAKE) $(USEMAKEFILE) $(MAKEFILE_OLD) clean $(DEV_NULL)
 	$(PERLRUN) Makefile.PL %s
 	$(NOECHO) $(ECHO) "==> Your Makefile has been rebuilt. <=="
 	$(NOECHO) $(ECHO) "==> Please rerun the $(MAKE) command.  <=="
@@ -2722,7 +2735,7 @@ sub perldepend {
 # We do NOT just update config.h because that is not sufficient.
 # An out of date config.h is not fatal but complains loudly!
 $(PERL_INC)/config.h: $(PERL_SRC)/config.sh
-	$(IGNORE)$(NOECHO) $(ECHO) "Warning: $(PERL_INC)/config.h out of date with $(PERL_SRC)/config.sh"; false
+	-$(NOECHO) $(ECHO) "Warning: $(PERL_INC)/config.h out of date with $(PERL_SRC)/config.sh"; false
 
 $(PERL_ARCHLIB)/Config.pm: $(PERL_SRC)/config.sh
 	$(NOECHO) $(ECHO) "Warning: $(PERL_ARCHLIB)/Config.pm may be out of date with $(PERL_SRC)/config.sh"
@@ -3433,7 +3446,6 @@ sub tools_other {
 
     # We set PM_FILTER as late as possible so it can see all the earlier
     # on macro-order sensitive makes such as nmake.
-    # IGNORE must go last else MMS gets confused.
     for my $tool (qw{ SHELL CHMOD CP MV NOOP NOECHO RM_F RM_RF TEST_F TOUCH 
                       UMASK_NULL DEV_NULL MKPATH EQUALIZE_TIMESTAMP 
                       ECHO ECHO_N
@@ -3443,7 +3455,6 @@ sub tools_other {
                       MACROSTART MACROEND USEMAKEFILE
                       PM_FILTER
                       FIXIN
-                      IGNORE
                     } ) 
     {
         next unless defined $self->{$tool};

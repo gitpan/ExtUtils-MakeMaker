@@ -16,7 +16,7 @@ use strict;
 use File::Path;
 use Config;
 
-use Test::More tests => 19;
+use Test::More tests => 21;
 use MakeMaker::Test::Utils;
 use MakeMaker::Test::Setup::BFD;
 
@@ -47,6 +47,7 @@ ok( grep(/^Writing $makefile for Big::Dummy/,
                                            'Makefile.PL output looks right');
 
 my $make = make_run();
+run("$make");   # this is necessary due to a dmake bug.
 my $install_out = run("$make install");
 is( $?, 0, '  make install exited normally' ) || diag $install_out;
 like( $install_out, qr/^Installing /m );
@@ -57,6 +58,7 @@ ok( -r '../dummy-install',      '  install dir created' );
 my @installed_files = 
   ('../dummy-install/lib/perl5/Big/Dummy.pm',
    '../dummy-install/lib/perl5/Big/Liar.pm',
+   '../dummy-install/bin/program',
    "../dummy-install/lib/perl5/$Config{archname}/perllocal.pod",
    "../dummy-install/lib/perl5/$Config{archname}/auto/Big/Dummy/.packlist"
   );
@@ -67,5 +69,13 @@ foreach my $file (@installed_files) {
 }
 
 
+# nmake outputs its damned logo
+# Send STDERR off to oblivion.
+open(SAVERR, ">&STDERR") or die $!;
+open(STDERR, ">".File::Spec->devnull) or die $!;
+
 my $realclean_out = run("$make realclean");
 is( $?, 0, 'realclean' ) || diag($realclean_out);
+
+open(STDERR, ">&SAVERR") or die $!;
+close SAVERR;

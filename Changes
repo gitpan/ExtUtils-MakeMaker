@@ -1,3 +1,10 @@
+6.25_07  Fri Dec 31 03:47:20 EST 2004
+    - perllocal on VMS was inserting executables twice.
+    - No longer using $(IGNORE) macro.  Turns out MMS/K was not honoring
+      it.  Using "-$(NOECHO) command" which seems to make everybody happy.
+    - Executables with no extension weren't getting installed on VMS due to 
+      a bug in rename().  Broken sometime in this series of alphas.
+
 6.25_06  Sun Dec 26 17:21:37 EST 2004
     - Forgot to define BOOTDEP macro.
     - .exists files are back.  Directories cannot be used directly as 
