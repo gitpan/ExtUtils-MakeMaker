@@ -70,6 +70,7 @@ t/MM_VMS.t
 t/MM_Win32.t
 t/oneliner.t
 t/Packlist.t
+t/parse_version.t
 t/postamble.t
 t/prefixify.t
 t/prereq_print.t
@@ -83,3 +84,4 @@ t/vmsish.t
 t/writemakefile_args.t
 t/zz_cleanup_dummy.t
 TODO
+SIGNATURE                                Public-key signature (added by MakeMaker)
