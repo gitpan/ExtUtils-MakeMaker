@@ -20,7 +20,7 @@ use vars qw($VERSION @ISA
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
-$VERSION = '1.45_01';
+$VERSION = '1.46';
 
 require ExtUtils::MM_Any;
 @ISA = qw(ExtUtils::MM_Any);
@@ -1098,12 +1098,12 @@ $(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) blibdirs.ts $(EXPORT_LIST) $
 
     my $ld_run_path_shell = "";
     if ($self->{LD_RUN_PATH} ne "") {
-	$ld_run_path_shell = 'LD_RUN_PATH="$(LD_RUN_PATH)"';
+	$ld_run_path_shell = 'LD_RUN_PATH="$(LD_RUN_PATH)" ';
     }
 
     push @m, sprintf <<'MAKE', $ld_run_path_shell, $ldrun, $ldfrom, $libs;
-	%s $(LD) %s $(LDDLFLAGS) %s $(OTHERLDFLAGS) -o $@ $(MYEXTLIB) \
-	  $(PERL_ARCHIVE) %s $(PERL_ARCHIVE_AFTER) $(EXPORT_LIST)     \
+	%s$(LD) %s $(LDDLFLAGS) %s $(OTHERLDFLAGS) -o $@ $(MYEXTLIB)	\
+	  $(PERL_ARCHIVE) %s $(PERL_ARCHIVE_AFTER) $(EXPORT_LIST)	\
 	  $(INST_DYNAMIC_FIX)
 MAKE
 
@@ -1400,10 +1400,10 @@ Called by init_main.
 
 sub init_dirscan {	# --- File and Directory Lists (.xs .pm .pod etc)
     my($self) = @_;
-    my($name, %dir, %xs, %c, %h, %ignore, %pl_files, %manifypods);
+    my($name, %dir, %xs, %c, %h, %pl_files, %manifypods);
     my %pm;
 
-    @ignore{qw(Makefile.PL test.pl t)} = (1,1,1);
+    my %ignore = map {( $_ => 1 )} qw(Makefile.PL Build.PL test.pl t);
 
     # ignore the distdir
     $Is_VMS ? $ignore{"$self->{DISTVNAME}.dir"} = 1
