@@ -1,3 +1,15 @@
+=head2 v5.15 December 22, 1995 by Andreas Koenig
+
+Made PREFIX work also for INSTALLMAN1DIR, and applied Ilya's PREFIX
+patch which makes PREFIX overrideable from the make command
+line. Fixed the documantaion for that, too.
+
+Reintroduced XS_VERSION.
+
+Added SCCS as an exception in ->libscan();
+
+Set CCCDLFLAGS to "" in the recursive makeaperl call.
+
 =head2 v5.14 December 16, 1995 by Andreas Koenig
 
 catdir() and catfile() didn't check for successive slashes in the

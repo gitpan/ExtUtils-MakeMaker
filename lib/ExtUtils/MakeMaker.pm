@@ -56,10 +56,10 @@ sub warndirectuse {
 
 package ExtUtils::MakeMaker;
 
-# Last edited $Date: 1995/12/16 16:18:33 $ by Andreas Koenig
-# $Id: MakeMaker.pm,v 1.128 1995/12/16 16:18:33 k Exp $
+# Last edited $Date: 1995/12/22 19:47:52 $ by Andreas Koenig
+# $Id: MakeMaker.pm,v 1.129 1995/12/22 19:47:52 k Exp $
 
-$Version = $VERSION = "5.14";
+$Version = $VERSION = "5.15";
 
 $ExtUtils::MakeMaker::Version_OK = 4.13;	# Makefiles older than $Version_OK will die
 			# (Will be checked from MakeMaker version 4.13 onwards)
@@ -890,30 +890,35 @@ EOM
     }
     $self->{INST_EXE} ||= $self->catdir('.','blib',$Config::Config{archname});
 
-    if ($self->{PREFIX}){
+    my($prefix) = $Config{'prefix'};
+    $prefix = VMS::Filespec::unixify($prefix) if $Is_VMS;
+    unless ($self->{PREFIX}){
+	$self->{PREFIX} = $prefix;
+    }
 # With perl5.002 it turns out, that we hardcoded some assumptions in here:
 #	$self->{INSTALLPRIVLIB} = $self->catdir($self->{PREFIX},"lib","perl5");
 #	$self->{INSTALLBIN} = $self->catdir($self->{PREFIX},"bin");
 #	$self->{INSTALLMAN3DIR} = $self->catdir($self->{PREFIX},"perl5","man","man3")
 #	    unless defined $self->{INSTALLMAN3DIR};
 
-	# we have to look at the relation between $Config{prefix} and
-	# the requested values
-	my($prefix) = $Config{'prefix'};
-	$prefix = VMS::Filespec::unixify($prefix) if $Is_VMS;
-	$self->{INSTALLPRIVLIB} = $Config{installprivlib};
-	$self->{INSTALLPRIVLIB} = VMS::Filespec::unixpath($self->{INSTALLPRIVLIB})
-	   if $Is_VMS;
-	$self->{INSTALLPRIVLIB} =~ s/\Q$prefix\E/$self->{PREFIX}/;
-	$self->{INSTALLBIN} = $Config{installbin};
-	$self->{INSTALLBIN} = VMS::Filespec::unixpath($self->{INSTALLBIN})
-	   if $Is_VMS;
-	$self->{INSTALLBIN} =~ s/\Q$prefix\E/$self->{PREFIX}/;
-	$self->{INSTALLMAN3DIR} = $Config{installman3dir};
-	$self->{INSTALLMAN3DIR} = VMS::Filespec::unixpath($self->{INSTALLMAN3DIR})
-	   if $Is_VMS;
-	$self->{INSTALLMAN3DIR} =~ s/\Q$prefix\E/$self->{PREFIX}/;
-    }
+    # we have to look at the relation between $Config{prefix} and
+    # the requested values
+    $self->{INSTALLPRIVLIB} = $Config{installprivlib};
+    $self->{INSTALLPRIVLIB} = VMS::Filespec::unixpath($self->{INSTALLPRIVLIB})
+      if $Is_VMS;
+    $self->{INSTALLPRIVLIB} =~ s/\Q$prefix\E/\$(PREFIX)/;
+    $self->{INSTALLBIN} = $Config{installbin};
+    $self->{INSTALLBIN} = VMS::Filespec::unixpath($self->{INSTALLBIN})
+      if $Is_VMS;
+    $self->{INSTALLBIN} =~ s/\Q$prefix\E/\$(PREFIX)/;
+    $self->{INSTALLMAN1DIR} = $Config{installman1dir};
+    $self->{INSTALLMAN1DIR} = VMS::Filespec::unixpath($self->{INSTALLMAN1DIR})
+      if $Is_VMS;
+    $self->{INSTALLMAN1DIR} =~ s/\Q$prefix\E/\$(PREFIX)/;
+    $self->{INSTALLMAN3DIR} = $Config{installman3dir};
+    $self->{INSTALLMAN3DIR} = VMS::Filespec::unixpath($self->{INSTALLMAN3DIR})
+      if $Is_VMS;
+    $self->{INSTALLMAN3DIR} =~ s/\Q$prefix\E/\$(PREFIX)/;
 
     if( $self->{INSTALLPRIVLIB} && ! $self->{INSTALLARCHLIB} ){
 # Same as above here. With the unresolved versioned directory issue, we have to
@@ -1002,7 +1007,7 @@ EOM
     # version compatibility between the *.pm file and the
     # corresponding *.xs file. The bottomline was, that we need an
     # XS_VERSION macro that defaults to VERSION:
-    # $self->{XS_VERSION} ||= $self->{VERSION};
+    $self->{XS_VERSION} ||= $self->{VERSION};
 
     # --- Initialize Perl Binary Locations
 
@@ -1242,7 +1247,7 @@ sub replace_manpage_separator {
 
 sub libscan {
     my($self,$path) = @_;
-    return '' if $path =~ m:/RCS/: ;
+    return '' if $path =~ m:/(RCS|SCCS)/: ;
     $path;
 }
 
@@ -1441,9 +1446,9 @@ VERSION = $self->{VERSION}
 VERSION_SYM = $self->{VERSION_SYM}
 VERSION_MACRO = VERSION
 DEFINE_VERSION = -D\$(VERSION_MACRO)=\\\"\$(VERSION)\\\"
-# XS_VERSION = $self->{XS_VERSION}
-# XS_VERSION_MACRO = XS_VERSION
-# XS_DEFINE_VERSION = -D\$(XS_VERSION_MACRO)=\\\"\$(XS_VERSION)\\\"
+XS_VERSION = $self->{XS_VERSION}
+XS_VERSION_MACRO = XS_VERSION
+XS_DEFINE_VERSION = -D\$(XS_VERSION_MACRO)=\\\"\$(XS_VERSION)\\\"
 
 # In which directory should we put this extension during 'make'?
 # This is typically ./blib.
@@ -1451,6 +1456,8 @@ DEFINE_VERSION = -D\$(VERSION_MACRO)=\\\"\$(VERSION)\\\"
 INST_LIB = $self->{INST_LIB}
 INST_ARCHLIB = $self->{INST_ARCHLIB}
 INST_EXE = $self->{INST_EXE}
+
+PREFIX = $self->{PREFIX}
 
 # AFS users will want to set the installation directories for
 # the final 'make install' early without setting INST_LIB,
@@ -2318,7 +2325,7 @@ qq[POD2MAN_EXE = $pod2man_exe\n],
 q[POD2MAN = $(PERL) -we '%m=@ARGV;for (keys %m){' \\
 -e 'next if -e $$m{$$_} && -M $$m{$$_} < -M $$_ && -M $$m{$$_} < -M "].$self->{MAKEFILE}.q[";' \\
 -e 'print "Installing $$m{$$_}\n";' \\
--e 'system("$(PERL) $(POD2MAN_EXE) $$_>$$m{$$_}")==0 or warn "Couldn\\047t install $$m{$$_}\n";' \\
+-e 'system("$$^X $(POD2MAN_EXE) $$_>$$m{$$_}")==0 or warn "Couldn\\047t install $$m{$$_}\n";' \\
 -e 'chmod 0644, $$m{$$_} or warn "chmod 644 $$m{$$_}: $$!\n";}'
 ];
     push @m, "\nmanifypods : ";
@@ -2632,7 +2639,7 @@ doc_install ::
 	@ echo Appending installation info to $(INSTALLARCHLIB)/perllocal.pod
 	@ $(PERL) -I$(INST_ARCHLIB) -I$(INST_LIB) -I$(PERL_ARCHLIB) -I$(PERL_LIB)  \\
 		-e "use ExtUtils::MakeMaker; MY->new({})->writedoc('Module', '$(NAME)', \\
-		'LINKTYPE=$(LINKTYPE)', 'VERSION=$(VERSION)', \\
+		'LINKTYPE=$(LINKTYPE)', 'VERSION=$(VERSION)', 'XS_VERSION=$(XS_VERSION)', \\
 		'EXE_FILES=$(EXE_FILES)')" >> $(INSTALLARCHLIB)/perllocal.pod
 };
 
@@ -2893,7 +2900,7 @@ $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE)
 	@ $(PERL) -I$(INST_ARCHLIB) -I$(INST_LIB) -I$(PERL_ARCHLIB) -I$(PERL_LIB) \
 		Makefile.PL DIR=}, $dir, q{ \
 		MAKEFILE=$(MAKE_APERL_FILE) LINKTYPE=static \
-		MAKEAPERL=1 NORECURS=1};
+		MAKEAPERL=1 NORECURS=1 CCCDLFLAGS=};
 
 	push @m, map( " \\\n\t\t$_", @ARGV );
 	push @m, "\n";
@@ -3208,7 +3215,7 @@ $self->{BASEEXT}.def: Makefile.PL"
     join('',@m);
 }
 
-sub replace_manpage_seperator {
+sub replace_manpage_separator {
     my($self,$man) = @_;
     $man =~ s,/+,.,g;
     $man;
@@ -3419,16 +3426,13 @@ directory exists, otherwise it defaults to INSTALLPRIVLIB.
 
 =head2 PREFIX attribute
 
-The PREFIX attribute can be used to set the INSTALL* attributes
-(except INSTALLMAN1DIR) in one go. The quickest way to install a
-module in a non-standard place
+The PREFIX attribute can be used to set the INSTALL* attributes in one
+go. The quickest way to install a module in a non-standard place
 
     perl Makefile.PL PREFIX=~
 
-is identical to
-
-    perl Makefile.PL INSTALLPRIVLIB=~/perl5/lib INSTALLBIN=~/bin \
-                     INSTALLMAN3DIR=~/perl5/man/man3
+This will replace the string specified by $Config{prefix} in all
+$Config{install*} values.
 
 Note, that the tilde expansion is done by MakeMaker, not by perl by
 default, nor by make.
@@ -3466,8 +3470,6 @@ In nested extensions with many subdirectories, the INSTALL* arguments
 will get propagated to the subdirectories. Be careful to repeat this
 procedure every time you recompile an extension, unless you are sure
 the AFS istallation directories are still valid.
-
-
 
 =head2 Static Linking of a new Perl Binary
 
@@ -3935,6 +3937,11 @@ that purpose.
 May be set to an empty string, which is identical to C<-prototypes>, or
 C<-noprototypes>. See the xsubpp documentation for details. MakeMaker
 defaults to the empty string.
+
+=item XS_VERSION
+
+Your version number for the .xs file of this package.  This defaults
+to the value of the VERSION attribute.
 
 =back
 

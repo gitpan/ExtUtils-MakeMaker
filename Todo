@@ -82,6 +82,8 @@ The order of Todo's is significant. Most urgent ones first:
 - Internal attribute NEEDS_TESTING, so a parent Makefile doesn't 'cd
   dir && make test' if there are no tests available.
 
+- Reintroduce .packlist!
+
 - Add a C<html:> target when there has been found a general solution to
   installing html files.
 

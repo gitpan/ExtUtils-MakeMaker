@@ -1,4 +1,4 @@
-MakeMaker 5.13/5.14 are bug fix releases
+MakeMaker 5.13/5.14/5.15 are bug fix releases
 
 Mainly for AIX and HPUX.
 
@@ -9,5 +9,5 @@ And finally a workaround for the AutoSplit bug, that it doesn't accept
 
 For details see the Changes file.
 
-December 16, 1995
+December 22, 1995
 andreas
