@@ -1,4 +1,9 @@
-6.22
+6.22 Tue Nov 23 22:22:22 EST 2004
+    - Minor glitch in Command.t test on Win32 [thanks Steve Hay]
+    * Fixed MANIFEST.SKIP so it avoids all the new *.ts files.
+    - Don't spuriously define pasthru arguments
+
+6.21_03 Sat Apr 3 2004
     - Minor potential glitch in the version check logic.
     - Making Makefile rebuild logic more resistant to inconsequential
       errors when cleaning up things that are going to be rebuilt anyway.
