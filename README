@@ -3,6 +3,9 @@ distribution. It writes Makefiles for perl extensions. It provides all
 sorts of support to make development of extensions easy: building,
 testing, installing, distributing and archiving extensions/modules.
 
+Version 5.4002 is the same version that comes with perl5.004 and is
+only distributed in case somebody needs a fallback version later.
+
 To install this package, run
 
     perl Makefile.PL
@@ -20,13 +23,4 @@ the list, send mail to
 
 To send mail to the list, write to makemaker@franz.ww.tu-berlin.de.
 
-!!! WARNING !!!
-!!!
-!!! MakeMakers from version 5.18 do not work with perl5.001m. Get 5.17 as
-!!! the last 5.001m compatible version or upgrade your perl.
-!!!
-!!!!!!!!!!!!!!!
-
-
-
-andreas koenig
+andreas könig

@@ -1,3 +1,20 @@
+=head2 May 19, 1997
+
+After Nick and Sarathy have done their outstanding major cool work on
+makeing makemaker run on windows during the Chip era of the 5.004
+development, after the over hundred changes they had to make, I
+checked these into my MakeMaker tree. Released
+MakeMaker-5.4002.tar.gz, the identical version as in perl5.004.
+
+This release may possibly be needed as a fallback later. The *VERSION
+patch that is mentioned below, is backed out for this release and will
+come in again.
+
+=head2 March 16, 1997
+
+Integrated a patch by jql@accessone.com ("John Q. Linux") [Ashley
+Winters] that allows *VERSION as version variable.
+
 =head2 February 11, 1997
 
 Applied a patch by Ulrich Pfeifer who writes:

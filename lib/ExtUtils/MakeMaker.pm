@@ -2,7 +2,7 @@ BEGIN {require 5.002;} # MakeMaker 5.17 was the last MakeMaker that was compatib
 
 package ExtUtils::MakeMaker;
 
-$Version = $VERSION = "5.40";
+$Version = $VERSION = "5.4002";
 $Version_OK = "5.17";	# Makefiles older than $Version_OK will die
 			# (Will be checked from MakeMaker version 4.13 onwards)
 ($Revision = substr(q$Revision: 1.211 $, 10)) =~ s/\s+$//;
@@ -66,11 +66,12 @@ package ExtUtils::Liblist;
 
 package ExtUtils::MakeMaker;
 #
-# Now we can can pull in the friends
+# Now we can pull in the friends
 #
-$Is_VMS = $^O eq 'VMS';
-$Is_OS2 = $^O eq 'os2';
-$Is_Mac = $^O eq 'MacOS';
+$Is_VMS   = $^O eq 'VMS';
+$Is_OS2   = $^O eq 'os2';
+$Is_Mac   = $^O eq 'MacOS';
+$Is_Win32 = $^O eq 'MSWin32';
 
 require ExtUtils::MM_Unix;
 
@@ -83,6 +84,9 @@ if ($Is_OS2) {
 }
 if ($Is_Mac) {
     require ExtUtils::MM_Mac;
+}
+if ($Is_Win32) {
+    require ExtUtils::MM_Win32;
 }
 
 # The SelfLoader would bring a lot of overhead for MakeMaker, because
@@ -150,7 +154,7 @@ sub ExtUtils::MakeMaker::mksymlists ;
 sub ExtUtils::MakeMaker::neatvalue ;
 sub ExtUtils::MakeMaker::selfdocument ;
 sub ExtUtils::MakeMaker::WriteMakefile ;
-sub ExtUtils::MakeMaker::prompt ;
+sub ExtUtils::MakeMaker::prompt ($;$) ;
 
 1;
 
@@ -231,9 +235,9 @@ sub full_setup {
 
     @Attrib_help = qw/
 
-    C CONFIG CONFIGURE DEFINE DIR DISTNAME DL_FUNCS DL_VARS EXE_FILES
-    EXCLUDE_EXT INCLUDE_EXT NO_VC FIRST_MAKEFILE FULLPERL H INC
-    INSTALLARCHLIB INSTALLBIN INSTALLDIRS INSTALLMAN1DIR
+    C CCFLAGS CONFIG CONFIGURE DEFINE DIR DISTNAME DL_FUNCS DL_VARS
+    EXE_FILES EXCLUDE_EXT INCLUDE_EXT NO_VC FIRST_MAKEFILE FULLPERL H
+    INC INSTALLARCHLIB INSTALLBIN INSTALLDIRS INSTALLMAN1DIR
     INSTALLMAN3DIR INSTALLPRIVLIB INSTALLSCRIPT INSTALLSITEARCH
     INSTALLSITELIB INST_ARCHLIB INST_BIN INST_EXE INST_LIB
     INST_MAN1DIR INST_MAN3DIR INST_SCRIPT LDFROM LIBPERL_A LIB LIBS
@@ -244,9 +248,12 @@ sub full_setup {
     XS_VERSION clean depend dist dynamic_lib linkext macro realclean
     tool_autosplit
 
-    installpm
+    IMPORTS
 
+    installpm
 	/;
+
+    # IMPORTS is used under OS/2
 
     # ^^^ installpm is deprecated, will go about Summer 96
 
@@ -300,7 +307,7 @@ sub full_setup {
     @Get_from_Config = 
 	qw(
 	   ar cc cccdlflags ccdlflags dlext dlsrc ld lddlflags ldflags libc
-	   lib_ext obj_ext ranlib sitelibexp sitearchexp so
+	   lib_ext obj_ext ranlib sitelibexp sitearchexp so exe_ext
 	  );
 
     my $item;
@@ -446,9 +453,10 @@ sub ExtUtils::MakeMaker::new {
     $self->init_main();
 
     if (! $self->{PERL_SRC} ) {
-	my($pthinks) = $INC{'Config.pm'};
+	my($pthinks) = $self->canonpath($INC{'Config.pm'});
 	$pthinks = VMS::Filespec::vmsify($pthinks) if $Is_VMS;
 	if ($pthinks ne $self->catfile($Config{archlibexp},'Config.pm')){
+            print "Have $pthinks expected ",$self->catfile($Config{archlibexp},'Config.pm'),"\n";
 	    $pthinks =~ s!/Config\.pm$!!;
 	    $pthinks =~ s!.*/!!;
 	    print STDOUT <<END;
@@ -1679,7 +1687,8 @@ either say:
 or you can edit the default by saying something like:
 
 	sub MY::c_o {
-            my($inherited) = shift->SUPER::c_o(@_);
+	    package MY;	# so that "SUPER" works right
+	    my $inherited = shift->SUPER::c_o(@_);
 	    $inherited =~ s/old text/new text/;
 	    $inherited;
 	}
@@ -1832,11 +1841,10 @@ ExtUtils::Install, ExtUtils::embed
 
 =head1 AUTHORS
 
-Andy Dougherty F<E<lt>doughera@lafcol.lafayette.eduE<gt>>, Andreas
-KE<ouml>nig F<E<lt>A.Koenig@franz.ww.TU-Berlin.DEE<gt>>, Tim Bunce
-F<E<lt>Tim.Bunce@ig.co.ukE<gt>>.  VMS support by Charles Bailey
-F<E<lt>bailey@genetics.upenn.eduE<gt>>. OS/2 support by Ilya
-Zakharevich F<E<lt>ilya@math.ohio-state.eduE<gt>>. Contact the
+Andy Dougherty <F<doughera@lafcol.lafayette.edu>>, Andreas KE<ouml>nig
+<F<A.Koenig@franz.ww.TU-Berlin.DE>>, Tim Bunce <F<Tim.Bunce@ig.co.uk>>.
+VMS support by Charles Bailey <F<bailey@genetics.upenn.edu>>.  OS/2
+support by Ilya Zakharevich <F<ilya@math.ohio-state.edu>>.  Contact the
 makemaker mailing list C<mailto:makemaker@franz.ww.tu-berlin.de>, if
 you have any questions.
 

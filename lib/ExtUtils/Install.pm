@@ -12,7 +12,7 @@ use vars qw(@ISA @EXPORT $VERSION);
 $Is_VMS = $^O eq 'VMS';
 
 my $splitchar = $^O eq 'VMS' ? '|' : $^O eq 'os2' ? ';' : ':';
-my @PERL_ENV_LIB = split $splitchar, defined $ENV{'PERL5LIB'} ? $ENV{'PERL5LIB'} : $ENV{'PERLLIB'};
+my @PERL_ENV_LIB = split $splitchar, defined $ENV{'PERL5LIB'} ? $ENV{'PERL5LIB'} : $ENV{'PERLLIB'} || '';
 my $Inc_uninstall_warn_handler;
 
 #use vars qw( @EXPORT @ISA $Is_VMS );
@@ -232,6 +232,17 @@ sub pm_to_blib {
     use AutoSplit;
     # my $my_req = $self->catfile(qw(auto ExtUtils Install forceunlink.al));
     # require $my_req; # Hairy, but for the first
+
+    if (!ref($fromto) && -r $fromto)
+     {
+      # Win32 has severe command line length limitations, but
+      # can generate temporary files on-the-fly
+      # so we pass name of file here - eval it to get hash 
+      open(FROMTO,"<$fromto") or die "Cannot open $fromto:$!";
+      my $str = '$fromto = {qw{'.join('',<FROMTO>).'}}';
+      eval $str;
+      close(FROMTO);
+     }
 
     my $umask = umask 0022 unless $Is_VMS;
     mkpath($autodir,0,0755);
