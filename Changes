@@ -1,3 +1,11 @@
+6.19 Mon Nov  3 22:53:56 PST 2003
+    - Removed 00setup_dummy.t and zz_cleanup_dummy.t.  Tests now setup and
+      teardown the dummy modules as needed.
+    - Little test glitch on systems without $Config{usevendorprefix} set
+    - INSTALL(SITE|VENDOR)MAN*DIR now fall back to $(INSTALLMAN*DIR)
+      instead of copying its value.  This lets "perl Makefile.PL 
+      INSTALLMAN1DIR=/some/man/man1" work like expected.
+
 6.18 Mon Nov  3 20:09:51 PST 2003
     - parse_version() was blowing over $_ (Ilya Zakharevich)
     - 5.6.2 has the same Cygwin shared lib name fix as 5.7.0. (Gerrit Haase)

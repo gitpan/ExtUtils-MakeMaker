@@ -16,8 +16,9 @@ BEGIN {
 }
 
 use strict;
-use Test::More tests => 49;
+use Test::More tests => 52;
 use MakeMaker::Test::Utils;
+use MakeMaker::Test::Setup::BFD;
 use ExtUtils::MakeMaker;
 use File::Spec;
 use TieOut;
@@ -34,6 +35,12 @@ $| = 1;
 my $Makefile = makefile_name;
 my $Curdir = File::Spec->curdir;
 my $Updir  = File::Spec->updir;
+
+ok( setup_recurs(), 'setup' );
+END {
+    ok( chdir File::Spec->updir );
+    ok( teardown_recurs(), 'teardown' );
+}
 
 ok( chdir 'Big-Dummy', "chdir'd to Big-Dummy" ) ||
   diag("chdir failed: $!");
@@ -114,18 +121,28 @@ my %Install_Vars = (
 );
 
 while( my($type, $vars) = each %Install_Vars) {
-
-    SKIP: foreach my $var (@$vars) {
+    SKIP: {
         skip "VMS must expand macros in INSTALL* vars", scalar @$vars 
-          if $Is_VMS;
+          if $Is_VMS;    
+        skip '$Config{usevendorprefix} not set', scalar @$vars
+          if $type eq 'VENDOR' and !$Config{usevendorprefix};
 
-        my $prefix = '$('.$type.'PREFIX)';
+        foreach my $var (@$vars) {
+            my $installvar = "install$var";
+            my $prefix = '$('.$type.'PREFIX)';
 
-        # support for man page skipping
-        $prefix = 'none' if $type eq 'PERL' && 
-                            $var =~ /man/ && 
-                            !$Config{"install$var"};
-        like( $mm->{uc "install$var"}, qr/^\Q$prefix\E/, "$prefix + $var" );
+            SKIP: {
+                skip uc($installvar).' set to another INSTALL variable', 1
+                  if $mm->{uc $installvar} =~ /^\$\(INSTALL.*\)$/;
+
+                # support for man page skipping
+                $prefix = 'none' if $type eq 'PERL' && 
+                                    $var =~ /man/ && 
+                                    !$Config{$installvar};
+                like( $mm->{uc $installvar}, qr/^\Q$prefix\E/, 
+                      "$prefix + $var" );
+            }
+        }
     }
 }
 
@@ -215,10 +232,10 @@ while( my($type, $vars) = each %Install_Vars) {
 
     is( $mm->{INSTALLMAN1DIR}, File::Spec->catdir('foo', 'bar') );
     is( $mm->{INSTALLMAN3DIR}, File::Spec->catdir('foo', 'baz') );
-    is( $mm->{INSTALLSITEMAN1DIR},   $mm->{INSTALLMAN1DIR} );
-    is( $mm->{INSTALLSITEMAN3DIR},   $mm->{INSTALLMAN3DIR} );
-    is( $mm->{INSTALLVENDORMAN1DIR}, $mm->{INSTALLMAN1DIR} );
-    is( $mm->{INSTALLVENDORMAN3DIR}, $mm->{INSTALLMAN3DIR} );
+    is( $mm->{INSTALLSITEMAN1DIR},   '$(INSTALLMAN1DIR)' );
+    is( $mm->{INSTALLSITEMAN3DIR},   '$(INSTALLMAN3DIR)' );
+    is( $mm->{INSTALLVENDORMAN1DIR}, '$(INSTALLMAN1DIR)' );
+    is( $mm->{INSTALLVENDORMAN3DIR}, '$(INSTALLMAN3DIR)' );
 }
 
 
@@ -249,8 +266,8 @@ while( my($type, $vars) = each %Install_Vars) {
 
     is( $mm->{INSTALLMAN1DIR}, File::Spec->catdir('foo', 'bar') );
     is( $mm->{INSTALLMAN3DIR}, File::Spec->catdir('foo', 'baz') );
-    is( $mm->{INSTALLSITEMAN1DIR},   $mm->{INSTALLMAN1DIR} );
-    is( $mm->{INSTALLSITEMAN3DIR},   $mm->{INSTALLMAN3DIR} );
+    is( $mm->{INSTALLSITEMAN1DIR},   '$(INSTALLMAN1DIR)' );
+    is( $mm->{INSTALLSITEMAN3DIR},   '$(INSTALLMAN3DIR)' );
     is( $mm->{INSTALLVENDORMAN1DIR}, '' );
     is( $mm->{INSTALLVENDORMAN3DIR}, '' );
 }
