@@ -90,4 +90,3 @@ t/vmsish.t
 t/writemakefile_args.t
 TODO
 META.yml                                 Module meta-data (added by MakeMaker)
-SIGNATURE                                Public-key signature (added by MakeMaker)

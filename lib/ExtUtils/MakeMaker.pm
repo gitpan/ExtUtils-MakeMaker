@@ -1,4 +1,4 @@
-# $Id: /mirror/CPAN/ExtUtils-MakeMaker/trunk/lib/ExtUtils/MakeMaker.pm 4178 2004-12-31T07:26:51.762177Z schwern  $
+# $Id: /mirror/schwern.org/CPAN/ExtUtils-MakeMaker/trunk/lib/ExtUtils/MakeMaker.pm 3258 2005-02-08T14:06:55.438469Z schwern  $
 package ExtUtils::MakeMaker;
 
 BEGIN {require 5.005_03;}
@@ -21,8 +21,8 @@ use vars qw(
 use vars qw($Revision);
 use strict;
 
-$VERSION = '6.25_07';
-($Revision) = q$Revision: 4153 $ =~ /Revision:\s+(\S+)/;
+$VERSION = '6.25_08';
+($Revision) = q$Revision: 3217 $ =~ /Revision:\s+(\S+)/;
 
 @ISA = qw(Exporter);
 @EXPORT = qw(&WriteMakefile &writeMakefile $Verbose &prompt);
@@ -272,7 +272,7 @@ sub full_setup {
  installbin subdirs
  clean_subdirs clean realclean_subdirs realclean 
  metafile signature
- dist_basics dist_core distdir dist_test dist_ci distmeta distsign
+ dist_basics dist_core distdir dist_test dist_ci distmeta distsignature
  install force perldepend makefile staticmake test ppd
 
           ); # loses section ordering
@@ -2069,7 +2069,7 @@ MakeMaker object. The following lines will be parsed o.k.:
 
     $VERSION = '1.00';
     *VERSION = \'1.01';
-    $VERSION = sprintf "%d.%03d", q$Revision: 4153 $ =~ /(\d+)/g;
+    $VERSION = sprintf "%d.%03d", q$Revision: 3217 $ =~ /(\d+)/g;
     $FOO::VERSION = '1.10';
     *FOO::VERSION = \'1.11';
     our $VERSION = 1.2.3;       # new for perl5.6.0 

@@ -13,14 +13,14 @@ use DirHandle;
 use vars qw($VERSION @ISA
             $Is_OS2 $Is_VMS $Is_Win32 $Is_Dos
             $Is_OSF $Is_IRIX  $Is_NetBSD $Is_BSD
-            $Is_SunOS4 $Is_Solaris $Is_SunOS
+            $Is_SunOS4 $Is_Solaris $Is_SunOS $Is_Interix
             $Verbose %pm
             %Config_Override
            );
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
-$VERSION = '1.46_07';
+$VERSION = '1.46_08';
 
 require ExtUtils::MM_Any;
 @ISA = qw(ExtUtils::MM_Any);
@@ -33,10 +33,12 @@ BEGIN {
     $Is_OSF     = $^O eq 'dec_osf';
     $Is_IRIX    = $^O eq 'irix';
     $Is_NetBSD  = $^O eq 'netbsd';
+    $Is_Interix = $^O eq 'interix';
     $Is_SunOS4  = $^O eq 'sunos';
     $Is_Solaris = $^O eq 'solaris';
     $Is_SunOS   = $Is_SunOS4 || $Is_Solaris;
-    $Is_BSD     = $^O =~ /^(?:free|net|open)bsd|bsdos$/;
+    $Is_BSD     = $^O =~ /^(?:free|net|open)bsd$/ or
+                  $^O eq 'bsdos' or $^O eq 'interix';
 }
 
 BEGIN {
@@ -926,7 +928,7 @@ $(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)$(DFSEP).
 
     my $libs = '$(LDLOADLIBS)';
 
-    if ($Is_NetBSD && $Config{'useshrplib'}) {
+    if (($Is_NetBSD || $Is_Interix) && $Config{'useshrplib'}) {
 	# Use nothing on static perl platforms, and to the flags needed
 	# to link against the shared libperl library on shared perl
 	# platforms.  We peek at lddlflags to see if we need -Wl,-R
@@ -2687,7 +2689,7 @@ sub pasthru {
     $sep .= "\\\n\t";
 
     foreach $key (qw(LIB LIBPERL_A LINKTYPE OPTIMIZE
-                     PREFIX INSTALLBASE DESTDIR)
+                     PREFIX INSTALLBASE)
                  ) 
     {
         next unless defined $self->{$key};
@@ -3520,7 +3522,8 @@ sub tool_xsubpp {
 
     return qq{
 XSUBPPDIR = $xsdir
-XSUBPP = \$(PERLRUN) \$(XSUBPPDIR)/xsubpp
+XSUBPP = \$(XSUBPPDIR)\$(DFSEP)xsubpp
+XSUBPPRUN = \$(PERLRUN) \$(XSUBPP)
 XSPROTOARG = $self->{XSPROTOARG}
 XSUBPPDEPS = @tmdeps \$(XSUBPP)
 XSUBPPARGS = @tmargs
@@ -3607,7 +3610,7 @@ sub xs_c {
     return '' unless $self->needs_linking();
     '
 .xs.c:
-	$(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $(XSUBPP_EXTRA_ARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.c
+	$(XSUBPPRUN) $(XSPROTOARG) $(XSUBPPARGS) $(XSUBPP_EXTRA_ARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.c
 ';
 }
 
@@ -3622,7 +3625,7 @@ sub xs_cpp {
     return '' unless $self->needs_linking();
     '
 .xs.cpp:
-	$(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.cpp
+	$(XSUBPPRUN) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.cpp
 ';
 }
 
@@ -3638,7 +3641,7 @@ sub xs_o {	# many makes are too dumb to use xs_c then c_o
     return '' unless $self->needs_linking();
     '
 .xs$(OBJ_EXT):
-	$(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.c
+	$(XSUBPPRUN) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.c
 	$(CCCMD) $(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE) $*.c
 ';
 }

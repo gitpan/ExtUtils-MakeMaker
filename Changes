@@ -1,3 +1,19 @@
+6.25_08  Tue Feb  8 09:04:36 EST 2005
+    - Fixing xsubpp on VMS.  Had a foo/bar path in it.
+    - Turning XSUBPP into a runable command by the addition of PERLRUN
+      made it unusable as a dependency.  Added XSUBPPRUN for that and left
+      XSUBPP alone.
+    - Removed DESTDIR from PASTHRU as install is not recursive and it can
+      make commands too long on VMS.
+    - Older versions of MMS cannot handle directory targets at all.  Using
+      .exists files everywhere.
+    - Restore missing *.Opt clean on VMS.
+    - Fix .exists files accidentally getting caught in static builds.
+    - Older versions of MMS cannot handle directory targets at all.
+    - Add Interix support (bleadperl@33892)
+    - distsign target changed to distsignature to avoid clash with
+      Module::Install
+
 6.25_07  Fri Dec 31 03:47:20 EST 2004
     - perllocal on VMS was inserting executables twice.
     - No longer using $(IGNORE) macro.  Turns out MMS/K was not honoring
