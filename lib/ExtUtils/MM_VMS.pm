@@ -14,7 +14,7 @@ use VMS::Filespec;
 use File::Basename;
 use File::Spec;
 use vars qw($Revision @ISA $VERSION);
-($VERSION) = $Revision = '5.60_01';
+($VERSION) = $Revision = '5.62_01';
 
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
@@ -348,7 +348,7 @@ sub init_others {
     $self->{MAKEFILE} ||= $self->{FIRST_MAKEFILE};
     $self->{NOECHO} ||= '@ ';
     $self->{RM_F} = '$(PERL) -e "foreach (@ARGV) { 1 while ( -d $_ ? rmdir $_ : unlink $_)}"';
-    $self->{RM_RF} = '$(PERL) "-I$(PERL_LIB)" -e "use File::Path; @dirs = map(VMS::Filespec::unixify($_),@ARGV); rmtree(\@dirs,0,0)"';
+    $self->{RM_RF} = '$(PERLRUN) -e "use File::Path; @dirs = map(VMS::Filespec::unixify($_),@ARGV); rmtree(\@dirs,0,0)"';
     $self->{TOUCH} = '$(PERL) -e "$t=time; foreach (@ARGV) { -e $_ ? utime($t,$t,@ARGV) : (open(F,qq(>$_)),close F)}"';
     $self->{CHMOD} = '$(PERL) -e "chmod @ARGV"';  # expect Unix syntax from MakeMaker
     $self->{CP} = 'Copy/NoConfirm';
@@ -429,8 +429,8 @@ sub constants {
 	      INSTALLSITEARCH INSTALLBIN INSTALLSCRIPT PERL_LIB
 	      PERL_ARCHLIB SITELIBEXP SITEARCHEXP LIBPERL_A MYEXTLIB
 	      FIRST_MAKEFILE MAKE_APERL_FILE PERLMAINCC PERL_SRC PERL_VMS
-	      PERL_INC PERL FULLPERL PERLRUN PERLRUNINST TEST_LIBS 
-	      PERL_CORE
+	      PERL_INC PERL FULLPERL PERLRUN FULLPERLRUN PERLRUNINST
+          FULLPERLRUNINST TEST_LIBS PERL_CORE NOECHO NOOP
 	      / ) {
 	next unless defined $self->{$macro};
 	push @m, "$macro = $self->{$macro}\n";
@@ -508,6 +508,7 @@ MAN3PODS = ',$self->wraplist(sort keys %{$self->{MAN3PODS}}),'
 
 push @m,"
 makemakerdflt : all
+	\$(NOECHO) \$(NOOP)
 
 .SUFFIXES :
 .SUFFIXES : \$(OBJ_EXT) .c .cpp .cxx .xs
@@ -726,7 +727,7 @@ pm_to_blib.ts : $(TO_INST_PM)
     }
     push(@m,"\t\$(NOECHO) \$(PERL) -e \"print '$line'\" >>.MM_tmp\n") if $line;
 
-    push(@m,q[	$(PERL) "-I$(PERL_LIB)" "-MExtUtils::Install" -e "pm_to_blib({split(' ',<STDIN>)},'].$autodir.q[','$(PM_FILTER)')" <.MM_tmp]);
+    push(@m,q[	$(PERLRUN) "-MExtUtils::Install" -e "pm_to_blib({split(' ',<STDIN>)},'].$autodir.q[','$(PM_FILTER)')" <.MM_tmp]);
     push(@m,qq[
 	\$(NOECHO) Delete/NoLog/NoConfirm .MM_tmp;
 	\$(NOECHO) \$(TOUCH) pm_to_blib.ts
@@ -828,7 +829,7 @@ sub xsubpp_version
 
     # first try the -v flag, introduced in 1.921 & 2.000a2
 
-    my $command = "$self->{PERL} \"-I$self->{PERL_LIB}\" $xsubpp -v";
+    my $command = "$self->{PERLRUN} $xsubpp -v";
     print "Running: $command\n" if $Verbose;
     $version = `$command` ;
     if ($?) {
@@ -858,7 +859,7 @@ EOM
 
     close F ;
 
-    $command = "$self->{PERL} $xsubpp $file";
+    $command = "$self->{PERLRUN} $xsubpp $file";
     print "Running: $command\n" if $Verbose;
     my $text = `$command` ;
     if ($?) {
@@ -907,15 +908,13 @@ RM_F  = $self->{RM_F}
 RM_RF = $self->{RM_RF}
 SAY = Write Sys\$Output
 UMASK_NULL = $self->{UMASK_NULL}
-NOOP = $self->{NOOP}
-NOECHO = $self->{NOECHO}
 MKPATH = Create/Directory
 EQUALIZE_TIMESTAMP = \$(PERL) -we "open F,qq{>\$ARGV[1]};close F;utime(0,(stat(\$ARGV[0]))[9]+1,\$ARGV[1])"
 !. ($self->{PARENT} ? '' : 
 qq!WARN_IF_OLD_PACKLIST = \$(PERL) -e "if (-f \$ARGV[0]){print qq[WARNING: Old package found (\$ARGV[0]); please check for collisions\\n]}"
-MOD_INSTALL = \$(PERL) "-I\$(PERL_LIB)" "-MExtUtils::Install" -e "install({split(' ',<STDIN>)},1);"
+MOD_INSTALL = \$(PERLRUN) "-MExtUtils::Install" -e "install({split(' ',<STDIN>)},1);"
 DOC_INSTALL = \$(PERL) -e "\@ARGV=split(/\\|/,<STDIN>);print '=head2 ',scalar(localtime),': C<',shift,qq[>\\n\\n=over 4\\n\\n];while(\$key=shift && \$val=shift){print qq[=item *\\n\\nC<\$key: \$val>\\n\\n];}print qq[=back\\n\\n]"
-UNINSTALL = \$(PERL) "-I\$(PERL_LIB)" "-MExtUtils::Install" -e "uninstall(\$ARGV[0],1,1);"
+UNINSTALL = \$(PERLRUN) "-MExtUtils::Install" -e "uninstall(\$ARGV[0],1,1);"
 !);
 }
 
@@ -1277,7 +1276,7 @@ END
     push @m,
 qq[POD2MAN_EXE = $pod2man_exe\n],
 q[POD2MAN = $(PERL) -we "%m=@ARGV;for (keys %m){" -
--e "system(qq/MCR $^X ""-I$(PERL_ARCHLIB)"" ""-I$(PERL_LIB)"" $(POD2MAN_EXE) $_ >$m{$_}/);}"
+-e "system(qq/$(PERLRUN) $(POD2MAN_EXE) $_ >$m{$_}/);}"
 ];
     push @m, "\nmanifypods : \$(MAN1PODS) \$(MAN3PODS)\n";
     if (%{$self->{MAN1PODS}} || %{$self->{MAN3PODS}}) {
@@ -1347,9 +1346,6 @@ sub installbin {
     @to = values %fromto;
     push @m, "
 EXE_FILES = @exefiles
-
-all :: @to
-	\$(NOECHO) \$(NOOP)
 
 realclean ::
 ";
@@ -1607,11 +1603,11 @@ sub install {
 	foreach $file (@{$self->{EXE_FILES}}) {
 	    $line .= "$file ";
 	    if (length($line) > 128) {
-		push(@docfiles,qq[\t\$(PERL) -e "print '$line'" >>.MM_tmp\n]);
+		push(@docfiles,qq[\t\$(NOECHO) \$(PERL) -e "print '$line'" >>.MM_tmp\n]);
 		$line = '';
 	    }
 	}
-	push(@docfiles,qq[\t\$(PERL) -e "print '$line'" >>.MM_tmp\n]) if $line;
+	push(@docfiles,qq[\t\$(NOECHO) \$(PERL) -e "print '$line'" >>.MM_tmp\n]) if $line;
     }
 
     push @m, q[
@@ -1641,8 +1637,8 @@ doc__install : doc_site_install
 
 # This hack brought to you by DCL's 255-character command line limit
 pure_perl_install ::
-	$(NOECHO) $(PERL) -e "print 'read ].File::Spec->catfile('$(PERL_ARCHLIB)','auto','$(FULLEXT)','.packlist').q[ '" >.MM_tmp
-	$(NOECHO) $(PERL) -e "print 'write ].File::Spec->catfile('$(INSTALLARCHLIB)','auto','$(FULLEXT)','.packlist').q[ '" >>.MM_tmp
+	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'read '.File::Spec->catfile('$(PERL_ARCHLIB)','auto','$(FULLEXT)','.packlist') " >.MM_tmp
+	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'write '.File::Spec->catfile('$(INSTALLARCHLIB)','auto','$(FULLEXT)','.packlist') " >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_LIB) $(INSTALLPRIVLIB) '" >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_ARCHLIB) $(INSTALLARCHLIB) '" >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_BIN) $(INSTALLBIN) '" >>.MM_tmp
@@ -1651,12 +1647,12 @@ pure_perl_install ::
 	$(NOECHO) $(PERL) -e "print '$(INST_MAN3DIR) $(INSTALLMAN3DIR) '" >>.MM_tmp
 	$(MOD_INSTALL) <.MM_tmp
 	$(NOECHO) Delete/NoLog/NoConfirm .MM_tmp;
-	$(NOECHO) $(WARN_IF_OLD_PACKLIST) ].File::Spec->catfile('$(SITEARCHEXP)','auto','$(FULLEXT)','.packlist').q[
+	$(NOECHO) $(WARN_IF_OLD_PACKLIST) ].File::Spec->catfile($self->{SITEARCHEXP},'auto',$self->{FULLEXT},'.packlist').q[
 
 # Likewise
 pure_site_install ::
-	$(NOECHO) $(PERL) -e "print 'read ].File::Spec->catfile('$(SITEARCHEXP)','auto','$(FULLEXT)','.packlist').q[ '" >.MM_tmp
-	$(NOECHO) $(PERL) -e "print 'write ].File::Spec->catfile('$(INSTALLSITEARCH)','auto','$(FULLEXT)','.packlist').q[ '" >>.MM_tmp
+	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'read '.File::Spec->catfile('$(SITEARCHEXP)','auto','$(FULLEXT)','.packlist') " >.MM_tmp
+	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'write '.File::Spec->catfile('$(INSTALLSITEARCH)','auto','$(FULLEXT)','.packlist') " >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_LIB) $(INSTALLSITELIB) '" >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_ARCHLIB) $(INSTALLSITEARCH) '" >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_BIN) $(INSTALLBIN) '" >>.MM_tmp
@@ -1665,7 +1661,7 @@ pure_site_install ::
 	$(NOECHO) $(PERL) -e "print '$(INST_MAN3DIR) $(INSTALLMAN3DIR) '" >>.MM_tmp
 	$(MOD_INSTALL) <.MM_tmp
 	$(NOECHO) Delete/NoLog/NoConfirm .MM_tmp;
-	$(NOECHO) $(WARN_IF_OLD_PACKLIST) ].File::Spec->catfile('$(PERL_ARCHLIB)','auto','$(FULLEXT)','.packlist').q[
+	$(NOECHO) $(WARN_IF_OLD_PACKLIST) ].File::Spec->catfile($self->{PERL_ARCHLIB},'auto',$self->{FULLEXT},'.packlist').q[
 
 # Ditto
 doc_perl_install ::
@@ -1676,7 +1672,7 @@ q%	$(NOECHO) $(PERL) -e "print q[@ARGV=split(/\\|/,<STDIN>);]" >.MM2_tmp
 	$(NOECHO) $(PERL) -e "print q[print '=head2 ',scalar(localtime),': C<',shift,qq[>\\n\\n=over 4\\n\\n];]" >>.MM2_tmp
 	$(NOECHO) $(PERL) -e "print q[while(($key=shift) && ($val=shift)) ]" >>.MM2_tmp
 	$(NOECHO) $(PERL) -e "print q[{print qq[=item *\\n\\nC<$key: $val>\\n\\n];}print qq[=back\\n\\n];]" >>.MM2_tmp
-	$(NOECHO) $(PERL) .MM2_tmp <.MM_tmp >>%.File::Spec->catfile('$(INSTALLARCHLIB)','perllocal.pod').q[
+	$(NOECHO) $(PERL) .MM2_tmp <.MM_tmp >>%.File::Spec->catfile($self->{INSTALLARCHLIB},'perllocal.pod').q[
 	$(NOECHO) Delete/NoLog/NoConfirm .MM_tmp;,.MM2_tmp;
 
 # And again
@@ -1688,7 +1684,7 @@ q%	$(NOECHO) $(PERL) -e "print q[@ARGV=split(/\\|/,<STDIN>);]" >.MM2_tmp
 	$(NOECHO) $(PERL) -e "print q[print '=head2 ',scalar(localtime),': C<',shift,qq[>\\n\\n=over 4\\n\\n];]" >>.MM2_tmp
 	$(NOECHO) $(PERL) -e "print q[while(($key=shift) && ($val=shift)) ]" >>.MM2_tmp
 	$(NOECHO) $(PERL) -e "print q[{print qq[=item *\\n\\nC<$key: $val>\\n\\n];}print qq[=back\\n\\n];]" >>.MM2_tmp
-	$(NOECHO) $(PERL) .MM2_tmp <.MM_tmp >>%.File::Spec->catfile('$(INSTALLARCHLIB)','perllocal.pod').q[
+	$(NOECHO) $(PERL) .MM2_tmp <.MM_tmp >>%.File::Spec->catfile($self->{INSTALLARCHLIB},'perllocal.pod').q[
 	$(NOECHO) Delete/NoLog/NoConfirm .MM_tmp;,.MM2_tmp;
 
 ];
@@ -1698,13 +1694,13 @@ uninstall :: uninstall_from_$(INSTALLDIRS)dirs
 	$(NOECHO) $(NOOP)
 
 uninstall_from_perldirs ::
-	$(NOECHO) $(UNINSTALL) ].File::Spec->catfile('$(PERL_ARCHLIB)','auto','$(FULLEXT)','.packlist').q[
+	$(NOECHO) $(UNINSTALL) ].File::Spec->catfile($self->{PERL_ARCHLIB},'auto',$self->{FULLEXT},'.packlist').q[
 	$(NOECHO) $(SAY) "Uninstall is now deprecated and makes no actual changes."
 	$(NOECHO) $(SAY) "Please check the list above carefully for errors, and manually remove"
 	$(NOECHO) $(SAY) "the appropriate files.  Sorry for the inconvenience."
 
 uninstall_from_sitedirs ::
-	$(NOECHO) $(UNINSTALL) ],File::Spec->catfile('$(SITEARCHEXP)','auto','$(FULLEXT)','.packlist'),"\n",q[
+	$(NOECHO) $(UNINSTALL) ],File::Spec->catfile($self->{SITEARCHEXP},'auto',$self->{FULLEXT},'.packlist'),"\n",q[
 	$(NOECHO) $(SAY) "Uninstall is now deprecated and makes no actual changes."
 	$(NOECHO) $(SAY) "Please check the list above carefully for errors, and manually remove"
 	$(NOECHO) $(SAY) "the appropriate files.  Sorry for the inconvenience."
@@ -1847,13 +1843,13 @@ testdb :: testdb_\$(LINKTYPE)
     push(@m, "\n");
 
     push(@m, "test_dynamic :: pure_all\n");
-    push(@m, $self->test_via_harness('$(PERLRUN)', $tests)) if $tests;
-    push(@m, $self->test_via_script('$(PERLRUN)', 'test.pl')) if -f "test.pl";
+    push(@m, $self->test_via_harness('$(FULLPERLRUN)', $tests)) if $tests;
+    push(@m, $self->test_via_script('$(FULLPERLRUN)', 'test.pl')) if -f "test.pl";
     push(@m, "\t\$(NOECHO) \$(NOOP)\n") if (!$tests && ! -f "test.pl");
     push(@m, "\n");
 
     push(@m, "testdb_dynamic :: pure_all\n");
-    push(@m, $self->test_via_script('$(FULLPERL) "$(TESTDB_SW)"', '$(TEST_FILE)'));
+    push(@m, $self->test_via_script('$(FULLPERLRUN) "$(TESTDB_SW)"', '$(TEST_FILE)'));
     push(@m, "\n");
 
     # Occasionally we may face this degenerate target:
