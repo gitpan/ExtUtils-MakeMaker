@@ -3,7 +3,7 @@ package ExtUtils::MM;
 use strict;
 use Config;
 use vars qw(@ISA $VERSION);
-$VERSION = 0.02;
+$VERSION = 0.04;
 
 require ExtUtils::Liblist;
 require ExtUtils::MakeMaker;
@@ -52,7 +52,7 @@ if( $^O eq 'MSWin32' ) {
 }
 $Is{UWIN}   = 1 if $^O eq 'uwin';
 $Is{Cygwin} = 1 if $^O eq 'cygwin';
-$Is{NW5}    = 1 if $Config{osname} eq 'NetWare';
+$Is{NW5}    = 1 if $Config{osname} eq 'NetWare';  # intentional
 $Is{BeOS}   = 1 if $^O =~ /beos/i;    # XXX should this be that loose?
 $Is{DOS}    = 1 if $^O eq 'dos';
 
@@ -67,9 +67,10 @@ _assert( keys %Is == 1 );
 my($OS) = keys %Is;
 
 
-
-eval "require ExtUtils::MM_$OS";
-unshift @ISA, "ExtUtils::MM_$OS";
+my $class = "ExtUtils::MM_$OS";
+eval "require $class" unless $INC{"ExtUtils/MM_$OS.pm"};
+die $@ if $@;
+unshift @ISA, $class;
 
 
 sub _assert {

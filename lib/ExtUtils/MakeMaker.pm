@@ -2,16 +2,14 @@ BEGIN {require 5.004;}
 
 package ExtUtils::MakeMaker;
 
-$VERSION = "5.50_01";
+$VERSION = "5.51_01";
 $Version_OK = "5.49";   # Makefiles older than $Version_OK will die
                         # (Will be checked from MakeMaker version 4.13 onwards)
-($Revision = substr(q$Revision: 1.11 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.16 $, 10)) =~ s/\s+$//;
 
 require Exporter;
 use Config;
 use Carp ();
-use ExtUtils::MM;  # Things like CPAN assume loading ExtUtils::MakeMaker
-                   # will give them MM.
 
 use vars qw(
             @ISA @EXPORT @EXPORT_OK
@@ -32,6 +30,9 @@ my $Is_VMS     = $^O eq 'VMS';
 my $Is_Win32   = $^O eq 'MSWin32';
 
 full_setup();
+
+require ExtUtils::MM;  # Things like CPAN assume loading ExtUtils::MakeMaker
+                       # will give them MM.
 
 sub warnhandler {
     $_[0] =~ /^Use of uninitialized value/ && return;
@@ -268,33 +269,24 @@ sub new {
         eval "require $prereq";
 
         if ($@) {
-            warn "Warning: prerequisite $prereq $self->{PREREQ_PM}->{$prereq} not found.\n" unless $self->{PREREQ_FATAL};
+            warn sprintf "Warning: prerequisite %s %s not found.\n", 
+              $prereq, $self->{PREREQ_PM}{$prereq} 
+                   unless $self->{PREREQ_FATAL};
             $unsatisfied{$prereq} = 'not installed';
         } elsif ($prereq->VERSION < $self->{PREREQ_PM}->{$prereq} ){
-            warn "Warning: prerequisite $prereq $self->{PREREQ_PM}->{$prereq} not found. We have "
-               . ($prereq->VERSION || 'unknown version') unless $self->{PREREQ_FATAL};
-            $unsatisfied{$prereq} = $self->{PREREQ_PM}->{$prereq} ? $self->{PREREQ_PM}->{$prereq} : 'unknown version' ;
+            warn "Warning: prerequisite %s %s not found. We have %s.\n",
+              $prereq, $self->{PREREQ_PM}{$prereq}, 
+                ($prereq->VERSION || 'unknown version') 
+                  unless $self->{PREREQ_FATAL};
+            $unsatisfied{$prereq} = $self->{PREREQ_PM}->{$prereq} ? 
+              $self->{PREREQ_PM}->{$prereq} : 'unknown version' ;
         }
     }
     if (%unsatisfied && $self->{PREREQ_FATAL}){
-#         unless (defined $ExtUtils::MakeMaker::useCPAN) {
-        my $failedprereqs = join ', ', map {"$_ $unsatisfied{$_}"} keys %unsatisfied;
-        die qq{MakeMaker FATAL: prerequisites not found ($failedprereqs)
-                 Please install these modules first and rerun 'perl Makefile.PL'.\n};
-#             if ($ExtUtils::MakeMaker::hasCPAN) {
-#                 $ExtUtils::MakeMaker::useCPAN = prompt(qq{Should I try to use the CPAN module to fetch them for you?},"yes");
-#             } else {
-#                 print qq{Hint: You may want to install the CPAN module to autofetch the needed modules\n};
-#                 $ExtUtils::MakeMaker::useCPAN=0;
-#             }
-#         }
-#         if ($ExtUtils::MakeMaker::useCPAN) {
-#             require CPAN;
-#             CPAN->import(@unsatisfied);
-#         } else {
-#             die qq{prerequisites not found (@unsatisfied)};
-#         }
-#       warn qq{WARNING: prerequisites not found (@unsatisfied)};
+        my $failedprereqs = join ', ', map {"$_ $unsatisfied{$_}"} 
+                            keys %unsatisfied;
+        die qq{MakeMaker FATAL: prerequisites not found ($failedprereqs)\n
+               Please install these modules first and rerun 'perl Makefile.PL'.\n};
     }
 
     if (defined $self->{CONFIGURE}) {
@@ -1755,7 +1747,7 @@ MakeMaker object. The following lines will be parsed o.k.:
 
     $VERSION = '1.00';
     *VERSION = \'1.01';
-    ( $VERSION ) = '$Revision: 1.11 $ ' =~ /\$Revision:\s+([^\s]+)/;
+    ( $VERSION ) = '$Revision: 1.16 $ ' =~ /\$Revision:\s+([^\s]+)/;
     $FOO::VERSION = '1.10';
     *FOO::VERSION = \'1.11';
     our $VERSION = 1.2.3;       # new for perl5.6.0 
@@ -2079,6 +2071,8 @@ by Ilya Zakharevich <F<ilya@math.ohio-state.edu>>.
 
 Currently maintained by Michael G Schwern <F<schwern@pobox.com>>
 
-Send patches and bug reports to <F<makemaker@perl.org>>.
+Send patches and ideas to <F<makemaker@perl.org>>.
+
+Send bug reports via http://rt.cpan.org/.
 
 =cut

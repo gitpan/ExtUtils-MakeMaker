@@ -19,3 +19,10 @@ Don't assume everything is in $Config{PREFIX}/lib and
 $Config{PREFIX}/man.  Debian puts stuff in /usr/share/{perl,man}
 
 Investigate one method per make target.
+
+Handle config files (ie. /etc) and their special PREFIX needs
+(ie. PREFIX=/usr, INSTALLCONFIGDIR=/etc).
+
+Add SITEPREFIX
+
+Add INSTALLDIRS=vendor (see Debian patch)

@@ -5,11 +5,8 @@ NOTES
 README
 TODO
 bin/instmodsh
-bin/xsubpp
 lib/ExtUtils/Command.pm
 lib/ExtUtils/Command/MM.pm
-lib/ExtUtils/Constant.pm
-lib/ExtUtils/Embed.pm
 lib/ExtUtils/Install.pm
 lib/ExtUtils/Installed.pm
 lib/ExtUtils/Liblist.pm
@@ -34,13 +31,10 @@ lib/ExtUtils/Mkbootstrap.pm
 lib/ExtUtils/Mksymlists.pm
 lib/ExtUtils/Packlist.pm
 lib/ExtUtils/testlib.pm
-lib/ExtUtils/typemap
 t/Big-Fat-Dummy/Makefile.PL
 t/Big-Fat-Dummy/lib/Big/Fat/Dummy.pm
 t/Big-Fat-Dummy/t/compile.t
 t/Command.t
-t/Embed.t
-t/ExtUtils.t
 t/Installed.t
 t/MM_BeOS.t
 t/MM_Cygwin.t

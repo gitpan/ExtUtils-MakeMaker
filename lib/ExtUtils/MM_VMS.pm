@@ -14,10 +14,11 @@ use VMS::Filespec;
 use File::Basename;
 use File::Spec;
 use vars qw($Revision @ISA $VERSION);
-($VERSION) = $Revision = '5.58_01';
+($VERSION) = $Revision = '5.60_01';
 
+require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
-@ISA = qw( ExtUtils::MM_Unix File::Spec );
+@ISA = qw( ExtUtils::MM_Any ExtUtils::MM_Unix File::Spec );
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
@@ -506,6 +507,8 @@ MAN3PODS = ',$self->wraplist(sort keys %{$self->{MAN3PODS}}),'
     }
 
 push @m,"
+makemakerdflt : all
+
 .SUFFIXES :
 .SUFFIXES : \$(OBJ_EXT) .c .cpp .cxx .xs
 
@@ -738,13 +741,13 @@ Use VMS-style quoting on command line.
 
 =cut
 
-sub tool_autosplit{
+sub tool_autosplit {
     my($self, %attribs) = @_;
     my($asl) = "";
     $asl = "\$AutoSplit::Maxlen=$attribs{MAXLEN};" if $attribs{MAXLEN};
     q{
 # Usage: $(AUTOSPLITFILE) FileToSplit AutoDirToSplitInto
-AUTOSPLITFILE = $(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -e "use AutoSplit;}.$asl.q{ AutoSplit::autosplit($ARGV[0], $ARGV[1], 0, 1, 1) ;"
+AUTOSPLITFILE = $(PERLRUN) -e "use AutoSplit;}.$asl.q{autosplit($ARGV[0], $ARGV[1], 0, 1, 1) ;"
 };
 }
 
@@ -801,7 +804,7 @@ sub tool_xsubpp {
 
     "
 XSUBPPDIR = $xsdir
-XSUBPP = \$(PERL) \"-I\$(PERL_ARCHLIB)\" \"-I\$(PERL_LIB)\" \$(XSUBPPDIR)xsubpp
+XSUBPP = \$(PERLRUN) \$(XSUBPPDIR)xsubpp
 XSPROTOARG = $self->{XSPROTOARG}
 XSUBPPDEPS = @tmdeps
 XSUBPPARGS = @tmargs
@@ -1086,7 +1089,7 @@ $(INST_ARCHAUTODIR)$(BASEEXT).opt : $(BASEEXT).opt
 	$(CP) $(MMS$SOURCE) $(MMS$TARGET)
 
 $(BASEEXT).opt : Makefile.PL
-	$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -e "use ExtUtils::Mksymlists;" -
+	$(PERLRUN) -e "use ExtUtils::Mksymlists;" -
 	',qq[-e "Mksymlists('NAME' => '$self->{NAME}', 'DL_FUNCS' => ],
 	neatvalue($funcs),q[, 'DL_VARS' => ],neatvalue($vars),
 	q[, 'FUNCLIST' => ],neatvalue($funclist),qq[)"\n];
@@ -1185,7 +1188,7 @@ BOOTSTRAP = '."$self->{BASEEXT}.bs".'
 # The DynaLoader only reads a non-empty file.
 $(BOOTSTRAP) : $(MAKEFILE) '."$self->{BOOTDEP}".' $(INST_ARCHAUTODIR).exists
 	$(NOECHO) $(SAY) "Running mkbootstrap for $(NAME) ($(BSLOADLIBS))"
-	$(NOECHO) $(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -
+	$(NOECHO) $(PERLRUN) -
 	-e "use ExtUtils::Mkbootstrap; Mkbootstrap(\'$(BASEEXT)\',\'$(BSLOADLIBS)\');"
 	$(NOECHO) $(TOUCH) $(MMS$TARGET)
 
@@ -1313,7 +1316,7 @@ all :: $vmsfile
 	\$(NOECHO) \$(NOOP)
 
 $vmsfile :: $vmsplfile
-",'	$(PERL) "-I$(INST_ARCHLIB)" "-I$(INST_LIB)" "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" '," $vmsplfile $vmsfile
+",'	$(PERLRUNINST) '," $vmsplfile $vmsfile
 ";
 	}
     }
@@ -1472,8 +1475,8 @@ realclean :: clean
 	push(@m, '	If F$Search("'."$vmsdir".'$(MAKEFILE)").nes."" Then \\',"\n\t",
 	      '$(PERL) -e "chdir ',"'$vmsdir'",'; print `$(MMS)$(MMSQUALIFIERS) realclean`;"',"\n");
     }
-    push @m,'	$(RM_RF) $(INST_AUTODIR) $(INST_ARCHAUTODIR)
-';
+    push @m, "	\$(RM_RF) \$(INST_AUTODIR) \$(INST_ARCHAUTODIR)\n";
+    push @m, "	\$(RM_RF) \$(DISTVNAME)\n";
     # We can't expand several of the MMS macros here, since they don't have
     # corresponding %$self keys (i.e. they're defined in Descrip.MMS as a
     # combination of macros).  In order to stay below DCL's 255 char limit,
@@ -1524,28 +1527,6 @@ realclean :: clean
     join('', @m);
 }
 
-=item dist_basics (override)
-
-Use VMS-style quoting on command line.
-
-=cut
-
-sub dist_basics {
-    my($self) = @_;
-'
-distclean :: realclean distcheck
-	$(NOECHO) $(NOOP)
-
-distcheck :
-	$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -e "use ExtUtils::Manifest \'&fullcheck\'; fullcheck()"
-
-skipcheck :
-	$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -e "use ExtUtils::Manifest \'&skipcheck\'; skipcheck()"
-
-manifest :
-	$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -e "use ExtUtils::Manifest \'&mkmanifest\'; mkmanifest()"
-';
-}
 
 =item dist_core (override)
 
@@ -1588,22 +1569,6 @@ shdist : distdir
 ];
 }
 
-=item dist_dir (override)
-
-Use VMS-style quoting on command line.
-
-=cut
-
-sub dist_dir {
-    my($self) = @_;
-q{
-distdir :
-	$(RM_RF) $(DISTVNAME)
-	$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -e "use ExtUtils::Manifest '/mani/';" \\
-	-e "manicopy(maniread(),'$(DISTVNAME)','$(DIST_CP)');"
-};
-}
-
 =item dist_test (override)
 
 Use VMS commands to change default directory, and use VMS-style
@@ -1617,7 +1582,7 @@ q{
 disttest : distdir
 	startdir = F$Environment("Default")
 	Set Default [.$(DISTVNAME)]
-	$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" Makefile.PL
+	$(PERLRUN) Makefile.PL
 	$(MMS)$(MMSQUALIFIERS)
 	$(MMS)$(MMSQUALIFIERS) test
 	Set Default 'startdir'
@@ -1841,7 +1806,7 @@ $(MAKEFILE) : Makefile.PL $(CONFIGDEP)
 	$(NOECHO) $(SAY) "Cleaning current config before rebuilding $(MAKEFILE) ..."
 	- $(MV) $(MAKEFILE) $(MAKEFILE)_old
 	- $(MMS)$(MMSQUALIFIERS) $(USEMAKEFILE)$(MAKEFILE)_old clean
-	$(PERL) "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" Makefile.PL ],join(' ',map(qq["$_"],@ARGV)),q[
+	$(PERLRUN) Makefile.PL ],join(' ',map(qq["$_"],@ARGV)),q[
 	$(NOECHO) $(SAY) "$(MAKEFILE) has been rebuilt."
 	$(NOECHO) $(SAY) "Please run $(MMS) to build the extension."
 ];
@@ -1882,8 +1847,8 @@ testdb :: testdb_\$(LINKTYPE)
     push(@m, "\n");
 
     push(@m, "test_dynamic :: pure_all\n");
-    push(@m, $self->test_via_harness('$(FULLPERL)', $tests)) if $tests;
-    push(@m, $self->test_via_script('$(FULLPERL)', 'test.pl')) if -f "test.pl";
+    push(@m, $self->test_via_harness('$(PERLRUN)', $tests)) if $tests;
+    push(@m, $self->test_via_script('$(PERLRUN)', 'test.pl')) if -f "test.pl";
     push(@m, "\t\$(NOECHO) \$(NOOP)\n") if (!$tests && ! -f "test.pl");
     push(@m, "\n");
 
@@ -1939,7 +1904,7 @@ MAP_TARGET    = $target
 	push @m, q{
 $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE)
 	$(NOECHO) $(SAY) "Writing ""$(MMS$TARGET)"" for this $(MAP_TARGET)"
-	$(NOECHO) $(PERL) "-I$(INST_ARCHLIB)" "-I$(INST_LIB)" "-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" \
+	$(NOECHO) $(PERLRUNINST) \
 		Makefile.PL DIR=}, $dir, q{ \
 		MAKEFILE=$(MAKE_APERL_FILE) LINKTYPE=static \
 		MAKEAPERL=1 NORECURS=1 };

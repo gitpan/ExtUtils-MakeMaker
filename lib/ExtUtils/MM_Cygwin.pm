@@ -6,8 +6,9 @@ use vars qw($VERSION @ISA);
 use Config;
 use File::Spec;
 
+require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
-@ISA = qw( ExtUtils::MM_Unix );
+@ISA = qw( ExtUtils::MM_Any ExtUtils::MM_Unix );
 
 $VERSION = 1.01_01;
 
@@ -76,9 +77,14 @@ q[-e 'next if -e $$m{$$_} && -M $$m{$$_} < -M $$_ && -M $$m{$$_} < -M "],
     join('', @m);
 }
 
-sub perl_archive
-{
- return '$(PERL_INC)' .'/'. ("$Config{libperl}" or "libperl.a");
+sub perl_archive {
+    if ($Config{useshrplib} eq 'true') {
+        my $libperl = '$(PERL_INC)' .'/'. "$Config{libperl}";
+        $libperl =~ s/a$/dll.a/;
+        return $libperl;
+    } else {
+        return '$(PERL_INC)' .'/'. ("$Config{libperl}" or "libperl.a");
+    }
 }
 
 1;

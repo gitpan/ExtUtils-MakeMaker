@@ -11,20 +11,21 @@ use File::Spec;
 use DirHandle;
 use strict;
 use vars qw($VERSION @ISA
-            $Is_Mac $Is_OS2 $Is_VMS $Is_Win32 $Is_Dos
+            $Is_Mac $Is_OS2 $Is_VMS $Is_Win32 $Is_Dos $Is_VOS
             $Verbose %pm %static $Xsubpp_Version);
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
-$VERSION = '1.14_01';
+$VERSION = '1.16_01';
 
 require ExtUtils::MM_Any;
 @ISA = qw(ExtUtils::MM_Any);
 
-$Is_OS2 = $^O eq 'os2';
-$Is_Mac = $^O eq 'MacOS';
+$Is_OS2   = $^O eq 'os2';
+$Is_Mac   = $^O eq 'MacOS';
 $Is_Win32 = $^O eq 'MSWin32';
-$Is_Dos = $^O eq 'dos';
+$Is_Dos   = $^O eq 'dos';
+$Is_VOS   = $^O eq 'vos';
 
 if ($Is_VMS = $^O eq 'VMS') {
     require VMS::Filespec;
@@ -369,13 +370,19 @@ EOT
     push(@otherfiles, $attribs{FILES}) if $attribs{FILES};
     push(@otherfiles, qw[./blib $(MAKE_APERL_FILE) 
                          $(INST_ARCHAUTODIR)/extralibs.all
-			 perlmain.c tmon.out mon.out core core.*perl.*.?
-			 *perl.core so_locations pm_to_blib
+			 perlmain.c tmon.out mon.out so_locations pm_to_blib
 			 *$(OBJ_EXT) *$(LIB_EXT) perl.exe perl perl$(EXE_EXT)
 			 $(BOOTSTRAP) $(BASEEXT).bso
 			 $(BASEEXT).def lib$(BASEEXT).def
 			 $(BASEEXT).exp $(BASEEXT).x
 			]);
+    if( $Is_VOS ) {
+        push(@otherfiles, qw[*.kp]);
+    }
+    else {
+        push(@otherfiles, qw[core core.*perl.*.? *perl.core]);
+    }
+
     push @m, "\t-$self->{RM_RF} @otherfiles\n";
     # See realclean and ext/utils/make_ext for usage of Makefile.old
     push(@m,
@@ -714,34 +721,25 @@ Defines the targets distclean, distcheck, skipcheck, manifest, veryclean.
 
 sub dist_basics {
     my($self) = shift;
-    my @m;
-    push @m, q{
+
+    return <<'MAKE_FRAG';
 distclean :: realclean distcheck
-};
+	$(NOECHO) $(NOOP)
 
-    push @m, q{
 distcheck :
-	$(PERLRUN) -MExtUtils::Manifest=fullcheck \\
-		-e fullcheck
-};
+	$(PERLRUN) "-MExtUtils::Manifest=fullcheck" -e fullcheck
 
-    push @m, q{
 skipcheck :
-	$(PERLRUN) -MExtUtils::Manifest=skipcheck \\
-		-e skipcheck
-};
+	$(PERLRUN) "-MExtUtils::Manifest=skipcheck" -e skipcheck
 
-    push @m, q{
 manifest :
-	$(PERLRUN) -MExtUtils::Manifest=mkmanifest \\
-		-e mkmanifest
-};
+	$(PERLRUN) "-MExtUtils::Manifest=mkmanifest" -e mkmanifest
 
-    push @m, q{
 veryclean : realclean
 	$(RM_F) *~ *.orig */*~ */*.orig
-};
-    join "", @m;
+
+MAKE_FRAG
+
 }
 
 =item dist_ci (o)
@@ -755,7 +753,7 @@ sub dist_ci {
     my @m;
     push @m, q{
 ci :
-	$(PERLRUN) -MExtUtils::Manifest=maniread \\
+	$(PERLRUN) "-MExtUtils::Manifest=maniread" \\
 		-e "@all = keys %{ maniread() };" \\
 		-e 'print("Executing $(CI) @all\n"); system("$(CI) @all");' \\
 		-e 'print("Executing $(RCS_LABEL) ...\n"); system("$(RCS_LABEL) @all");'
@@ -809,7 +807,7 @@ shdist : distdir
     join "", @m;
 }
 
-=item dist_dir (o)
+=item dist_dir
 
 Defines the scratch directory target that will hold the distribution
 before tar-ing (or shar-ing).
@@ -818,17 +816,18 @@ before tar-ing (or shar-ing).
 
 sub dist_dir {
     my($self) = shift;
-    my @m;
-    push @m, q{
+
+    return <<'MAKE_FRAG';
 distdir :
 	$(RM_RF) $(DISTVNAME)
-	$(PERLRUN) -MExtUtils::Manifest=manicopy,maniread \\
+	$(PERLRUN) "-MExtUtils::Manifest=manicopy,maniread" \
 		-e "manicopy(maniread(),'$(DISTVNAME)', '$(DIST_CP)');"
-};
-    join "", @m;
+
+MAKE_FRAG
+
 }
 
-=item dist_test (o)
+=item dist_test
 
 Defines a target that produces the distribution in the
 scratchdirectory, and runs 'perl Makefile.PL; make ;make test' in that
@@ -926,7 +925,7 @@ BOOTSTRAP = '."$self->{BASEEXT}.bs".'
 $(BOOTSTRAP): '."$self->{MAKEFILE} $self->{BOOTDEP}".' $(INST_ARCHAUTODIR)/.exists
 	'.$self->{NOECHO}.'echo "Running Mkbootstrap for $(NAME) ($(BSLOADLIBS))"
 	'.$self->{NOECHO}.'$(PERLRUN) \
-		-MExtUtils::Mkbootstrap \
+		"-MExtUtils::Mkbootstrap" \
 		-e "Mkbootstrap(\'$(BASEEXT)\',\'$(BSLOADLIBS)\');"
 	'.$self->{NOECHO}.'$(TOUCH) $(BOOTSTRAP)
 	$(CHMOD) $(PERM_RW) $@
@@ -1584,7 +1583,8 @@ EOP
 	    }
 	}
 	
-	unless (-f ($perl_h = $self->catfile($self->{PERL_INC},"perl.h"))){
+	unless(-f ($perl_h = File::Spec->catfile($self->{PERL_INC},"perl.h")))
+        {
 	    die qq{
 Error: Unable to locate installed Perl libraries or Perl source code.
 
@@ -1699,21 +1699,23 @@ usually solves this kind of problem.
 			   /) {
 	$self->prefixify($install_variable,$configure_prefix,$replace_prefix);
     }
-    my $funkylibdir = $self->catdir($configure_prefix,"lib","perl5");
+    my $funkylibdir = File::Spec->catdir($configure_prefix,"lib","perl5");
     $funkylibdir = '' unless -d $funkylibdir;
-    $search_prefix = $funkylibdir || $self->catdir($configure_prefix,"lib");
+    $search_prefix = $funkylibdir || 
+                     File::Spec->catdir($configure_prefix,"lib");
 
     if ($self->{LIB}) {
 	$self->{INSTALLPRIVLIB} = $self->{INSTALLSITELIB} = $self->{LIB};
 	$self->{INSTALLARCHLIB} = $self->{INSTALLSITEARCH} = 
-	    $self->catdir($self->{LIB},$Config{'archname'});
+	    File::Spec->catdir($self->{LIB},$Config{'archname'});
     }
     else {
-	if (-d $self->catdir($self->{PREFIX},"lib","perl5")) {
-	    $replace_prefix = $self->catdir(qq[\$\(PREFIX\)],"lib", "perl5");
+	if (-d File::Spec->catdir($self->{PREFIX},"lib","perl5")) {
+	    $replace_prefix = File::Spec->catdir(qq[\$\(PREFIX\)],"lib", 
+                                                 "perl5");
 	}
 	else {
-	    $replace_prefix = $self->catdir(qq[\$\(PREFIX\)],"lib");
+	    $replace_prefix = File::Spec->catdir(qq[\$\(PREFIX\)],"lib");
 	}
 	for $install_variable (qw/
 			       INSTALLPRIVLIB
@@ -1840,7 +1842,7 @@ usually solves this kind of problem.
     }
 
     # Build up a set of file names (not command names).
-    my $thisperl = $self->canonpath($^X);
+    my $thisperl = File::Spec->canonpath($^X);
     $thisperl .= $Config{exe_ext} unless $thisperl =~ m/$Config{exe_ext}$/i;
     my @perls = ('perl', 'perl5', "perl$Config{version}");
     @perls = ($thisperl, (map $_.=$Config{exe_ext}, @perls));
@@ -1868,11 +1870,11 @@ usually solves this kind of problem.
     $self->{PERL_CORE} = 0 unless exists $self->{PERL_CORE};
 
     # How do we run perl?
-    $self->{PERLRUN}  = $self->{PERL};
+    $self->{PERLRUN}  = $self->{FULLPERL};
     $self->{PERLRUN} .= qq{ "-I\$(PERL_LIB)"} if $self->{UNINSTALLED_PERL};
 
     # How do we run perl when installing libraries?
-    $self->{PERLRUNINST} .= qq{$self->{PERLRUN} "-I\$(INST_ARCHLIB)" "-I\$(INST_LIB)"};
+    $self->{PERLRUNINST} = qq{$self->{PERLRUN} "-I\$(INST_ARCHLIB)" "-I\$(INST_LIB)"};
 
     # What extra library dirs do we need when running the tests?
     # Make sure these are absolute paths in case the test chdirs.
@@ -2078,7 +2080,7 @@ EXE_FILES = @{$self->{EXE_FILES}}
 
 } . ($Is_Win32
   ? q{FIXIN = pl2bat.bat
-} : q{FIXIN = $(PERLRUN) -MExtUtils::MY \
+} : q{FIXIN = $(PERLRUN) "-MExtUtils::MY" \
     -e "MY->fixin(shift)"
 }).qq{
 pure_all :: @to
@@ -2378,7 +2380,7 @@ $tmp/perlmain\$(OBJ_EXT): $tmp/perlmain.c
     push @m, qq{
 $tmp/perlmain.c: $makefilename}, q{
 	}.$self->{NOECHO}.q{echo Writing $@
-	}.$self->{NOECHO}.q{$(PERL) $(MAP_PERLINC) -MExtUtils::Miniperl \\
+	}.$self->{NOECHO}.q{$(PERL) $(MAP_PERLINC) "-MExtUtils::Miniperl" \\
 		-e "writemain(grep s#.*/auto/##s, split(q| |, q|$(MAP_STATIC)|))" > $@t && $(MV) $@t $@
 
 };
@@ -2895,7 +2897,7 @@ destination and autosplits them. See L<ExtUtils::Install/DESCRIPTION>
 sub _pm_to_blib_flush {
     my ($self, $autodir, $rr, $ra, $rl) = @_;
     $$rr .= 
-q{	}.$self->{NOECHO}.q[$(PERLRUNINST) -MExtUtils::Install \
+q{	}.$self->{NOECHO}.q[$(PERLRUNINST) "-MExtUtils::Install" \
 	-e "pm_to_blib({qw{].qq[@$ra].q[}},'].$autodir.q{','$(PM_FILTER)')"
 };
     @$ra = ();
@@ -3049,6 +3051,7 @@ realclean purge ::  clean
 	push(@m, sprintf($sub,$_,"$self->{MAKEFILE}",''));
     }
     push(@m, "	$self->{RM_RF} \$(INST_AUTODIR) \$(INST_ARCHAUTODIR)\n");
+    push(@m, "	$self->{RM_RF} \$(DISTVNAME)\n");
     if( $self->has_link_code ){
         push(@m, "	$self->{RM_F} \$(INST_DYNAMIC) \$(INST_BOOT)\n");
         push(@m, "	$self->{RM_F} \$(INST_STATIC)\n");
@@ -3359,15 +3362,16 @@ pm_to_blib soon.
 =cut
 
 sub tool_autosplit {
-# --- Tool Sections ---
-
     my($self, %attribs) = @_;
     my($asl) = "";
-    $asl = "\$AutoSplit::Maxlen=$attribs{MAXLEN};" if $attribs{MAXLEN};
-    q{
+    $asl = "\$\$AutoSplit::Maxlen=$attribs{MAXLEN};" if $attribs{MAXLEN};
+
+    return sprintf <<'MAKE_FRAG', $asl;
 # Usage: $(AUTOSPLITFILE) FileToSplit AutoDirToSplitInto
-AUTOSPLITFILE = $(PERLRUN) -e 'use AutoSplit;}.$asl.q{autosplit($$ARGV[0], $$ARGV[1], 0, 1, 1) ;'
-};
+AUTOSPLITFILE = $(PERLRUN) -e 'use AutoSplit; %s autosplit($$ARGV[0], $$ARGV[1], 0, 1, 1) ;'
+
+MAKE_FRAG
+
 }
 
 =item tools_other (o)
@@ -3393,13 +3397,13 @@ SHELL = $bin_sh
     push @m, q{
 # The following is a portable way to say mkdir -p
 # To see which directories are created, change the if 0 to if 1
-MKPATH = $(PERLRUN) -MExtUtils::Command -e mkpath
+MKPATH = $(PERLRUN) "-MExtUtils::Command" -e mkpath
 
 # This helps us to minimize the effect of the .exists files A yet
 # better solution would be to have a stable file in the perl
 # distribution with a timestamp of zero. But this solution doesn't
 # need any changes to the core distribution and works with older perls
-EQUALIZE_TIMESTAMP = $(PERLRUN) -MExtUtils::Command -e eqtime
+EQUALIZE_TIMESTAMP = $(PERLRUN) "-MExtUtils::Command" -e eqtime
 };
 
 
@@ -3416,7 +3420,7 @@ WARN_IF_OLD_PACKLIST = $(PERL) -we 'exit unless -f $$ARGV[0];' \\
 UNINST=0
 VERBINST=0
 
-MOD_INSTALL = $(PERL) "-I$(INST_LIB)" "-I$(PERL_LIB)" -MExtUtils::Install \
+MOD_INSTALL = $(PERL) "-I$(INST_LIB)" "-I$(PERL_LIB)" "-MExtUtils::Install" \
 -e "install({@ARGV},'$(VERBINST)',0,'$(UNINST)');"
 
 DOC_INSTALL = $(PERL) -e '$$\="\n\n";' \
@@ -3425,7 +3429,7 @@ DOC_INSTALL = $(PERL) -e '$$\="\n\n";' \
 -e 'while (defined($$key = shift) and defined($$val = shift)){print "=item *";print "C<$$key: $$val>";}' \
 -e 'print "=back";'
 
-UNINSTALL =   $(PERL) -MExtUtils::Install \
+UNINSTALL =   $(PERLRUN) "-MExtUtils::Install" \
 -e 'uninstall($$ARGV[0],1,1); print "\nUninstall is deprecated. Please check the";' \
 -e 'print " packlist above carefully.\n  There may be errors. Remove the";' \
 -e 'print " appropriate files manually.\n  Sorry for the inconveniences.\n"'
