@@ -1,8 +1,7 @@
 package ExtUtils::testlib;
-$VERSION = substr q$Revision: 1.1.1.1 $, 10;
-# $Id: testlib.pm,v 1.1.1.1 2002/01/16 19:27:19 schwern Exp $
+$VERSION = 1.12_01;
 
-use blib;
+use lib qw(blib/lib blib/arch);
 1;
 __END__
 

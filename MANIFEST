@@ -1,7 +1,7 @@
 Changes
 MANIFEST
 Makefile.PL
-bin/inst
+bin/instmodsh
 bin/xsubpp
 lib/ExtUtils/Command.pm
 lib/ExtUtils/Constant.pm
@@ -37,4 +37,6 @@ t/MM_Win32.t
 t/Manifest.t
 t/Mkbootstrap.t
 t/Packlist.t
+t/hints.t
+t/lib/TieOut.pm
 t/testlib.t
