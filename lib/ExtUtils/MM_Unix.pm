@@ -19,7 +19,7 @@ use vars qw($VERSION @ISA
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
-$VERSION = '1.33';
+$VERSION = '1.34';
 
 require ExtUtils::MM_Any;
 @ISA = qw(ExtUtils::MM_Any);
@@ -484,8 +484,8 @@ sub constants {
 	      INSTALLPRIVLIB  INSTALLSITELIB  INSTALLVENDORLIB
 	      INSTALLARCHLIB  INSTALLSITEARCH INSTALLVENDORARCH
               INSTALLBIN      INSTALLSITEBIN  INSTALLVENDORBIN  INSTALLSCRIPT 
-              PERL_LIB        PERL_ARCHLIB 
-              SITELIBEXP      SITEARCHEXP 
+              PERL_LIB        PERL_ARCHLIB    VENDORLIBEXP
+              SITELIBEXP      SITEARCHEXP     VENDORARCHEXP
               LIBPERL_A MYEXTLIB
 	      FIRST_MAKEFILE MAKE_APERL_FILE PERLMAINCC PERL_SRC
 	      PERL_INC PERL FULLPERL PERLRUN FULLPERLRUN PERLRUNINST 
@@ -542,7 +542,7 @@ MAN3PODS = ".join(" \\\n\t", sort keys %{$self->{MAN3PODS}})."
 ";
 
     for $tmp (qw/
-	      INST_MAN1DIR  MAN1EXT 
+	      INST_MAN1DIR  MAN1EXT
               INSTALLMAN1DIR INSTALLSITEMAN1DIR INSTALLVENDORMAN1DIR
 	      INST_MAN3DIR  MAN3EXT
               INSTALLMAN3DIR INSTALLSITEMAN3DIR INSTALLVENDORMAN3DIR
@@ -1349,8 +1349,15 @@ sub init_dirscan {	# --- File and Directory Lists (.xs .pm .pod etc)
     # (which includes PARENT_NAME). This is a subtle distinction but one
     # that's important for nested modules.
 
-    $self->{PMLIBDIRS} = ['lib', $self->{BASEEXT}]
-	unless $self->{PMLIBDIRS};
+    unless( $self->{PMLIBDIRS} ) {
+        if( $Is_VMS ) {
+            # Avoid logical name vs directory collisions
+            $self->{PMLIBDIRS} = ['./lib', "./$self->{BASEEXT}"];
+        }
+        else {
+            $self->{PMLIBDIRS} = ['lib', $self->{BASEEXT}];
+        }
+    }
 
     #only existing directories that aren't in $dir are allowed
 
@@ -1419,7 +1426,7 @@ sub init_dirscan {	# --- File and Directory Lists (.xs .pm .pod etc)
 		my($ispod)=0;
 		if (open(FH,"<$name")) {
 		    while (<FH>) {
-			if (/^=head1\s+\w+/) {
+			if (/^=(head|item|pod)\b/) {
 			    $ispod=1;
 			    last;
 			}
@@ -1877,9 +1884,9 @@ sub init_INSTALL {
 
     if( $Config{usevendorprefix} ) {
         $Config_Override{installvendorman1dir} =
-          File::Spec->catdir($Config{vendorprefixexp}, 'man', 'man$(MAN1EXT)');
+          File::Spec->catdir($Config{vendorprefixexp}, 'man', 'man1');
         $Config_Override{installvendorman3dir} =
-          File::Spec->catdir($Config{vendorprefixexp}, 'man', 'man$(MAN3EXT)');
+          File::Spec->catdir($Config{vendorprefixexp}, 'man', 'man3');
     }
     else {
         $Config_Override{installvendorman1dir} = '';
@@ -1898,12 +1905,12 @@ sub init_INSTALL {
     # it up.
     unless( $Config{installsiteman1dir} ) {
         $Config_Override{installsiteman1dir} = 
-          File::Spec->catdir($sprefix, 'man', 'man$(MAN1EXT)');
+          File::Spec->catdir($sprefix, 'man', 'man1');
     }
 
     unless( $Config{installsiteman3dir} ) {
         $Config_Override{installsiteman3dir} = 
-          File::Spec->catdir($sprefix, 'man', 'man$(MAN3EXT)');
+          File::Spec->catdir($sprefix, 'man', 'man3');
     }
 
     unless( $Config{installsitebin} ) {
@@ -1958,28 +1965,28 @@ sub init_INSTALL {
     (
         man1dir         => { s => $iprefix,
                              r => $u_prefix,
-                             d => 'man/man$(MAN1EXT)',
+                             d => 'man/man1',
                              style => $manstyle, },
         siteman1dir     => { s => $sprefix,
                              r => $u_sprefix,
-                             d => 'man/man$(MAN1EXT)',
+                             d => 'man/man1',
                              style => $manstyle, },
         vendorman1dir   => { s => $vprefix,
                              r => $u_vprefix,
-                             d => 'man/man$(MAN1EXT)',
+                             d => 'man/man1',
                              style => $manstyle, },
 
         man3dir         => { s => $iprefix,
                              r => $u_prefix,
-                             d => 'man/man$(MAN3EXT)',
+                             d => 'man/man3',
                              style => $manstyle, },
         siteman3dir     => { s => $sprefix,
                              r => $u_sprefix,
-                             d => 'man/man$(MAN3EXT)',
+                             d => 'man/man3',
                              style => $manstyle, },
         vendorman3dir   => { s => $vprefix,
                              r => $u_vprefix,
-                             d => 'man/man$(MAN3EXT)',
+                             d => 'man/man3',
                              style => $manstyle, },
     );
 
@@ -2051,6 +2058,10 @@ sub init_INSTALL {
         print STDERR "  $Installvar == $self->{$Installvar}\n" 
           if $Verbose >= 2;
     }
+
+    # Generate these if they weren't figured out.
+    $self->{VENDORARCHEXP} ||= $self->{INSTALLVENDORARCH};
+    $self->{VENDORLIBEXP}  ||= $self->{INSTALLVENDORLIB};
 
     return 1;
 }
@@ -2223,7 +2234,6 @@ install_vendor :: all pure_vendor_install doc_vendor_install
 pure_install :: pure_$(INSTALLDIRS)_install
 
 doc_install :: doc_$(INSTALLDIRS)_install
-	}.$self->{NOECHO}.q{echo Appending installation info to $(INSTALLARCHLIB)/perllocal.pod
 
 pure__install : pure_site_install
 	@echo INSTALLDIRS not defined, defaulting to INSTALLDIRS=site
@@ -2260,6 +2270,8 @@ pure_site_install ::
 
 pure_vendor_install ::
 	}.$self->{NOECHO}.q{$(MOD_INSTALL) \
+		read }.File::Spec->catfile('$(VENDORARCHEXP)','auto','$(FULLEXT)','.packlist').q{ \
+		write }.File::Spec->catfile('$(INSTALLVENDORARCH)','auto','$(FULLEXT)','.packlist').q{ \
 		$(INST_LIB) $(INSTALLVENDORLIB) \
 		$(INST_ARCHLIB) $(INSTALLVENDORARCH) \
 		$(INST_BIN) $(INSTALLVENDORBIN) \
@@ -2268,6 +2280,7 @@ pure_vendor_install ::
 		$(INST_MAN3DIR) $(INSTALLVENDORMAN3DIR)
 
 doc_perl_install ::
+	}.$self->{NOECHO}.q{echo Appending installation info to $(INSTALLARCHLIB)/perllocal.pod
 	-}.$self->{NOECHO}.q{$(MKPATH) $(INSTALLARCHLIB)
 	-}.$self->{NOECHO}.q{$(DOC_INSTALL) \
 		"Module" "$(NAME)" \
@@ -2278,7 +2291,8 @@ doc_perl_install ::
 		>> }.File::Spec->catfile('$(INSTALLARCHLIB)','perllocal.pod').q{
 
 doc_site_install ::
-	-}.$self->{NOECHO}.q{$(MKPATH) $(INSTALLARCHLIB)
+	}.$self->{NOECHO}.q{echo Appending installation info to $(INSTALLSITEARCH)/perllocal.pod
+	-}.$self->{NOECHO}.q{$(MKPATH) $(INSTALLSITEARCH)
 	-}.$self->{NOECHO}.q{$(DOC_INSTALL) \
 		"Module" "$(NAME)" \
 		"installed into" "$(INSTALLSITELIB)" \
@@ -2288,6 +2302,15 @@ doc_site_install ::
 		>> }.File::Spec->catfile('$(INSTALLSITEARCH)','perllocal.pod').q{
 
 doc_vendor_install ::
+	}.$self->{NOECHO}.q{echo Appending installation info to $(INSTALLVENDORLIB)/perllocal.pod
+	-}.$self->{NOECHO}.q{$(MKPATH) $(INSTALLVENDORLIB)
+	-}.$self->{NOECHO}.q{$(DOC_INSTALL) \
+		"Module" "$(NAME)" \
+		"installed into" "$(INSTALLVENDORLIB)" \
+		LINKTYPE "$(LINKTYPE)" \
+		VERSION "$(VERSION)" \
+		EXE_FILES "$(EXE_FILES)" \
+		>> }.File::Spec->catfile('$(INSTALLVENDORARCH)','perllocal.pod').q{
 
 };
 
@@ -2301,6 +2324,10 @@ uninstall_from_perldirs ::
 uninstall_from_sitedirs ::
 	}.$self->{NOECHO}.
 	q{$(UNINSTALL) }.File::Spec->catfile('$(SITEARCHEXP)','auto','$(FULLEXT)','.packlist').q{
+
+uninstall_from_vendordirs ::
+	}.$self->{NOECHO}.
+        q{$(UNINSTALL) }.File::Spec->catfile('$(VENDORARCHEXP)','auto','$(FULLEXT)','.packlist').q{
 };
 
     join("",@m);

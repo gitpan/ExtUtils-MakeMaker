@@ -12,7 +12,7 @@ require ExtUtils::MM_Unix;
 @ISA = qw( ExtUtils::MM_Any ExtUtils::MM_Unix );
 
 use vars qw($VERSION);
-$VERSION = '1.03';
+$VERSION = '1.04';
 
 use Config;
 use Cwd 'cwd';
@@ -51,7 +51,9 @@ sub new {
 
     mkdir("Obj", 0777) unless -d "Obj";
 
-    $self = {} unless (defined $self);
+    $self = {} unless defined $self;
+
+    check_hints($self);
 
     my(%initial_att) = %$self; # record initial attributes
 
@@ -74,6 +76,9 @@ sub new {
         require ExtUtils::MY;
         @{"$newclass\:\:ISA"} = 'MM';
     }
+
+    $ExtUtils::MakeMaker::Recognized_Att_Keys{$_} = 1
+      for map { $_ . 'Optimize' } qw(MWC MWCPPC MWC68K MPW MRC MRC SC);
 
     if (defined $ExtUtils::MakeMaker::Parent[-2]){
         $self->{PARENT} = $ExtUtils::MakeMaker::Parent[-2];
@@ -125,7 +130,7 @@ sub new {
 # This Makefile is for the $self->{NAME} extension to perl.
 #
 # It was generated automatically by MakeMaker version
-# $VERSION (Revision: $Revision) from the contents of
+# $ExtUtils::MakeMaker::VERSION (Revision: $ExtUtils::MakeMaker::Revision) from the contents of
 # Makefile.PL. Don't edit this file, edit Makefile.PL instead.
 #
 #	ANY CHANGES MADE HERE WILL BE LOST!
@@ -154,15 +159,15 @@ END
 	    dynamic_bs dynamic_lib static_lib manifypods
 	    installbin subdirs dist_basics dist_core
 	    dist_dir dist_test dist_ci install force perldepend makefile
-	    staticmake test pm_to_blib selfdocument cflags 
+	    staticmake test pm_to_blib selfdocument
 	    const_loadlibs const_cccmd
-    /) 
+    /)
     {
 	$self->{SKIPHASH}{$_} = 2;
     }
     push @ExtUtils::MakeMaker::MM_Sections, "rulez" 
     	unless grep /rulez/, @ExtUtils::MakeMaker::MM_Sections;
-    
+
     if ($self->{PARENT}) {
 	for (qw/install dist dist_basics dist_core dist_dir dist_test dist_ci/) {
 	    $self->{SKIPHASH}{$_} = 1;
@@ -177,7 +182,8 @@ END
 
     my $section;
     foreach $section ( @ExtUtils::MakeMaker::MM_Sections ){
-    	next if ($self->{SKIPHASH}{$section} == 2);
+    	next if defined $self->{SKIPHASH}{$section} &&
+                $self->{SKIPHASH}{$section} == 2;
 	print "Processing Makefile '$section' section\n" if ($Verbose >= 2);
 	$self->{ABSTRACT_FROM} = macify($self->{ABSTRACT_FROM})
 		if $self->{ABSTRACT_FROM};
@@ -342,13 +348,10 @@ sub init_main {
 	$self->{MACPERL_INC}  = $self->{MACPERL_SRC};
     } else {
 # hmmmmmmm ... ?
-    $self->{PERL_LIB} ||= "$ENV{MACPERL}site_perl";
-	$self->{PERL_ARCHLIB} = $self->{PERL_LIB};
-	$self->{PERL_INC}     = $ENV{MACPERL};
-#    	die <<END;
-#On MacOS, we need to build under the Perl source directory or have the MacPerl SDK
-#installed in the MacPerl folder.
-#END
+        $self->{PERL_LIB}    ||= "$ENV{MACPERL}site_perl";
+	$self->{PERL_ARCHLIB} =  $self->{PERL_LIB};
+	$self->{PERL_INC}     =  $ENV{MACPERL};
+        $self->{PERL_SRC}     = '';
     }
 
     $self->{INSTALLDIRS} = "perl";
@@ -867,6 +870,18 @@ $target :: $plfile
     }
     join "", @m;
 }
+
+sub cflags {
+    my($self,$libperl) = @_;
+    my $optimize = '';
+
+    for (map { $_ . "Optimize" } qw(MWC MWCPPC MWC68K MPW MRC MRC SC)) {
+        $optimize .= "$_ = $self->{$_}" if exists $self->{$_};
+    }
+
+    return $self->{CFLAGS} = $optimize;
+}
+
 
 sub _include {  # for Unix-style includes, with -I instead of -i
 	my($inc) = @_;
