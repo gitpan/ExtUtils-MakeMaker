@@ -1,3 +1,15 @@
+6.25_02  Mon Dec 20 03:31:49 EST 2004
+    - Set PM_FILTER as late as possible so it can see all the earlier
+      macro definitions.  Necessary for challenged make implementations
+      like nmake.  Should fix Mail::SpamAssassin installs on Win32.
+      [rt.cpan.org 4545]
+    - clean and realclean are now more careful about accidentally deleting
+      directories instead of files.  [rt.cpan.org 6851]
+    - small fix for parallel builds, make sure pm_to_blib has run before
+      we try to use stuff in blib. [rt.cpan.org 6460]
+    - MAKEFILE=foo appears to have been broken for recursive builds and
+      several other things.  I think this was broken by 6.18.
+
 6.25_01  Fri Dec 17 21:29:04 EST 2004
     * *.bak added to the default MANIFEST.SKIP.
     * META.yml will no longer be generated in the build directory.  It will
