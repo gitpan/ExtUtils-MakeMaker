@@ -2,20 +2,21 @@ BEGIN {require 5.004;}
 
 package ExtUtils::MakeMaker;
 
-$VERSION = "5.49_01";
-$Version_OK = "5.17";   # Makefiles older than $Version_OK will die
+$VERSION = "5.50_01";
+$Version_OK = "5.49";   # Makefiles older than $Version_OK will die
                         # (Will be checked from MakeMaker version 4.13 onwards)
-($Revision = substr(q$Revision: 1.6 $, 10)) =~ s/\s+$//;
-
+($Revision = substr(q$Revision: 1.11 $, 10)) =~ s/\s+$//;
 
 require Exporter;
 use Config;
 use Carp ();
+use ExtUtils::MM;  # Things like CPAN assume loading ExtUtils::MakeMaker
+                   # will give them MM.
 
 use vars qw(
             @ISA @EXPORT @EXPORT_OK
             $ISA_TTY $Revision $VERSION $Verbose $Version_OK %Config 
-            %Keep_after_flush %MM_Sections %Prepend_dot_dot 
+            %Keep_after_flush %MM_Sections @Prepend_dot_dot 
             %Recognized_Att_Keys @Get_from_Config @MM_Sections @Overridable 
             @Parent $PACKNAME
            );
@@ -23,7 +24,7 @@ use strict;
 
 @ISA = qw(Exporter);
 @EXPORT = qw(&WriteMakefile &writeMakefile $Verbose &prompt);
-@EXPORT_OK = qw($VERSION &Version_check &neatvalue &mkbootstrap &mksymlists);
+@EXPORT_OK = qw($VERSION &neatvalue &mkbootstrap &mksymlists);
 
 # These will go away once the last of the Win32 & VMS specific code is 
 # purged.
@@ -43,7 +44,6 @@ sub WriteMakefile {
     Carp::croak "WriteMakefile: Need even number of args" if @_ % 2;
     local $SIG{__WARN__} = \&warnhandler;
 
-    require ExtUtils::MM;
     require ExtUtils::MY;
     my %att = @_;
     MM->new(\%att)->flush;
@@ -113,12 +113,11 @@ sub full_setup {
     AUTHOR ABSTRACT ABSTRACT_FROM BINARY_LOCATION
     C CAPI CCFLAGS CONFIG CONFIGURE DEFINE DIR DISTNAME DL_FUNCS DL_VARS
     EXCLUDE_EXT EXE_FILES FIRST_MAKEFILE FULLPERL FUNCLIST H 
-    HTMLLIBPODS HTMLSCRIPTPODS IMPORTS
-    INC INCLUDE_EXT INSTALLARCHLIB INSTALLBIN INSTALLDIRS INSTALLHTMLPRIVLIBDIR
-    INSTALLHTMLSCRIPTDIR INSTALLHTMLSITELIBDIR INSTALLMAN1DIR
+    IMPORTS
+    INC INCLUDE_EXT INSTALLARCHLIB INSTALLBIN INSTALLDIRS
+    INSTALLMAN1DIR
     INSTALLMAN3DIR INSTALLPRIVLIB INSTALLSCRIPT INSTALLSITEARCH
     INSTALLSITELIB INST_ARCHLIB INST_BIN INST_EXE INST_LIB
-    INST_HTMLLIBDIR INST_HTMLSCRIPTDIR
     INST_MAN1DIR INST_MAN3DIR INST_SCRIPT LDFROM LIB LIBPERL_A LIBS
     LINKTYPE MAKEAPERL MAKEFILE MAN1PODS MAN3PODS MAP_TARGET MYEXTLIB
     PERL_MALLOC_OK
@@ -156,7 +155,7 @@ sub full_setup {
  pasthru
 
  c_o xs_c xs_o top_targets linkext dlsyms dynamic dynamic_bs
- dynamic_lib static static_lib htmlifypods manifypods processPL
+ dynamic_lib static static_lib manifypods processPL
  installbin subdirs
  clean realclean dist_basics dist_core dist_dir dist_test dist_ci
  install force perldepend makefile staticmake test ppd
@@ -205,14 +204,11 @@ sub full_setup {
     # us (the parent) for the values and will prepend "..", so that
     # all files to be installed end up below OUR ./blib
     #
-    %Prepend_dot_dot = 
-        qw(
-
-           INST_BIN 1 INST_EXE 1 INST_LIB 1 INST_ARCHLIB 1 INST_SCRIPT 1
-           MAP_TARGET 1 INST_HTMLLIBDIR 1 INST_HTMLSCRIPTDIR 1 
-           INST_MAN1DIR 1 INST_MAN3DIR 1 PERL_SRC 1 PERL 1 FULLPERL 1
-
-          );
+    @Prepend_dot_dot = qw(
+           INST_BIN INST_EXE INST_LIB INST_ARCHLIB INST_SCRIPT
+           MAP_TARGET INST_MAN1DIR INST_MAN3DIR PERL_SRC
+           PERL FULLPERL
+    );
 
     my @keep = qw/
         NEEDS_LINKING HAS_LINK_CODE
@@ -323,7 +319,6 @@ sub new {
         mv_all_methods("MY",$newclass);
         bless $self, $newclass;
         push @Parent, $self;
-        require ExtUtils::MM;
         require ExtUtils::MY;
         @{"$newclass\:\:ISA"} = 'MM';
     }
@@ -331,23 +326,23 @@ sub new {
     if (defined $Parent[-2]){
         $self->{PARENT} = $Parent[-2];
         my $key;
-        for $key (keys %Prepend_dot_dot) {
+        for $key (@Prepend_dot_dot) {
             next unless defined $self->{PARENT}{$key};
             $self->{$key} = $self->{PARENT}{$key};
-        unless ($^O eq 'VMS' && $key =~ /PERL$/) {
-            $self->{$key} = $self->catdir("..",$self->{$key})
-              unless $self->file_name_is_absolute($self->{$key});
-        } else {
-            # PERL or FULLPERL will be a command verb or even a command with
-            # an argument instead of a full file specification under VMS.  So, 
-            # don't turn the command into a filespec, but do add a level to 
-            # the path of the argument if not already absolute.
-
-            my @cmd = split /\s+/, $self->{$key};
-            $cmd[1] = $self->catfile('[-]',$cmd[1])
-              unless (@cmd < 2) || $self->file_name_is_absolute($cmd[1]);
-            $self->{$key} = join(' ', @cmd);
-        }
+            unless ($^O eq 'VMS' && $key =~ /PERL$/) {
+                $self->{$key} = $self->catdir("..",$self->{$key})
+                  unless $self->file_name_is_absolute($self->{$key});
+            } else {
+                # PERL or FULLPERL will be a command verb or even a
+                # command with an argument instead of a full file
+                # specification under VMS.  So, don't turn the command
+                # into a filespec, but do add a level to the path of
+                # the argument if not already absolute.
+                my @cmd = split /\s+/, $self->{$key};
+                $cmd[1] = $self->catfile('[-]',$cmd[1])
+                  unless (@cmd < 2) || $self->file_name_is_absolute($cmd[1]);
+                $self->{$key} = join(' ', @cmd);
+            }
         }
         if ($self->{PARENT}) {
             $self->{PARENT}->{CHILDREN}->{$newclass} = $self;
@@ -486,7 +481,6 @@ sub WriteEmptyMakefile {
     Carp::croak "WriteEmptyMakefile: Need even number of args" if @_ % 2;
     local $SIG{__WARN__} = \&warnhandler;
 
-    require ExtUtils::MM;
     my %att = @_;
     my $self = MM->new(\%att);
     if (-f "$self->{MAKEFILE}.old") {
@@ -915,12 +909,11 @@ want to specify some other option, set C<TESTDB_SW> variable:
 =head2 make install
 
 make alone puts all relevant files into directories that are named by
-the macros INST_LIB, INST_ARCHLIB, INST_SCRIPT, INST_HTMLLIBDIR,
-INST_HTMLSCRIPTDIR, INST_MAN1DIR, and INST_MAN3DIR.  All these default
-to something below ./blib if you are I<not> building below the perl
-source directory. If you I<are> building below the perl source,
-INST_LIB and INST_ARCHLIB default to ../../lib, and INST_SCRIPT is not
-defined.
+the macros INST_LIB, INST_ARCHLIB, INST_SCRIPT, INST_MAN1DIR and
+INST_MAN3DIR.  All these default to something below ./blib if you are
+I<not> building below the perl source directory. If you I<are>
+building below the perl source, INST_LIB and INST_ARCHLIB default to
+../../lib, and INST_SCRIPT is not defined.
 
 The I<install> target of the generated Makefile copies the files found
 below each of the INST_* directories to their INSTALL*
@@ -932,8 +925,6 @@ INSTALLDIRS according to the following table:
 
     INST_ARCHLIB        INSTALLARCHLIB        INSTALLSITEARCH
     INST_LIB            INSTALLPRIVLIB        INSTALLSITELIB
-    INST_HTMLLIBDIR     INSTALLHTMLPRIVLIBDIR INSTALLHTMLSITELIBDIR
-    INST_HTMLSCRIPTDIR            INSTALLHTMLSCRIPTDIR
     INST_BIN                      INSTALLBIN
     INST_SCRIPT                   INSTALLSCRIPT
     INST_MAN1DIR                  INSTALLMAN1DIR
@@ -958,24 +949,25 @@ PREFIX and LIB can be used to set several INSTALL* attributes in one
 go. The quickest way to install a module in a non-standard place might
 be
 
+    perl Makefile.PL PREFIX=~
+
+This will install all files in the module under your home directory,
+with man pages and libraries going into an appropriate place (usually
+~/man and ~/lib).
+
+Another way to specify many INSTALL directories with a single
+parameter is LIB.
+
     perl Makefile.PL LIB=~/lib
 
 This will install the module's architecture-independent files into
 ~/lib, the architecture-dependent files into ~/lib/$archname.
 
-Another way to specify many INSTALL directories with a single
-parameter is PREFIX.
-
-    perl Makefile.PL PREFIX=~
-
-This will replace the string specified by C<$Config{prefix}> in all
-C<$Config{install*}> values.
-
 Note, that in both cases the tilde expansion is done by MakeMaker, not
 by perl by default, nor by make.
 
-Conflicts between parameters LIB,
-PREFIX and the various INSTALL* arguments are resolved so that:
+Conflicts between parameters LIB, PREFIX and the various INSTALL*
+arguments are resolved so that:
 
 =over 4
 
@@ -992,10 +984,10 @@ set (but are set to still start with C<$Config{prefix}>).
 
 =back
 
-If the user has superuser privileges, and is not working on AFS
-or relatives, then the defaults for
-INSTALLPRIVLIB, INSTALLARCHLIB, INSTALLSCRIPT, etc. will be appropriate,
-and this incantation will be the best:
+If the user has superuser privileges, and is not working on AFS or
+relatives, then the defaults for INSTALLPRIVLIB, INSTALLARCHLIB,
+INSTALLSCRIPT, etc. will be appropriate, and this incantation will be
+the best:
 
     perl Makefile.PL; make; make test
     make install
@@ -1279,20 +1271,6 @@ names are passed through unaltered to the linker options file.
 
 Ref to array of *.h file names. Similar to C.
 
-=item HTMLLIBPODS
-
-Hashref of .pm and .pod files.  MakeMaker will default this to all
- .pod and any .pm files that include POD directives.  The files listed
-here will be converted to HTML format and installed as was requested
-at Configure time.
-
-=item HTMLSCRIPTPODS
-
-Hashref of pod-containing files.  MakeMaker will default this to all
-EXE_FILES files that include POD directives.  The files listed
-here will be converted to HTML format and installed as was requested
-at Configure time.
-
 =item IMPORTS
 
 This attribute is used to specify names to be imported into the
@@ -1332,22 +1310,6 @@ Determines which of the two sets of installation directories to
 choose: installprivlib and installarchlib versus installsitelib and
 installsitearch. The first pair is chosen with INSTALLDIRS=perl, the
 second with INSTALLDIRS=site. Default is site.
-
-=item INSTALLHTMLPRIVLIBDIR
-
-This directory gets the HTML pages at 'make install' time. Defaults to
-$Config{installhtmlprivlibdir}.
-
-=item INSTALLHTMLSCRIPTDIR
-
-This directory gets the HTML pages at 'make install' time. Defaults to
-$Config{installhtmlscriptdir}.
-
-=item INSTALLHTMLSITELIBDIR
-
-This directory gets the HTML pages at 'make install' time. Defaults to
-$Config{installhtmlsitelibdir}.
-
 
 =item INSTALLMAN1DIR
 
@@ -1393,14 +1355,6 @@ to INSTALLBIN during 'make install'
 Old name for INST_SCRIPT. Deprecated. Please use INST_SCRIPT if you
 need to use it.
 
-=item INST_HTMLLIBDIR
-
-Directory to hold the man pages in HTML format at 'make' time
-
-=item INST_HTMLSCRIPTDIR
-
-Directory to hold the man pages in HTML format at 'make' time
-
 =item INST_LIB
 
 Directory where we put library files of this extension while building
@@ -1430,11 +1384,10 @@ specify ld flags)
 =item LIB
 
 LIB should only be set at C<perl Makefile.PL> time but is allowed as a
-MakeMaker argument. It has the effect of
-setting both INSTALLPRIVLIB and INSTALLSITELIB to that value regardless any
-explicit setting of those arguments (or of PREFIX).  
-INSTALLARCHLIB and INSTALLSITEARCH are set to the corresponding 
-architecture subdirectory.
+MakeMaker argument. It has the effect of setting both INSTALLPRIVLIB
+and INSTALLSITELIB to that value regardless any explicit setting of
+those arguments (or of PREFIX).  INSTALLARCHLIB and INSTALLSITEARCH
+are set to the corresponding architecture subdirectory.
 
 =item LIBPERL_A
 
@@ -1711,12 +1664,14 @@ the installation of a package.
 
 =item PREFIX
 
-Can be used to set the three INSTALL* attributes in one go (except for
-probably INSTALLMAN1DIR, if it is not below PREFIX according to
-%Config).  They will have PREFIX as a common directory node and will
-branch from that node into lib/, lib/ARCHNAME or whatever Configure
-decided at the build time of your perl (unless you override one of
-them, of course).
+This overrides all the default install locations.  Man pages,
+libraries, scripts, etc...  MakeMaker will try to make an educated
+guess about where to place things under the new PREFIX based on your
+Config defaults.  Failing that, it will fall back to a structure
+which should be sensible for your platform.
+
+If you specify LIB or any INSTALL* variables they will not be effected
+by the PREFIX.
 
 =item PREREQ_PM
 
@@ -1800,7 +1755,7 @@ MakeMaker object. The following lines will be parsed o.k.:
 
     $VERSION = '1.00';
     *VERSION = \'1.01';
-    ( $VERSION ) = '$Revision: 1.6 $ ' =~ /\$Revision:\s+([^\s]+)/;
+    ( $VERSION ) = '$Revision: 1.11 $ ' =~ /\$Revision:\s+([^\s]+)/;
     $FOO::VERSION = '1.10';
     *FOO::VERSION = \'1.11';
     our $VERSION = 1.2.3;       # new for perl5.6.0 
@@ -2112,8 +2067,8 @@ always return the default without waiting for user input.
 
 =head1 SEE ALSO
 
-ExtUtils::MM_Unix, ExtUtils::Manifest, ExtUtils::testlib,
-ExtUtils::Install, ExtUtils::Embed
+ExtUtils::MM_Unix, ExtUtils::Manifest ExtUtils::Install,
+ExtUtils::Embed
 
 =head1 AUTHORS
 
@@ -2122,9 +2077,8 @@ Andy Dougherty <F<doughera@lafcol.lafayette.edu>>, Andreas KE<ouml>nig
 support by Charles Bailey <F<bailey@newman.upenn.edu>>.  OS/2 support
 by Ilya Zakharevich <F<ilya@math.ohio-state.edu>>.
 
-Contact the MakeMaker mailing list <F<makemaker@perl.org>> if you have
-any questions.
+Currently maintained by Michael G Schwern <F<schwern@pobox.com>>
 
-Send patches and bug reports to <F<perlbug@perl.org>>.
+Send patches and bug reports to <F<makemaker@perl.org>>.
 
 =cut

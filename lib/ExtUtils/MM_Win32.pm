@@ -28,7 +28,7 @@ use vars qw(@ISA $VERSION $BORLAND $GCC $DMAKE $NMAKE $PERLMAKE);
 
 require ExtUtils::MM_Unix;
 @ISA = qw( ExtUtils::MM_Unix );
-$VERSION = '1.00_03';
+$VERSION = '1.01_01';
 
 $ENV{EMXSHELL} = 'sh'; # to run `commands`
 
@@ -94,10 +94,6 @@ sub maybe_command {
     return;
 }
 
-sub file_name_is_absolute {
-    shift;
-    return File::Spec->file_name_is_absolute(@_);
-}
 
 sub find_perl {
     my($self, $ver, $names, $dirs, $trace) = @_;
@@ -136,23 +132,6 @@ in these dirs:
     }
     print STDOUT "Unable to find a perl $ver (by these names: @$names, in these dirs: @$dirs)\n";
     0; # false and not empty
-}
-
-sub catdir {
-    shift;
-    return File::Spec->catdir(@_);
-}
-
-=item catfile
-
-Concatenate one or more directory names and a filename to form a
-complete path ending with a filename
-
-=cut
-
-sub catfile {
-    shift;
-    return File::Spec->catfile(@_);
 }
 
 sub init_others
@@ -229,7 +208,6 @@ MM_VERSION = $ExtUtils::MakeMaker::VERSION
     push @m, q{
 # FULLEXT = Pathname for extension directory (eg Foo/Bar/Oracle).
 # BASEEXT = Basename part of FULLEXT. May be just equal FULLEXT. (eg Oracle)
-# ROOTEXT = Directory part of FULLEXT with leading slash (eg /DBD)  !!! Deprecated from MM 5.32  !!!
 # PARENT_NAME = NAME without BASEEXT and no trailing :: (eg Foo::Bar)
 # DLBASE  = Basename part of dynamic library. May be just equal BASEEXT.
 };
@@ -248,17 +226,11 @@ XS_FILES= ".join(" \\\n\t", sort keys %{$self->{XS}})."
 C_FILES = ".join(" \\\n\t", @{$self->{C}})."
 O_FILES = ".join(" \\\n\t", @{$self->{O_FILES}})."
 H_FILES = ".join(" \\\n\t", @{$self->{H}})."
-HTMLLIBPODS    = ".join(" \\\n\t", sort keys %{$self->{HTMLLIBPODS}})."
-HTMLSCRIPTPODS = ".join(" \\\n\t", sort keys %{$self->{HTMLSCRIPTPODS}})."
 MAN1PODS = ".join(" \\\n\t", sort keys %{$self->{MAN1PODS}})."
 MAN3PODS = ".join(" \\\n\t", sort keys %{$self->{MAN3PODS}})."
 ";
 
     for $tmp (qw/
-	      INST_HTMLPRIVLIBDIR INSTALLHTMLPRIVLIBDIR
-	      INST_HTMLSITELIBDIR INSTALLHTMLSITELIBDIR
-	      INST_HTMLSCRIPTDIR  INSTALLHTMLSCRIPTDIR
-	      INST_HTMLLIBDIR                    HTMLEXT
 	      INST_MAN1DIR        INSTALLMAN1DIR MAN1EXT
 	      INST_MAN3DIR        INSTALLMAN3DIR MAN3EXT
 	      /) {
@@ -326,12 +298,6 @@ EXPORT_LIST = $tmp
 PERL_ARCHIVE = $tmp
 ";
 
-#    push @m, q{
-#INST_PM = }.join(" \\\n\t", sort values %{$self->{PM}}).q{
-#
-#PM_TO_BLIB = }.join(" \\\n\t", %{$self->{PM}}).q{
-#};
-
     push @m, q{
 TO_INST_PM = }.join(" \\\n\t", sort keys %{$self->{PM}}).q{
 
@@ -341,10 +307,6 @@ PM_TO_BLIB = }.join(" \\\n\t", %{$self->{PM}}).q{
     join('',@m);
 }
 
-
-sub path {
-    return File::Spec->path();
-}
 
 =item static_lib (o)
 
@@ -483,8 +445,8 @@ $(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)\.exists 
 
 sub clean
 {
-    my ($self) = @_;
-    my $s = &ExtUtils::MM_Unix::clean;
+    my ($self) = shift;
+    my $s = $self->SUPER::clean(@_);
     my $clean = $GCC ? 'dll.base dll.exp' : '*.pdb';
     $s .= <<END;
 clean ::
@@ -568,17 +530,6 @@ $(PM_TO_BLIB)
 <<
 	} : '') . $self->{NOECHO}.q{$(TOUCH) $@
 };
-}
-
-=item test_via_harness (o)
-
-Helper method to write the test targets
-
-=cut
-
-sub test_via_harness {
-    my($self, $perl, $tests) = @_;
-    "\t$perl".q! -Mblib -I$(PERL_ARCHLIB) -I$(PERL_LIB) -e "use Test::Harness qw(&runtests $$verbose); $$verbose=$(TEST_VERBOSE); runtests @ARGV;" !."$tests\n";
 }
 
 
@@ -687,12 +638,9 @@ sub top_targets {
 
     my($self) = shift;
     my(@m);
-    push @m, '
-#all ::	config $(INST_PM) subdirs linkext manifypods
-';
 
     push @m, '
-all :: pure_all htmlifypods manifypods
+all :: pure_all manifypods
 	'.$self->{NOECHO}.'$(NOOP)
 ' 
 	  unless $self->{SKIPHASH}{'all'};
@@ -715,24 +663,6 @@ config :: $(INST_AUTODIR)\.exists
 ';
 
     push @m, $self->dir_target(qw[$(INST_AUTODIR) $(INST_LIBDIR) $(INST_ARCHAUTODIR)]);
-
-    if (%{$self->{HTMLLIBPODS}}) {
-	push @m, qq[
-config :: \$(INST_HTMLLIBDIR)/.exists
-	$self->{NOECHO}\$(NOOP)
-
-];
-	push @m, $self->dir_target(qw[$(INST_HTMLLIBDIR)]);
-    }
-
-    if (%{$self->{HTMLSCRIPTPODS}}) {
-	push @m, qq[
-config :: \$(INST_HTMLSCRIPTDIR)/.exists
-	$self->{NOECHO}\$(NOOP)
-
-];
-	push @m, $self->dir_target(qw[$(INST_HTMLSCRIPTDIR)]);
-    }
 
     if (%{$self->{MAN1PODS}}) {
 	push @m, qq[
@@ -760,67 +690,7 @@ help:
 	perldoc ExtUtils::MakeMaker
 };
 
-    push @m, q{
-Version_check:
-	}.$self->{NOECHO}.q{$(PERL) -I$(PERL_ARCHLIB) -I$(PERL_LIB) \
-		-MExtUtils::MakeMaker=Version_check \
-		-e "Version_check('$(MM_VERSION)')"
-};
-
     join('',@m);
-}
-
-=item htmlifypods (o)
-
-Defines targets and routines to translate the pods into HTML manpages
-and put them into the INST_HTMLLIBDIR and INST_HTMLSCRIPTDIR
-directories.
-
-Same as MM_Unix version (changes command-line quoting).
-
-=cut
-
-sub htmlifypods {
-    my($self, %attribs) = @_;
-    return "\nhtmlifypods : pure_all\n\t$self->{NOECHO}\$(NOOP)\n" unless
-	%{$self->{HTMLLIBPODS}} || %{$self->{HTMLSCRIPTPODS}};
-    my($dist);
-    my($pod2html_exe);
-    if (defined $self->{PERL_SRC}) {
-	$pod2html_exe = File::Spec->catfile($self->{PERL_SRC},'pod','pod2html');
-    } else {
-	$pod2html_exe = File::Spec->catfile($Config{scriptdirexp},'pod2html');
-    }
-    unless ($pod2html_exe = $self->perl_script($pod2html_exe)) {
-	# No pod2html but some HTMLxxxPODS to be installed
-	print <<END;
-
-Warning: I could not locate your pod2html program. Please make sure,
-         your pod2html program is in your PATH before you execute 'make'
-
-END
-        $pod2html_exe = "-S pod2html";
-    }
-    my(@m);
-    push @m,
-qq[POD2HTML_EXE = $pod2html_exe\n],
-qq[POD2HTML = \$(PERL) -we "use File::Basename; use File::Path qw(mkpath); %m=\@ARGV;for (keys %m){" \\\n],
-q[-e "next if -e $$m{$$_} && -M $$m{$$_} < -M $$_ && -M $$m{$$_} < -M '],
- $self->{MAKEFILE}, q[';" \\
--e "print qq(Htmlifying $$m{$$_}\n);" \\
--e "$$dir = dirname($$m{$$_}); mkpath($$dir) unless -d $$dir;" \\
--e "system(qq[$$^X ].q["-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" $(POD2HTML_EXE) ].qq[$$_>$$m{$$_}])==0 or warn qq(Couldn\\047t install $$m{$$_}\n);" \\
--e "chmod(oct($(PERM_RW))), $$m{$$_} or warn qq(chmod $(PERM_RW) $$m{$$_}: $$!\n);}"
-];
-    push @m, "\nhtmlifypods : pure_all ";
-    push @m, join " \\\n\t", keys %{$self->{HTMLLIBPODS}}, keys %{$self->{HTMLSCRIPTPODS}};
-
-    push(@m,"\n");
-    if (%{$self->{HTMLLIBPODS}} || %{$self->{HTMLSCRIPTPODS}}) {
-	push @m, "\t$self->{NOECHO}\$(POD2HTML) \\\n\t";
-	push @m, join " \\\n\t", %{$self->{HTMLLIBPODS}}, %{$self->{HTMLSCRIPTPODS}};
-    }
-    join('', @m);
 }
 
 =item manifypods (o)
