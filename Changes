@@ -1,3 +1,26 @@
+6.10_04 Fri May 23 01:13:04 PDT 2003
+    - Working around BSD threaading bug in version check. [from bleadperl]
+    - Added the Makefile to the dist dependencies. (Slaven Rezic)
+    - Reversing the find_perl() version check failure warning introced in
+      6.10_03.  Too talkative, warned when nothing was wrong.
+    * Fixing META.yml auto-addition when there's no newline at the end 
+      of the MANIFEST [rt.cpan.org 2444]
+    * Making it a bit more obvious in the MANIFEST where META.yml comes from.
+    - Fixed $_ clobbering in ExtUtils::Manifest functions.
+    - [rt.cpan.org 2591] some LD_RUN_PATH thing (Marek Rouchal)
+    - Added core.\d+ files to 'make clean' [rt.cpan.org 2543] (Slaven Rezic)
+    - INST_* targets were expanded too early (Stas Bekman)
+    - Adding ExtUtils::MakeMaker::bytes (bytes.pm backwards compat wrapper)
+    - Fixing MM_MacOS so it will compile on 5.5.x machines (use bytes wrapper)
+    * Reducing perldepend set of CORE/*.h dependencies to what 5.5.3 has.
+      5.5.3 should be able to compile XS again.
+    * Eliminating fakethr.h and perlsfio.h from VMS's perldepend as they
+      sometimes don't get installed.
+    - ExtUtils::Install was making a few directories even with the
+      "don't really do it" switch on (Slaven Rezic)
+    * can build static linked perl binaries again.  Probably damaged in
+      6.06_01 when $self->{MAKEFILE} became FIRST_MAKEFILE. (Nick Clark)
+
 6.10_03 Fri Apr 11 00:21:25 PDT 2003
     * Added NO_META WriteMakefile() option to suppress generation of
       META.yml. (Spoon, rt.cpan.org 2359)
