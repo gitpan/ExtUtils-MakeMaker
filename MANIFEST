@@ -1,16 +1,26 @@
-Changes				The history of MakeMaker
-MANIFEST			This file
-FAQ				Frequently Asked Questions about MakeMaker
+MANIFEST
 Makefile.PL
-README
-Todo
-lib/ExtUtils/Command.pm		Emulate favorite UNIX commands
-lib/ExtUtils/Install.pm		Helper package for 'make install'
-lib/ExtUtils/Liblist.pm		determines which libraries to link
-lib/ExtUtils/MM_Unix.pm		Methods for all platforms
-lib/ExtUtils/MM_Win32.pm	Methods for Win32
-lib/ExtUtils/MakeMaker.pm	writes a Makefile for a perl extension
-lib/ExtUtils/Mkbootstrap.pm	writes a bootstrap file
-lib/ExtUtils/Mksymlists.pm	writes a symbol table file (VMS, AIX, OS/2)
-mm_dummy_exe			testfile to check if MM installs exefile o.k.
-verifydist			Script that runs before MM is distributed
+lib/ExtUtils/Command.pm
+lib/ExtUtils/Constant.pm
+lib/ExtUtils/Embed.pm
+lib/ExtUtils/Install.pm
+lib/ExtUtils/Installed.pm
+lib/ExtUtils/Liblist.pm
+lib/ExtUtils/MANIFEST.SKIP
+lib/ExtUtils/MM_Cygwin.pm
+lib/ExtUtils/MM_NW5.pm
+lib/ExtUtils/MM_OS2.pm
+lib/ExtUtils/MM_Unix.pm
+lib/ExtUtils/MM_VMS.pm
+lib/ExtUtils/MM_Win32.pm
+lib/ExtUtils/MakeMaker.pm
+lib/ExtUtils/Manifest.pm
+lib/ExtUtils/Miniperl.pm
+lib/ExtUtils/Mkbootstrap.pm
+lib/ExtUtils/Mksymlists.pm
+lib/ExtUtils/Packlist.pm
+lib/ExtUtils/inst
+lib/ExtUtils/testlib.pm
+lib/ExtUtils/typemap
+lib/ExtUtils/xsubpp
+t/ExtUtils.t

@@ -1,14 +1,12 @@
-package ExtUtils::MM_Win32;
-
-our $VERSION = '1.00';
+package ExtUtils::MM_NW5;
 
 =head1 NAME
 
-ExtUtils::MM_Win32 - methods to override UN*X behaviour in ExtUtils::MakeMaker
+ExtUtils::MM_NW5 - methods to override UN*X behaviour in ExtUtils::MakeMaker
 
 =head1 SYNOPSIS
 
- use ExtUtils::MM_Win32; # Done internally by ExtUtils::MakeMaker if needed
+ use ExtUtils::MM_NW5; # Done internally by ExtUtils::MakeMaker if needed
 
 =head1 DESCRIPTION
 
@@ -16,7 +14,7 @@ See ExtUtils::MM_Unix for a documentation of the methods provided
 there. This package overrides the implementation of these methods, not
 the semantics.
 
-=over 4
+=over
 
 =cut 
 
@@ -25,11 +23,11 @@ use Config;
 use File::Basename;
 require Exporter;
 
-require ExtUtils::MakeMaker;
-ExtUtils::MakeMaker->import(qw( $Verbose &neatvalue));
+Exporter::import('ExtUtils::MakeMaker',
+       qw( $Verbose &neatvalue));
 
 $ENV{EMXSHELL} = 'sh'; # to run `commands`
-unshift @MM::ISA, 'ExtUtils::MM_Win32';
+unshift @MM::ISA, 'ExtUtils::MM_NW5';
 
 $BORLAND = 1 if $Config{'cc'} =~ /^bcc/i;
 $GCC     = 1 if $Config{'cc'} =~ /^gcc/i;
@@ -232,6 +230,21 @@ sub init_others
  }
  $self->{'DEV_NULL'} = '> NUL';
  # $self->{'NOECHO'} = ''; # till we have it working
+
+ # incpath is copied to makefile var INCLUDE in constants sub, here just make it empty
+ my $libpth = $Config{'libpth'};
+ $libpth =~ s( )(;);
+ $self->{'LIBPTH'} = $libpth;
+ $self->{'BASE_IMPORT'} = $Config{'base_import'};
+ 
+ # Additional import file specified from Makefile.pl
+ if($self->{'base_import'}) {
+	$self->{'BASE_IMPORT'} .= ',' . $self->{'base_import'};
+ }
+ 
+ $self->{'NLM_VERSION'} = $Config{'nlm_version'};
+ $self->{'MPKTOOL'}	= $Config{'mpktool'};
+ $self->{'TOOLPATH'}	= $Config{'toolpath'};
 }
 
 
@@ -240,10 +253,23 @@ sub init_others
 Initializes lots of constants and .SUFFIXES and .PHONY
 
 =cut
+# NetWare override
+sub const_cccmd {
+    my($self,$libperl)=@_;
+    return $self->{CONST_CCCMD} if $self->{CONST_CCCMD};
+    return '' unless $self->needs_linking();
+    return $self->{CONST_CCCMD} =
+	q{CCCMD = $(CC) $(INC) $(CCFLAGS) $(OPTIMIZE) \\
+	$(PERLTYPE) $(LARGE) $(SPLIT) $(MPOLLUTE) \\
+	-DVERSION="$(VERSION)" -DXS_VERSION="$(XS_VERSION)"};
+}
 
 sub constants {
     my($self) = @_;
     my(@m,$tmp);
+
+# Added LIBPTH, BASE_IMPORT, ABSTRACT, NLM_VERSION BOOT_SYMBOL, NLM_SHORT_NAME
+# for NETWARE
 
     for $tmp (qw/
 
@@ -254,19 +280,51 @@ sub constants {
 	      INSTALLSITEARCH INSTALLBIN INSTALLSCRIPT PERL_LIB
 	      PERL_ARCHLIB SITELIBEXP SITEARCHEXP LIBPERL_A MYEXTLIB
 	      FIRST_MAKEFILE MAKE_APERL_FILE PERLMAINCC PERL_SRC
-	      PERL_INC PERL FULLPERL PERLRUN PERLRUNINST TEST_LIBS 
-	      FULL_AR PERL_CORE
+	      PERL_INC PERL FULLPERL LIBPTH BASE_IMPORT PERLRUN
+	      PERLRUNINST TEST_LIBS FULL_AR PERL_CORE
+		  NLM_VERSION MPKTOOL TOOLPATH
 
 	      / ) {
 	next unless defined $self->{$tmp};
 	push @m, "$tmp = $self->{$tmp}\n";
     }
 
+	(my $boot = $self->{'NAME'}) =~ s/:/_/g;
+	$self->{'BOOT_SYMBOL'}=$boot;
+	push @m, "BOOT_SYMBOL = $self->{'BOOT_SYMBOL'}\n";
+
+	# If the final binary name is greater than 8 chars,
+	# truncate it here and rename it after creation
+	# otherwise, Watcom Linker fails
+	if(length($self->{'BASEEXT'}) > 8) {
+		$self->{'NLM_SHORT_NAME'} = substr($self->{'NAME'},0,8);
+		push @m, "NLM_SHORT_NAME = $self->{'NLM_SHORT_NAME'}\n";
+	}
+
     push @m, qq{
 VERSION_MACRO = VERSION
 DEFINE_VERSION = -D\$(VERSION_MACRO)=\\\"\$(VERSION)\\\"
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D\$(XS_VERSION_MACRO)=\\\"\$(XS_VERSION)\\\"
+};
+
+	# Get the include path and replace the spaces with ;
+	# Copy this to makefile as INCLUDE = d:\...;d:\;
+	(my $inc = $Config{'incpath'}) =~ s/ /;/g;
+
+	# Get the additional include path and append to INCLUDE, keep it in
+	# INC will give problems during compilation, hence reset it after getting
+	# the value
+	(my $add_inc = $self->{'INC'}) =~ s/ -I/;/g;
+	$self->{'INC'} = '';
+ 	push @m, qq{
+INCLUDE = $inc;$add_inc;
+};
+
+	# Set the path to Watcom binaries which might not have been set in
+	# any other place
+	push @m, qq{
+PATH = \$(PATH);\$(TOOLPATH)
 };
 
     push @m, qq{
@@ -416,6 +474,7 @@ sub static_lib {
 $(INST_STATIC): $(OBJECT) $(MYEXTLIB) $(INST_ARCHAUTODIR)\.exists
 	$(RM_RF) $@
 END
+
     # If this extension has its own library (eg SDBM_File)
     # then copy that to $(INST_STATIC) and add $(OBJECT) into it.
     push(@m, "\t$self->{CP} \$(MYEXTLIB) \$\@\n") if $self->{MYEXTLIB};
@@ -477,7 +536,7 @@ Defines how to produce the *.so (or equivalent) files.
 =cut
 
 sub dynamic_lib {
-    my($self, %attribs) = @_;
+	my($self, %attribs) = @_;
     return '' unless $self->needs_linking(); #might be because of a subdir
 
     return '' unless $self->has_link_code;
@@ -486,45 +545,83 @@ sub dynamic_lib {
     my($inst_dynamic_dep) = $attribs{INST_DYNAMIC_DEP} || "";
     my($ldfrom) = '$(LDFROM)';
     my(@m);
-
-# one thing for GCC/Mingw32:
-# we try to overcome non-relocateable-DLL problems by generating
-#    a (hopefully unique) image-base from the dll's name
-# -- BKS, 10-19-1999
-    if ($GCC) { 
-	my $dllname = $self->{BASEEXT} . "." . $self->{DLEXT};
-	$dllname =~ /(....)(.{0,4})/;
-	my $baseaddr = unpack("n", $1 ^ $2);
-	$otherldflags .= sprintf("-Wl,--image-base,0x%x0000 ", $baseaddr);
-    }
-
+	(my $boot = $self->{NAME}) =~ s/:/_/g;
+	my ($mpk);
     push(@m,'
 # This section creates the dynamically loadable $(INST_DYNAMIC)
 # from $(OBJECT) and possibly $(MYEXTLIB).
 OTHERLDFLAGS = '.$otherldflags.'
 INST_DYNAMIC_DEP = '.$inst_dynamic_dep.'
 
-$(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)\.exists $(EXPORT_LIST) $(PERL_ARCHIVE) $(INST_DYNAMIC_DEP)
+$(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP)
 ');
-    if ($GCC) {
-      push(@m,  
-       q{	dlltool --def $(EXPORT_LIST) --output-exp dll.exp
-	$(LD) -o $@ -Wl,--base-file -Wl,dll.base $(LDDLFLAGS) }.$ldfrom.q{ $(OTHERLDFLAGS) $(MYEXTLIB) $(PERL_ARCHIVE) $(LDLOADLIBS) dll.exp
-	dlltool --def $(EXPORT_LIST) --base-file dll.base --output-exp dll.exp
-	$(LD) -o $@ $(LDDLFLAGS) }.$ldfrom.q{ $(OTHERLDFLAGS) $(MYEXTLIB) $(PERL_ARCHIVE) $(LDLOADLIBS) dll.exp });
-    } elsif ($BORLAND) {
-      push(@m,
-       q{	$(LD) $(LDDLFLAGS) $(OTHERLDFLAGS) }.$ldfrom.q{,$@,,}
-       .($DMAKE ? q{$(PERL_ARCHIVE:s,/,\,) $(LDLOADLIBS:s,/,\,) }
-		 .q{$(MYEXTLIB:s,/,\,),$(EXPORT_LIST:s,/,\,)}
-		: q{$(subst /,\,$(PERL_ARCHIVE)) $(subst /,\,$(LDLOADLIBS)) }
-		 .q{$(subst /,\,$(MYEXTLIB)),$(subst /,\,$(EXPORT_LIST))})
-       .q{,$(RESFILES)});
-    } else {	# VC
-      push(@m,
-       q{	$(LD) -out:$@ $(LDDLFLAGS) }.$ldfrom.q{ $(OTHERLDFLAGS) }
-      .q{$(MYEXTLIB) $(PERL_ARCHIVE) $(LDLOADLIBS) -def:$(EXPORT_LIST)});
-    }
+#      push(@m,
+#      q{	$(LD) -out:$@ $(LDDLFLAGS) }.$ldfrom.q{ $(OTHERLDFLAGS) }
+#      .q{$(MYEXTLIB) $(PERL_ARCHIVE) $(LDLOADLIBS) -def:$(EXPORT_LIST)});
+
+		# Create xdc data for an MT safe NLM in case of mpk build
+		if ( $self->{CCFLAGS} =~ m/ -DMPK_ON /) {
+			$mpk=1;
+			push @m, ' $(MPKTOOL) $(BASEEXT).xdc
+';
+		} else {
+			$mpk=0;
+		}
+
+		push(@m,
+			q{ $(LD) Form Novell NLM '$(DISTNAME) Extension, XS_VERSION=$(XS_VERSION)'} 
+			);
+
+		# Taking care of long names like FileHandle, ByteLoader, SDBM_File etc
+		if($self->{NLM_SHORT_NAME}) {
+			# In case of nlms with names exceeding 8 chars, build nlm in the 
+			# current dir, rename and move to auto\lib.  If we create in auto\lib
+			# in the first place, we can't rename afterwards.
+			push(@m,
+				q{ Name $(NLM_SHORT_NAME).$(DLEXT)}
+				);
+		} else {
+			push(@m,
+				q{ Name $(INST_AUTODIR)\\$(BASEEXT).$(DLEXT)}
+				);
+		}
+
+		push(@m,
+		   q{ Option Quiet Option Version = $(NLM_VERSION) Option Caseexact Option NoDefaultLibs Option screenname 'none' Option Synchronize }
+		   );
+
+		if ($mpk) {
+		push (@m, 
+		q{ Option XDCDATA=$(BASEEXT).xdc }
+		);
+		}
+
+		# Add additional lib files if any (SDBM_File)
+		if($self->{MYEXTLIB}) {
+			push(@m,
+				q{ Library $(MYEXTLIB) }
+				);
+		}
+
+#For now lets comment all the Watcom lib calls
+#q{ LibPath $(LIBPTH) Library plib3s.lib Library math3s.lib Library clib3s.lib Library emu387.lib Library $(PERL_ARCHIVE) Library $(PERL_INC)\Main.lib}
+
+		push(@m,
+				q{ Library $(PERL_ARCHIVE) Library $(PERL_INC)\Main.lib}			   
+			   .q{ Export boot_$(BOOT_SYMBOL) $(BASE_IMPORT) }
+			   .q{ FILE $(OBJECT:.obj=,)}
+			);
+
+		# If it is having a short name, rename it 
+		if($self->{NLM_SHORT_NAME}) {
+			push @m, '
+ if exist $(INST_AUTODIR)\\$(BASEEXT).$(DLEXT) del $(INST_AUTODIR)\\$(BASEEXT).$(DLEXT)';
+			push @m, '
+ rename $(NLM_SHORT_NAME).$(DLEXT) $(BASEEXT).$(DLEXT)';
+			push @m, '
+ move $(BASEEXT).$(DLEXT) $(INST_AUTODIR)';
+		}
+
     push @m, '
 	$(CHMOD) 755 $@
 ';
@@ -532,22 +629,6 @@ $(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)\.exists 
     push @m, $self->dir_target('$(INST_ARCHAUTODIR)');
     join('',@m);
 }
-
-sub clean
-{
- my ($self) = @_;
- my $s = &ExtUtils::MM_Unix::clean;
- if ($GCC) {
-	$s .= <<'END';
-clean ::
-	-$(RM_F) dll.base dll.exp
-
-END
- }
- return $s;
-}
-
-
 
 sub perl_archive
 {
@@ -615,7 +696,7 @@ pm_to_blib: $(TO_INST_PM)
 	($NMAKE ? 'qw[ <<pmfiles.dat ],'
 	        : $DMAKE ? 'qw[ $(mktmp,pmfiles.dat $(PM_TO_BLIB:s,\\,\\\\,)\n) ],'
 			 : '{ qw[$(PM_TO_BLIB)] },'
-	 ).q{'}.$autodir.q{','$(PM_FILTER)')"
+	 ).q{'}.$autodir.q{')"
 	}. ($NMAKE ? q{
 $(PM_TO_BLIB)
 <<
@@ -703,7 +784,7 @@ MOD_INSTALL = $(PERL) -I$(INST_LIB) -I$(PERL_LIB) -MExtUtils::Install \
 -e "install({ @ARGV },'$(VERBINST)',0,'$(UNINST)');"
 
 DOC_INSTALL = $(PERL) -e "$$\=\"\n\n\";" \
--e "print '=head2 ', scalar(localtime), ': C<', shift, '>', ' L<', $$arg=shift, '|', $$arg, '>';" \
+-e "print '=head2 ', scalar(localtime), ': C<', shift, '>', ' L<', shift, '>';" \
 -e "print '=over 4';" \
 -e "while (defined($$key = shift) and defined($$val = shift)) { print '=item *';print 'C<', \"$$key: $$val\", '>'; }" \
 -e "print '=back';"
@@ -726,7 +807,7 @@ only intended for broken make implementations.
 
 sub xs_o {	# many makes are too dumb to use xs_c then c_o
     my($self) = shift;
-    return ''
+	return ''
 }
 
 =item top_targets (o)

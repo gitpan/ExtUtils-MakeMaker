@@ -1,22 +1,43 @@
 package ExtUtils::Install;
 
-$VERSION = substr q$Revision: 1.18 $, 10;
-# $Date: 1997/06/28 15:16:44 $
+use 5.004;
+use vars qw(@ISA @EXPORT $VERSION);
+$VERSION = substr q$Revision: 1.2 $, 10;
+# $Date: 2001/07/06 07:59:22 $
 
 use Exporter;
 use Carp ();
-use Config ();
-use vars qw(@ISA @EXPORT $VERSION);
+use Config qw(%Config);
 @ISA = ('Exporter');
-@EXPORT = ('install','uninstall','pm_to_blib');
+@EXPORT = ('install','uninstall','pm_to_blib', 'install_default');
 $Is_VMS = $^O eq 'VMS';
 
-my $splitchar = $^O eq 'VMS' ? '|' : $^O eq 'os2' ? ';' : ':';
+my $splitchar = $^O eq 'VMS' ? '|' : ($^O eq 'os2' || $^O eq 'dos') ? ';' : ':';
 my @PERL_ENV_LIB = split $splitchar, defined $ENV{'PERL5LIB'} ? $ENV{'PERL5LIB'} : $ENV{'PERLLIB'} || '';
 my $Inc_uninstall_warn_handler;
 
-#use vars qw( @EXPORT @ISA $Is_VMS );
-#use strict;
+# install relative to here
+
+my $INSTALL_ROOT = $ENV{PERL_INSTALL_ROOT};
+
+use File::Spec;
+
+sub install_rooted_file {
+    if (defined $INSTALL_ROOT) {
+	MY->catfile($INSTALL_ROOT, $_[0]);
+    } else {
+	$_[0];
+    }
+}
+
+sub install_rooted_dir {
+    if (defined $INSTALL_ROOT) {
+	MY->catdir($INSTALL_ROOT, $_[0]);
+    } else {
+	$_[0];
+    }
+}
+
 
 sub forceunlink {
     chmod 0666, $_[0];
@@ -30,16 +51,19 @@ sub install {
 
     use Cwd qw(cwd);
     use ExtUtils::MakeMaker; # to implement a MY class
+    use ExtUtils::Packlist;
     use File::Basename qw(dirname);
     use File::Copy qw(copy);
     use File::Find qw(find);
     use File::Path qw(mkpath);
+    use File::Compare qw(compare);
 
     my(%hash) = %$hash;
-    my(%pack, %write, $dir, $warn_permissions);
+    my(%pack, $dir, $warn_permissions);
+    my($packlist) = ExtUtils::Packlist->new();
     # -w doesn't work reliably on FAT dirs
     $warn_permissions++ if $^O eq 'MSWin32';
-    local(*DIR, *P);
+    local(*DIR);
     for (qw/read write/) {
 	$pack{$_}=$hash{$_};
 	delete $hash{$_};
@@ -51,32 +75,22 @@ sub install {
 	opendir DIR, $source_dir_or_file or next;
 	for (readdir DIR) {
 	    next if $_ eq "." || $_ eq ".." || $_ eq ".exists";
-	    if (-w $hash{$source_dir_or_file} || mkpath($hash{$source_dir_or_file})) {
+		my $targetdir = install_rooted_dir($hash{$source_dir_or_file});
+	    if (-w $targetdir ||
+		mkpath($targetdir)) {
 		last;
 	    } else {
-		warn "Warning: You do not have permissions to install into $hash{$source_dir_or_file}"
+		warn "Warning: You do not have permissions to " .
+		    "install into $hash{$source_dir_or_file}"
 		    unless $warn_permissions++;
 	    }
 	}
 	closedir DIR;
     }
-    if (-f $pack{"read"}) {
-	open P, $pack{"read"} or Carp::croak("Couldn't read $pack{'read'}");
-	# Remember what you found
-	while (<P>) {
-	    chomp;
-	    $write{$_}++;
-	}
-	close P;
-    }
+    my $tmpfile = install_rooted_file($pack{"read"});
+    $packlist->read($tmpfile) if (-f $tmpfile);
     my $cwd = cwd();
-    my $umask = umask 0 unless $Is_VMS;
 
-    # This silly reference is just here to be able to call MY->catdir
-    # without a warning (Waiting for a proper path/directory module,
-    # Charles!)
-    my $MY = {};
-    bless $MY, 'MY';
     my($source);
     MOD_INSTALL: foreach $source (sort keys %hash) {
 	#copy the tree to the target directory without altering
@@ -84,19 +98,32 @@ sub install {
 	#file. The packlist file contains the absolute paths of the
 	#install locations. AFS users may call this a bug. We'll have
 	#to reconsider how to add the means to satisfy AFS users also.
+
+	#October 1997: we want to install .pm files into archlib if
+	#there are any files in arch. So we depend on having ./blib/arch
+	#hardcoded here.
+
+	my $targetroot = install_rooted_dir($hash{$source});
+
+	if ($source eq "blib/lib" and
+	    exists $hash{"blib/arch"} and
+	    directory_not_empty("blib/arch")) {
+	    $targetroot = install_rooted_dir($hash{"blib/arch"});
+            print "Files found in blib/arch: installing files in blib/lib into architecture dependent library tree\n";
+	}
 	chdir($source) or next;
 	find(sub {
 	    my ($dev,$ino,$mode,$nlink,$uid,$gid,$rdev,$size,
                          $atime,$mtime,$ctime,$blksize,$blocks) = stat;
 	    return unless -f _;
 	    return if $_ eq ".exists";
-	    my $targetdir = $MY->catdir($hash{$source},$File::Find::dir);
-	    my $targetfile = $MY->catfile($targetdir,$_);
+	    my $targetdir  = MY->catdir($targetroot, $File::Find::dir);
+	    my $targetfile = MY->catfile($targetdir, $_);
 
 	    my $diff = 0;
 	    if ( -f $targetfile && -s _ == $size) {
 		# We have a good chance, we can skip this one
-		$diff = my_cmp($_,$targetfile);
+		$diff = compare($_,$targetfile);
 	    } else {
 		print "$_ differs\n" if $verbose>1;
 		$diff++;
@@ -126,58 +153,64 @@ sub install {
 	    } else {
 		inc_uninstall($_,$File::Find::dir,$verbose,0); # nonono set to 0
 	    }
-	    $write{$targetfile}++;
+	    $packlist->{$targetfile}++;
 
 	}, ".");
 	chdir($cwd) or Carp::croak("Couldn't chdir to $cwd: $!");
     }
-    umask $umask unless $Is_VMS;
     if ($pack{'write'}) {
-	$dir = dirname($pack{'write'});
+	$dir = install_rooted_dir(dirname($pack{'write'}));
 	mkpath($dir,0,0755);
 	print "Writing $pack{'write'}\n";
-	open P, ">$pack{'write'}" or Carp::croak("Couldn't write $pack{'write'}: $!");
-	for (sort keys %write) {
-	    print P "$_\n";
-	}
-	close P;
+	$packlist->write(install_rooted_file($pack{'write'}));
     }
 }
 
-sub my_cmp {
-    my($one,$two) = @_;
-    local(*F,*T);
-    my $diff = 0;
-    open T, $two or return 1;
-    open F, $one or Carp::croak("Couldn't open $one: $!");
-    my($fr, $tr, $fbuf, $tbuf, $size);
-    $size = 1024;
-    # print "Reading $one\n";
-    while ( $fr = read(F,$fbuf,$size)) {
-	unless (
-		$tr = read(T,$tbuf,$size) and 
-		$tbuf eq $fbuf
-	       ){
-	    # print "diff ";
-	    $diff++;
-	    last;
-	}
-	# print "$fr/$tr ";
-    }
-    # print "\n";
-    close F;
-    close T;
-    $diff;
+sub directory_not_empty ($) {
+  my($dir) = @_;
+  my $files = 0;
+  find(sub {
+	   return if $_ eq ".exists";
+	   if (-f) {
+	     $File::Find::prune++;
+	     $files = 1;
+	   }
+       }, $dir);
+  return $files;
+}
+
+sub install_default {
+  @_ < 2 or die "install_default should be called with 0 or 1 argument";
+  my $FULLEXT = @_ ? shift : $ARGV[0];
+  defined $FULLEXT or die "Do not know to where to write install log";
+  my $INST_LIB = MM->catdir(MM->curdir,"blib","lib");
+  my $INST_ARCHLIB = MM->catdir(MM->curdir,"blib","arch");
+  my $INST_BIN = MM->catdir(MM->curdir,'blib','bin');
+  my $INST_SCRIPT = MM->catdir(MM->curdir,'blib','script');
+  my $INST_MAN1DIR = MM->catdir(MM->curdir,'blib','man1');
+  my $INST_MAN3DIR = MM->catdir(MM->curdir,'blib','man3');
+  install({
+	   read => "$Config{sitearchexp}/auto/$FULLEXT/.packlist",
+	   write => "$Config{installsitearch}/auto/$FULLEXT/.packlist",
+	   $INST_LIB => (directory_not_empty($INST_ARCHLIB)) ?
+			 $Config{installsitearch} :
+			 $Config{installsitelib},
+	   $INST_ARCHLIB => $Config{installsitearch},
+	   $INST_BIN => $Config{installbin} ,
+	   $INST_SCRIPT => $Config{installscript},
+	   $INST_MAN1DIR => $Config{installman1dir},
+	   $INST_MAN3DIR => $Config{installman3dir},
+	  },1,0,0);
 }
 
 sub uninstall {
+    use ExtUtils::Packlist;
     my($fil,$verbose,$nonono) = @_;
     die "no packlist file found: $fil" unless -f $fil;
     # my $my_req = $self->catfile(qw(auto ExtUtils Install forceunlink.al));
     # require $my_req; # Hairy, but for the first
-    local *P;
-    open P, $fil or Carp::croak("uninstall: Could not read packlist file $fil: $!");
-    while (<P>) {
+    my ($packlist) = ExtUtils::Packlist->new($fil);
+    foreach (sort(keys(%$packlist))) {
 	chomp;
 	print "unlink $_\n" if $verbose;
 	forceunlink($_) unless $nonono;
@@ -189,13 +222,14 @@ sub uninstall {
 sub inc_uninstall {
     my($file,$libdir,$verbose,$nonono) = @_;
     my($dir);
-    my $MY = {};
-    bless $MY, 'MY';
     my %seen_dir = ();
-    foreach $dir (@INC, @PERL_ENV_LIB, @Config::Config{qw/archlibexp privlibexp sitearchexp sitelibexp/}) {
+    foreach $dir (@INC, @PERL_ENV_LIB, @Config{qw(archlibexp
+						  privlibexp
+						  sitearchexp
+						  sitelibexp)}) {
 	next if $dir eq ".";
 	next if $seen_dir{$dir}++;
-	my($targetfile) = $MY->catfile($dir,$libdir,$file);
+	my($targetfile) = MY->catfile($dir,$libdir,$file);
 	next unless -f $targetfile;
 
 	# The reason why we compare file's contents is, that we cannot
@@ -204,7 +238,7 @@ sub inc_uninstall {
 	my $diff = 0;
 	if ( -f $targetfile && -s _ == -s $file) {
 	    # We have a good chance, we can skip this one
-	    $diff = my_cmp($file,$targetfile);
+	    $diff = compare($file,$targetfile);
 	} else {
 	    print "#$file and $targetfile differ\n" if $verbose>1;
 	    $diff++;
@@ -214,7 +248,7 @@ sub inc_uninstall {
 	if ($nonono) {
 	    if ($verbose) {
 		$Inc_uninstall_warn_handler ||= new ExtUtils::Install::Warn;
-		$libdir =~ s|^\./|| ; # That's just cosmetics, no need to port. It looks prettier.
+		$libdir =~ s|^\./||s ; # That's just cosmetics, no need to port. It looks prettier.
 		$Inc_uninstall_warn_handler->add("$libdir/$file",$targetfile);
 	    }
 	    # if not verbose, we just say nothing
@@ -225,12 +259,27 @@ sub inc_uninstall {
     }
 }
 
+sub run_filter {
+    my ($cmd, $src, $dest) = @_;
+    local *SRC, *CMD;
+    open(CMD, "|$cmd >$dest") || die "Cannot fork: $!";
+    open(SRC, $src)           || die "Cannot open $src: $!";
+    my $buf;
+    my $sz = 1024;
+    while (my $len = sysread(SRC, $buf, $sz)) {
+	syswrite(CMD, $buf, $len);
+    }
+    close SRC;
+    close CMD or die "Filter command '$cmd' failed for $src";
+}
+
 sub pm_to_blib {
-    my($fromto,$autodir) = @_;
+    my($fromto,$autodir,$pm_filter) = @_;
 
     use File::Basename qw(dirname);
     use File::Copy qw(copy);
     use File::Path qw(mkpath);
+    use File::Compare qw(compare);
     use AutoSplit;
     # my $my_req = $self->catfile(qw(auto ExtUtils Install forceunlink.al));
     # require $my_req; # Hairy, but for the first
@@ -246,28 +295,40 @@ sub pm_to_blib {
       close(FROMTO);
      }
 
-    my $umask = umask 0022 unless $Is_VMS;
     mkpath($autodir,0,0755);
     foreach (keys %$fromto) {
-	next if -f $fromto->{$_} && -M $fromto->{$_} < -M $_;
-	unless (my_cmp($_,$fromto->{$_})){
-	    print "Skip $fromto->{$_} (unchanged)\n";
+	my $dest = $fromto->{$_};
+	next if -f $dest && -M $dest < -M $_;
+
+	# When a pm_filter is defined, we need to pre-process the source first
+	# to determine whether it has changed or not.  Therefore, only perform
+	# the comparison check when there's no filter to be ran.
+	#    -- RAM, 03/01/2001
+
+	my $need_filtering = defined $pm_filter && length $pm_filter && /\.pm$/;
+
+	if (!$need_filtering && 0 == compare($_,$dest)) {
+	    print "Skip $dest (unchanged)\n";
 	    next;
 	}
-	if (-f $fromto->{$_}){
-	    forceunlink($fromto->{$_});
+	if (-f $dest){
+	    forceunlink($dest);
 	} else {
-	    mkpath(dirname($fromto->{$_}),0,0755);
+	    mkpath(dirname($dest),0,0755);
 	}
-	copy($_,$fromto->{$_});
+	if ($need_filtering) {
+	    run_filter($pm_filter, $_, $dest);
+	    print "$pm_filter <$_ >$dest\n";
+	} else {
+	    copy($_,$dest);
+	    print "cp $_ $dest\n";
+	}
 	my($mode,$atime,$mtime) = (stat)[2,8,9];
-	utime($atime,$mtime+$Is_VMS,$fromto->{$_});
-	chmod(0444 | ( $mode & 0111 ? 0111 : 0 ),$fromto->{$_});
-	print "cp $_ $fromto->{$_}\n";
+	utime($atime,$mtime+$Is_VMS,$dest);
+	chmod(0444 | ( $mode & 0111 ? 0111 : 0 ),$dest);
 	next unless /\.pm$/;
-	autosplit($fromto->{$_},$autodir);
+	autosplit($dest,$autodir);
     }
-    umask $umask unless $Is_VMS;
 }
 
 package ExtUtils::Install::Warn;
@@ -280,18 +341,20 @@ sub add {
 }
 
 sub DESTROY {
-    my $self = shift;
-    my($file,$i,$plural);
-    foreach $file (sort keys %$self) {
-	$plural = @{$self->{$file}} > 1 ? "s" : "";
-	print "## Differing version$plural of $file found. You might like to\n";
-	for (0..$#{$self->{$file}}) {
-	    print "rm ", $self->{$file}[$_], "\n";
-	    $i++;
+	unless(defined $INSTALL_ROOT) {
+		my $self = shift;
+		my($file,$i,$plural);
+		foreach $file (sort keys %$self) {
+		$plural = @{$self->{$file}} > 1 ? "s" : "";
+		print "## Differing version$plural of $file found. You might like to\n";
+		for (0..$#{$self->{$file}}) {
+			print "rm ", $self->{$file}[$_], "\n";
+			$i++;
+		}
+		}
+		$plural = $i>1 ? "all those files" : "this file";
+		print "## Running 'make install UNINST=1' will unlink $plural for you.\n";
 	}
-    }
-    $plural = $i>1 ? "all those files" : "this file";
-    print "## Running 'make install UNINST=1' will unlink $plural for you.\n";
 }
 
 1;
@@ -330,8 +393,22 @@ There are two keys with a special meaning in the hash: "read" and
 target files to the file named by C<$hashref-E<gt>{write}>. If there is
 another file named by C<$hashref-E<gt>{read}>, the contents of this file will
 be merged into the written file. The read and the written file may be
-identical, but on AFS it is quite likely, people are installing to a
+identical, but on AFS it is quite likely that people are installing to a
 different directory than the one where the files later appear.
+
+install_default() takes one or less arguments.  If no arguments are 
+specified, it takes $ARGV[0] as if it was specified as an argument.  
+The argument is the value of MakeMaker's C<FULLEXT> key, like F<Tk/Canvas>.  
+This function calls install() with the same arguments as the defaults 
+the MakeMaker would use.
+
+The argument-less form is convenient for install scripts like
+
+  perl -MExtUtils::Install -e install_default Tk/Canvas
+
+Assuming this command is executed in a directory with a populated F<blib> 
+directory, it will proceed as if the F<blib> was build by MakeMaker on 
+this machine.  This is useful for binary distributions.
 
 uninstall() takes as first argument a file containing filenames to be
 unlinked. The second argument is a verbose switch, the third is a
@@ -340,6 +417,11 @@ no-don't-really-do-it-now switch.
 pm_to_blib() takes a hashref as the first argument and copies all keys
 of the hash to the corresponding values efficiently. Filenames with
 the extension pm are autosplit. Second argument is the autosplit
-directory.
+directory.  If third argument is not empty, it is taken as a filter command
+to be ran on each .pm file, the output of the command being what is finally
+copied, and the source for auto-splitting.
+
+You can have an environment variable PERL_INSTALL_ROOT set which will
+be prepended as a directory to each installed file (and directory).
 
 =cut

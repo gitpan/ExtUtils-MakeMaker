@@ -1,6 +1,7 @@
 package ExtUtils::Command;
+
+use 5.004;
 use strict;
-# use AutoLoader;
 use Carp;
 use File::Copy;
 use File::Compare;
@@ -10,7 +11,7 @@ require Exporter;
 use vars qw(@ISA @EXPORT $VERSION);
 @ISA     = qw(Exporter);
 @EXPORT  = qw(cp rm_f rm_rf mv cat eqtime mkpath touch test_f);
-$VERSION = '1.01';
+$VERSION = '1.02';
 
 =head1 NAME
 
@@ -31,8 +32,8 @@ ExtUtils::Command - utilities to replace common UNIX commands in Makefiles etc.
 
 =head1 DESCRIPTION
 
-The module is used in Win32 port to replace common UNIX commands.
-Most commands are wrapers on generic modules File::Path and File::Basename.
+The module is used in the Win32 port to replace common UNIX commands.
+Most commands are wrappers on generic modules File::Path and File::Basename.
 
 =over 4
 
@@ -107,11 +108,13 @@ Makes files exist, with current timestamp
 sub touch
 {
  expand_wildcards();
+ my $t    = time;
  while (@ARGV)
   {
    my $file = shift(@ARGV);               
    open(FILE,">>$file") || die "Cannot write $file:$!";
    close(FILE);
+   utime($t,$t,$file);
   }
 }
 
@@ -173,7 +176,7 @@ Creates directory, including any parent directories.
 
 sub mkpath
 {
- File::Path::mkpath([expand_wildcards()],1,0777);
+ File::Path::mkpath([expand_wildcards()],0,0777);
 }
 
 =item test_f file
@@ -186,6 +189,7 @@ sub test_f
 {
  exit !-f shift(@ARGV);
 }
+
 
 1;
 __END__ 
