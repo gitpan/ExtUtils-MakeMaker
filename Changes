@@ -1,3 +1,11 @@
+6.24_01 Thu Dec  9 00:44:48 EST 2004
+    - Docs encouraged possibly insecure use of /tmp [CAN-2004-0976 via Debian]
+    - Remove empty rpath from .so files [bleadperl@23183]
+    - At long last the core man page title has its apostrophe.
+    - BeOS tests fixed [Ingo Weinhold] [perlbug #32717]
+    - Putting a pm_to_blib target back (alias of pm_to_blib.ts) in case
+      anyone was depending on it being there (mod_perl was).
+
 6.24 Tue Nov 30 15:35:13 EST 2004
     - dir_target() was accidentally named dir_targets() causing problems
       installing some Tk modules.
@@ -12,6 +20,9 @@
     - Don't spuriously define pasthru arguments
 
 6.21_03 Sat Apr 3 2004
+    - pm_to_blib and blibdirs stamp files now pm_to_blib.ts and blibdirs.ts
+      everywhere because some filesystems insist you have a dot in the 
+      filename.  This eliminates a bunch of special case code.
     - Minor potential glitch in the version check logic.
     - Making Makefile rebuild logic more resistant to inconsequential
       errors when cleaning up things that are going to be rebuilt anyway.

@@ -20,7 +20,7 @@ use vars qw($VERSION @ISA
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
-$VERSION = '1.45';
+$VERSION = '1.45_01';
 
 require ExtUtils::MM_Any;
 @ISA = qw(ExtUtils::MM_Any);
@@ -413,9 +413,16 @@ sub const_loadlibs {
 };
     my($tmp);
     for $tmp (qw/
-	 EXTRALIBS LDLOADLIBS BSLOADLIBS LD_RUN_PATH
+	 EXTRALIBS LDLOADLIBS BSLOADLIBS
 	 /) {
 	next unless defined $self->{$tmp};
+	push @m, "$tmp = $self->{$tmp}\n";
+    }
+    # don't set LD_RUN_PATH if empty
+    for $tmp (qw/
+	 LD_RUN_PATH
+	 /) {
+	next unless $self->{$tmp};
 	push @m, "$tmp = $self->{$tmp}\n";
     }
     return join "", @m;
@@ -1089,14 +1096,22 @@ $(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) blibdirs.ts $(EXPORT_LIST) $
         }
     }
 
-    push(@m,
-'	LD_RUN_PATH="$(LD_RUN_PATH)" $(LD) '.$ldrun.' $(LDDLFLAGS) '.$ldfrom.
-' $(OTHERLDFLAGS) -o $@ $(MYEXTLIB) $(PERL_ARCHIVE) '.$libs.' $(PERL_ARCHIVE_AFTER) $(EXPORT_LIST) $(INST_DYNAMIC_FIX)');
-    push @m, '
-	$(CHMOD) $(PERM_RWX) $@
-';
+    my $ld_run_path_shell = "";
+    if ($self->{LD_RUN_PATH} ne "") {
+	$ld_run_path_shell = 'LD_RUN_PATH="$(LD_RUN_PATH)"';
+    }
 
-    join('',@m);
+    push @m, sprintf <<'MAKE', $ld_run_path_shell, $ldrun, $ldfrom, $libs;
+	%s $(LD) %s $(LDDLFLAGS) %s $(OTHERLDFLAGS) -o $@ $(MYEXTLIB) \
+	  $(PERL_ARCHIVE) %s $(PERL_ARCHIVE_AFTER) $(EXPORT_LIST)     \
+	  $(INST_DYNAMIC_FIX)
+MAKE
+
+    push @m, <<'MAKE';
+	$(CHMOD) $(PERM_RWX) $@
+MAKE
+
+    return join('',@m);
 }
 
 =item exescan
@@ -3209,6 +3224,10 @@ sub pm_to_blib {
     my $self = shift;
     my($autodir) = $self->catdir('$(INST_LIB)','auto');
     my $r = q{
+# For backwards compat with anything that referenced this target.
+pm_to_blib: pm_to_blib.ts
+	$(NOOP)
+
 pm_to_blib.ts: $(TO_INST_PM)
 };
 
