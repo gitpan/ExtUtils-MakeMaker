@@ -1,7 +1,7 @@
 package ExtUtils::Mkbootstrap;
 
 $VERSION = substr q$Revision: 1.1.1.1 $, 10;
-# $Date: 2001/07/04 04:11:18 $
+# $Date: 2002/01/16 19:27:19 $
 
 use Config;
 use Exporter;

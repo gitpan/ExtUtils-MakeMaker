@@ -5,18 +5,14 @@
 # - Fill in your dependencies in PREREQ_PM
 # Alternatively, you can say the hell with this and use h2xs.
 
-BEGIN {
-    require 5.004;
-}
+use 5.006001;
 
-# Use the new MakeMaker.  Hell, best way to test it!
-use lib qw(lib);
-
+use lib qw(lib);    # build ourself with ourself
 use ExtUtils::MakeMaker;
 
 $PACKAGE = 'ExtUtils::MakeMaker';
 ($PACKAGE_FILE = $PACKAGE) =~ s|::|/|g;
-$LAST_API_CHANGE = 5.17;
+$LAST_API_CHANGE = 0;
 
 eval "require $PACKAGE";
 
@@ -30,32 +26,40 @@ are upgrading from a version older than $LAST_API_CHANGE.
 CHANGE_WARN
 }
 
-
-die <<ALPHA_WARN;
-**WARNING**WARNING**WARNING**WARNING**WARNING**WARNING**WARNING**WARNING**
-
-This is an ALPHA VERSION of ExtUtils::MakeMaker!  It has not been tested
-throughly.  If you install this module you risk SEVERELY BREAKING YOUR
-PERL INSTALLATION!!!
-
-If you REALLY want to install this module, simply comment out the 'die'
-in Makefile.PL
-
-This installation will now abort.
-
-**WARNING**WARNING**WARNING**WARNING**WARNING**WARNING**WARNING**WARNING**
-ALPHA_WARN
-
-
 WriteMakefile(
     NAME            => $PACKAGE,
     VERSION_FROM    => "lib/$PACKAGE_FILE.pm", # finds $VERSION
-    PREREQ_PM       => { 
-                        File::Spec  => 0.82
+    PREREQ_PM       => { File::Spec         => 0.8,
+                         File::Basename     => 0,
+                         DirHandle          => 0,
+                         Test::More         => 0.40,
                        },
     INSTALLDIRS     => 'perl',
-    'dist'          => { COMPRESS   => 'gzip -9',
-                         SUFFIX     => '.gz',
-                         DIST_DEFAULT   => 'all tardist',
-                       },
+    EXE_FILES       => [qw(bin/inst bin/xsubpp)]
 );
+
+
+{
+    package MY;
+
+    sub test_via_harness {
+        my($self, $orig_perl, $tests) = @_;
+
+        my @perls = ($orig_perl);
+        push @perls, qw(bleadperl 
+                        perl5.6.1
+                        perl5.6.0
+                        perl5.005_03 
+                        perl5.004_05 
+                        perl5.004_04
+                        perl5.004)
+          if $ENV{PERL_TEST_ALL};
+
+        my $out;
+        foreach my $perl (@perls) {
+            $out .= $self->SUPER::test_via_harness($perl, $tests);
+        }
+
+        return $out;
+    }
+}

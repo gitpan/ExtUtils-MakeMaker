@@ -1,15 +1,23 @@
-#!./perl -w
+#!/usr/bin/perl -w
 
 print "1..27\n";
 
+BEGIN {
+    if( $ENV{PERL_CORE} ) {
+        chdir 't' if -d 't';
+        @INC = '../lib';
+    }
+}
+
+# use warnings;
 use strict;
 use ExtUtils::MakeMaker;
 use ExtUtils::Constant qw (constant_types C_constant XS_constant autoload);
 use Config;
-use File::Spec::Functions qw(:DEFAULT rel2abs);
-
+use File::Spec::Functions qw(catfile rel2abs);
 # Because were are going to be changing directory before running Makefile.PL
-my $perl = rel2abs( $^X );
+my $perl;
+$perl = rel2abs( $^X ) unless $] < 5.006; # Hack. Until 5.00503 has rel2abs
 # ExtUtils::Constant::C_constant uses $^X inside a comment, and we want to
 # compare output to ensure that it is the same. We were probably run as ./perl
 # whereas we will run the child with the full path in $perl. So make $^X for
@@ -17,7 +25,7 @@ my $perl = rel2abs( $^X );
 $^X = $perl;
 
 print "# perl=$perl\n";
-my $runperl = "$perl -x \"-I../blib/lib\"";
+my $runperl = "$perl -x \"-I../../lib\"";
 
 $| = 1;
 
@@ -39,14 +47,7 @@ my $package = "ExtTest";
 
 # Test the code that generates 1 and 2 letter name comparisons.
 my %compass = (
-               N        => 0, 
-               'NE'     => 45, 
-               E        => 90, 
-               SE       => 135, 
-               S        => 180, 
-               SW       => 225, 
-               W        => 270, 
-               NW       => 315
+N => 0, 'NE' => 45, E => 90, SE => 135, S => 180, SW => 225, W => 270, NW => 315
 );
 
 my $parent_rfc1149 =
@@ -134,11 +135,14 @@ print FH "use $];\n";
 print FH <<'EOT';
 
 use strict;
+EOT
+printf FH "use warnings;\n" unless $] < 5.006;
+print FH <<'EOT';
 use Carp;
 
 require Exporter;
 require DynaLoader;
-use vars qw ($VERSION @ISA @EXPORT_OK);
+use vars qw ($VERSION @ISA @EXPORT_OK $AUTOLOAD);
 
 $VERSION = '0.01';
 @ISA = qw(Exporter DynaLoader);
@@ -292,7 +296,7 @@ my %compass = (
 EOT
 
 while (my ($point, $bearing) = each %compass) {
-  print FH "$point => $bearing, "
+  print FH "'$point' => $bearing, "
 }
 
 print FH <<'EOT';
@@ -445,7 +449,7 @@ if ($?) {
   print "not ok $test # $maketest failed: $?\n";
   print "# $_" foreach @makeout;
 } else {
-  print "ok $test\n";
+  print "ok $test - maketest\n";
 }
 $test++;
 
@@ -453,7 +457,7 @@ my $regen = `$runperl $package.xs`;
 if ($?) {
   print "not ok $test # $runperl $package.xs failed: $?\n";
 } else {
-  print "ok $test\n";
+  print "ok $test - regen\n";
 }
 $test++;
 
@@ -461,11 +465,11 @@ my $expect = $constant_types . $C_constant .
   "\n#### XS Section:\n" . $XS_constant;
 
 if ($expect eq $regen) {
-  print "ok $test\n";
+  print "ok $test - regen worked\n";
 } else {
-  print "not ok $test\n";
-  # open FOO, ">expect"; print FOO $expect;
-  # open FOO, ">regen"; print FOO $regen; close FOO;
+  print "not ok $test - regen worked\n";
+  open FOO, ">expect"; print FOO $expect;
+  open FOO, ">regen"; print FOO $regen; close FOO;
 }
 $test++;
 

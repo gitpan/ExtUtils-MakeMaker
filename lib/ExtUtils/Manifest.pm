@@ -8,11 +8,11 @@ use File::Spec::Functions qw(splitpath);
 use Carp;
 use strict;
 
-use vars qw($VERSION @ISA @EXPORT_OK 
-            $Is_MacOS $Is_VMS 
-            $Debug $Verbose $Quiet $MANIFEST $found $DEFAULT_MSKIP);
+our ($VERSION,@ISA,@EXPORT_OK,
+	    $Is_MacOS,$Is_VMS,
+	    $Debug,$Verbose,$Quiet,$MANIFEST,$found,$DEFAULT_MSKIP);
 
-$VERSION = substr(q$Revision: 1.2 $, 10);
+$VERSION = substr(q$Revision: 1.1.1.1 $, 10);
 @ISA=('Exporter');
 @EXPORT_OK = ('mkmanifest', 'manicheck', 'fullcheck', 'filecheck', 
 	      'skipcheck', 'maniread', 'manicopy');
@@ -29,13 +29,13 @@ $DEFAULT_MSKIP = (splitpath($INC{"ExtUtils/Manifest.pm"}))[1]."$MANIFEST.SKIP";
 
 # Really cool fix from Ilya :)
 unless (defined $Config{d_link}) {
-    local $^W = 0;
+    no warnings;
     *ln = \&cp;
 }
 
 sub mkmanifest {
     my $manimiss = 0;
-    my $read = maniread() or $manimiss++;
+    my $read = (-r 'MANIFEST' && maniread()) or $manimiss++;
     $read = {} if $manimiss;
     local *M;
     rename $MANIFEST, "$MANIFEST.bak" unless $manimiss;
@@ -69,34 +69,35 @@ sub manifind {
 	      $name =~ s/^:([^:]+)$/$1/ if $Is_MacOS;
 	      warn "Debug: diskfile $name\n" if $Debug;
 	      $name =~ s#(.*)\.$#\L$1# if $Is_VMS;
+	      $name = uc($name) if /^MANIFEST/i && $Is_VMS;
 	      $found->{$name} = "";}, $Is_MacOS ? ":" : ".");
     $found;
 }
 
 sub fullcheck {
-    _manicheck(3);
+    _manicheck({check_files => 1, check_MANIFEST => 1});
 }
 
 sub manicheck {
-    return @{(_manicheck(1))[0]};
+    return @{(_manicheck({check_files => 1}))[0]};
 }
 
 sub filecheck {
-    return @{(_manicheck(2))[1]};
+    return @{(_manicheck({check_MANIFEST => 1}))[1]};
 }
 
 sub skipcheck {
-    _manicheck(6);
+    _manicheck({check_MANIFEST => 1, warn_on_skip => 1});
 }
 
 sub _manicheck {
-    my($arg) = @_;
+    my($p) = @_;
     my $read = maniread();
     my $found = manifind();
     my $file;
     my $dosnames=(defined(&Dos::UseLFN) && Dos::UseLFN()==0);
     my(@missfile,@missentry);
-    if ($arg & 1){
+    if ($p->{check_files}){
 	foreach $file (sort keys %$read){
 	    warn "Debug: manicheck checking from $MANIFEST $file\n" if $Debug;
             if ($dosnames){
@@ -110,13 +111,12 @@ sub _manicheck {
 	    }
 	}
     }
-    if ($arg & 2){
+    if ($p->{check_MANIFEST}){
 	$read ||= {};
 	my $matches = _maniskip();
-	my $skipwarn = $arg & 4;
 	foreach $file (sort keys %$found){
 	    if (&$matches($file)){
-		warn "Skipping $file\n" if $skipwarn;
+		warn "Skipping $file\n" if $p->{warn_on_skip};
 		next;
 	    }
 	    warn "Debug: manicheck checking from disk $file\n" if $Debug;
@@ -142,15 +142,15 @@ sub maniread {
     while (<M>){
 	chomp;
 	next if /^#/;
+
+        my($file, $comment) = /^(\S+)\s*(.*)/;
+        next unless $file;
+
 	if ($Is_MacOS) {
-	    my($item,$text) = /^(\S+)\s*(.*)/;
-	    $item = _macify($item);
-	    $item =~ s/\\([0-3][0-7][0-7])/sprintf("%c", oct($1))/ge;
-	    $read->{$item}=$text;
+	    $file = _macify($file);
+	    $file =~ s/\\([0-3][0-7][0-7])/sprintf("%c", oct($1))/ge;
 	}
 	elsif ($Is_VMS) {
-	    my($file)= /^(\S+)/;
-	    next unless $file;
 	    my($base,$dir) = File::Basename::fileparse($file);
 	    # Resolve illegal file specifications in the same way as tar
 	    $dir =~ tr/./_/;
@@ -158,9 +158,11 @@ sub maniread {
 	    if (@pieces > 2) { $base = shift(@pieces) . '.' . join('_',@pieces); }
 	    my $okfile = "$dir$base";
 	    warn "Debug: Illegal name $file changed to $okfile\n" if $Debug;
-	    $read->{"\L$okfile"}=$_;
+            $file = $okfile;
+            $file = lc($file) unless $file =~ /^MANIFEST/i;
 	}
-	else { /^(\S+)\s*(.*)/ and $read->{$1}=$2; }
+
+        $read->{$file} = $comment;
     }
     close M;
     $read;

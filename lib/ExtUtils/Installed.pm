@@ -1,6 +1,6 @@
 package ExtUtils::Installed;
 
-use 5.004;
+use 5.006_001;
 use strict;
 use Carp qw();
 use ExtUtils::Packlist;
@@ -8,8 +8,8 @@ use ExtUtils::MakeMaker;
 use Config;
 use File::Find;
 use File::Basename;
-use vars qw($VERSION);
-$VERSION = '0.03';
+use File::Spec;
+our $VERSION = '0.04';
 
 my $DOSISH = ($^O =~ /^(MSWin\d\d|os2|dos|mint)$/);
 
@@ -85,7 +85,7 @@ if ($DOSISH)
 
 # Read the core packlist
 $self->{Perl}{packlist} =
-   ExtUtils::Packlist->new("$installarchlib/.packlist");
+   ExtUtils::Packlist->new( File::Spec->catfile($installarchlib, '.packlist') );
 $self->{Perl}{version} = $Config{version};
 
 # Read the module packlists
@@ -105,7 +105,7 @@ my $sub = sub
    $self->{$module}{version} = '';
    foreach my $dir (@INC)
       {
-      my $p = MM->catfile($dir, $modfile);
+      my $p = File::Spec->catfile($dir, $modfile);
       if (-f $p)
          {
          $self->{$module}{version} = MM->parse_version($p);

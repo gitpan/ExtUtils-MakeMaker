@@ -1,14 +1,15 @@
 package ExtUtils::Command;
 
-use 5.004;
+use 5.006_001;
 use strict;
+# use AutoLoader;
 use Carp;
 use File::Copy;
 use File::Compare;
 use File::Basename;
 use File::Path qw(rmtree);
 require Exporter;
-use vars qw(@ISA @EXPORT $VERSION);
+our(@ISA, @EXPORT, $VERSION);
 @ISA     = qw(Exporter);
 @EXPORT  = qw(cp rm_f rm_rf mv cat eqtime mkpath touch test_f);
 $VERSION = '1.02';
@@ -70,7 +71,7 @@ sub eqtime
  utime((stat($src))[8,9],$dst);
 }
 
-=item rm_f files....
+=item rm_rf files....
 
 Removes directories - recursively (even if readonly)
 
@@ -107,8 +108,8 @@ Makes files exist, with current timestamp
 
 sub touch
 {
- expand_wildcards();
  my $t    = time;
+ expand_wildcards();
  while (@ARGV)
   {
    my $file = shift(@ARGV);               
