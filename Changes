@@ -1,3 +1,20 @@
+=head2 December 6, 1996
+
+Reducing the size of the MakeMaker distribution by breaking out
+several parts that are part of the core perl anyway or that are easier
+to maintain separately.
+
+Fixed formatting of MM_Unix, where several =back were missing.
+
+Applied Ilya's patch and docu corrections of Date: Sun, 13 Oct 1996
+04:34:23 -0400 (EDT)
+
+Check in all the changes since 5.38 that were done by pumkin holders
+since 5.38.
+
+Eliminate Correct_relativ_subdirectories mechanics that were
+deprecated a long time ago.
+
 =head2 v5.38  September 3, 1996 by Andreas König
 
 Integrates a recent patch by Tim for parse_version that eliminates a

@@ -1,7 +1,7 @@
 package ExtUtils::Install;
 
-$VERSION = substr q$Revision: 1.15 $, 10;
-# $Date: 1996/09/03 21:58:58 $
+$VERSION = substr q$Revision: 1.16 $, 10;
+# $Date: 1996/12/17 00:31:26 $
 
 use Exporter;
 use Carp ();
@@ -247,7 +247,9 @@ sub pm_to_blib {
 	    mkpath(dirname($fromto->{$_}),0,0755);
 	}
 	copy($_,$fromto->{$_});
-	chmod(0444 | ( (stat)[2] & 0111 ? 0111 : 0 ),$fromto->{$_});
+	my($mode,$atime,$mtime) = (stat)[2,8,9];
+	utime($atime,$mtime+$Is_VMS,$fromto->{$_});
+	chmod(0444 | ( $mode & 0111 ? 0111 : 0 ),$fromto->{$_});
 	print "cp $_ $fromto->{$_}\n";
 	next unless /\.pm$/;
 	autosplit($fromto->{$_},$autodir);
@@ -312,8 +314,8 @@ be copied preserving timestamps and permissions.
 
 There are two keys with a special meaning in the hash: "read" and
 "write". After the copying is done, install will write the list of
-target files to the file named by $hashref->{write}. If there is
-another file named by $hashref->{read}, the contents of this file will
+target files to the file named by C<$hashref-E<gt>{write}>. If there is
+another file named by C<$hashref-E<gt>{read}>, the contents of this file will
 be merged into the written file. The read and the written file may be
 identical, but on AFS it is quite likely, people are installing to a
 different directory than the one where the files later appear.

@@ -2,7 +2,7 @@ BEGIN{unshift @INC, "./lib";}
 use ExtUtils::MakeMaker;
 $Verbose++ if $ENV{USER} eq "k";
 
-# $Id: Makefile.PL,v 1.16 1996/04/11 10:38:53 k Exp $
+# $Id: Makefile.PL,v 1.16 1996/04/11 10:38:53 k Exp k $
 
 WriteMakefile(
 	      INSTALLDIRS => 'perl',   # As it is a standard module,
@@ -12,6 +12,7 @@ WriteMakefile(
                                        # MakeMaker, so it can install
                                        # itself
 	      VERSION_FROM => 'lib/ExtUtils/MakeMaker.pm',
+	      EXE_FILES => [q[mm_dummy_exe]],
 	      NAME      => "ExtUtils::MakeMaker",
 	      DISTNAME  => "MakeMaker",
 	      dist      => {
