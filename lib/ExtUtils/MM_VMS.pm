@@ -16,7 +16,7 @@ BEGIN {
 use File::Basename;
 use vars qw($Revision @ISA $VERSION);
 ($VERSION) = '5.71_09';
-($Revision) = q$Revision: 3928 $ =~ /Revision:\s+(\S+)/;
+($Revision) = q$Revision: 3933 $ =~ /Revision:\s+(\S+)/;
 
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
@@ -288,6 +288,36 @@ the 256 character limit.
 
 sub pasthru {
     return "PASTHRU=\n";
+}
+
+
+=item pm_to_blib (override)
+
+VMS wants a dot in every file so we can't have one called 'pm_to_blib',
+it becomes 'pm_to_blib.' and MMS/K isn't smart enough to know that when
+you have a target called 'pm_to_blib' it should look for 'pm_to_blib.'.
+
+So in VMS its pm_to_blib.ts.
+
+=cut
+
+sub pm_to_blib {
+    my $self = shift;
+
+    my $make = $self->SUPER::pm_to_blib;
+
+    $make =~ s{^pm_to_blib :}{pm_to_blib.ts :};
+    $make =~ s{\$\(TOUCH\) pm_to_blib}{\$(TOUCH) pm_to_blib.ts};
+
+    $make = <<'MAKE' . $make;
+# Dummy target to match Unix target name; we use pm_to_blib.ts as
+# timestamp file to avoid repeated invocations under VMS
+pm_to_blib : pm_to_blib.ts
+	$(NOECHO) $(NOOP)
+
+MAKE
+
+    return $make;
 }
 
 
