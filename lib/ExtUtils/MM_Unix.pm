@@ -301,7 +301,7 @@ clean :: clean_subdirs
     push @m, "\t-\$(RM_RF) @otherfiles\n";
     # See realclean and ext/utils/make_ext for usage of Makefile.old
     push(@m,
-	 "\t-\$(MV) \$(MAKEFILE) \$(MAKEFILE_OLD) \$(DEV_NULL)\n");
+	 "\t-\$(MV) \$(FIRST_MAKEFILE) \$(MAKEFILE_OLD) \$(DEV_NULL)\n");
     push(@m,
 	 "\t$attribs{POSTOP}\n")   if $attribs{POSTOP};
     join("", @m);
@@ -331,7 +331,7 @@ NOOP_FRAG
 
     for my $dir (@{$self->{DIR}}) {
         $clean .= sprintf <<'MAKE_FRAG', $dir;
-	-cd %s && $(TEST_F) $(MAKEFILE) && $(MAKE) clean
+	-cd %s && $(TEST_F) $(FIRST_MAKEFILE) && $(MAKE) clean
 MAKE_FRAG
     }
 
@@ -410,7 +410,9 @@ sub const_loadlibs {
 
 =item constants (o)
 
-Initializes lots of constants.
+  my $make_frag = $mm->constants;
+
+Prints out macros for lots of constants.
 
 =cut
 
@@ -434,10 +436,9 @@ sub constants {
               PERL_LIB    
               PERL_ARCHLIB
               LIBPERL_A MYEXTLIB
-              FIRST_MAKEFILE MAKEFILE MAKEFILE_OLD MAKE_APERL_FILE 
+              FIRST_MAKEFILE MAKEFILE_OLD MAKE_APERL_FILE 
               PERLMAINCC PERL_SRC PERL_INC 
               PERL            FULLPERL          ABSPERL
-              PERLSAFE        FULLPERLSAFE      ABSPERLSAFE
               PERLRUN         FULLPERLRUN       ABSPERLRUN
               PERLRUNINST     FULLPERLRUNINST   ABSPERLRUNINST
               FULL_AR PERL_CORE
@@ -779,7 +780,7 @@ sub dist_target {
 
     my $date_check = $self->oneliner(<<'CODE', ['-l']);
 print 'Warning: Makefile possibly out of date with $(VERSION_FROM)'
-  if -e '$(VERSION_FROM)' and -M '$(VERSION_FROM)' < -M '$(MAKEFILE)';
+  if -e '$(VERSION_FROM)' and -M '$(VERSION_FROM)' < -M '$(FIRST_MAKEFILE)';
 CODE
 
     return sprintf <<'MAKE_FRAG', $date_check;
@@ -1003,7 +1004,7 @@ sub dynamic {
     '
 ## $(INST_PM) has been moved to the all: target.
 ## It remains here for awhile to allow for old usage: "make dynamic"
-dynamic :: $(MAKEFILE) $(INST_DYNAMIC) $(INST_BOOT)
+dynamic :: $(FIRST_MAKEFILE) $(INST_DYNAMIC) $(INST_BOOT)
 	$(NOECHO) $(NOOP)
 ';
 }
@@ -1026,7 +1027,7 @@ BOOTSTRAP = $(BASEEXT).bs
 # As Mkbootstrap might not write a file (if none is required)
 # we use touch to prevent make continually trying to remake it.
 # The DynaLoader only reads a non-empty file.
-$(BOOTSTRAP): $(MAKEFILE) $(BOOTDEP) $(INST_ARCHAUTODIR)$(DIRFILESEP).exists
+$(BOOTSTRAP): $(FIRST_MAKEFILE) $(BOOTDEP) $(INST_ARCHAUTODIR)$(DIRFILESEP).exists
 	$(NOECHO) echo "Running Mkbootstrap for $(NAME) ($(BSLOADLIBS))"
 	$(NOECHO) $(PERLRUN) \
 		"-MExtUtils::Mkbootstrap" \
@@ -1187,7 +1188,7 @@ WARNING
             # To avoid using the unportable 2>&1 to supress STDERR,
             # we close it before running the command.
             close STDERR if $stderr_duped;
-            $val = `"$abs" -e "require $ver; print qq{VER_OK\n}"`;
+            $val = `$abs -e "require $ver; print qq{VER_OK\n}"`;
             open STDERR, '>&STDERR_COPY' if $stderr_duped;
 
             if ($val =~ /^VER_OK/) {
@@ -1842,7 +1843,7 @@ usually solves this kind of problem.
 
 Initializes EXTRALIBS, BSLOADLIBS, LDLOADLIBS, LIBS, LD_RUN_PATH,
 OBJECT, BOOTDEP, PERLMAINCC, LDFROM, LINKTYPE, SHELL, NOOP,
-FIRST_MAKEFILE, MAKEFILE, MAKEFILE_OLD, NOECHO, RM_F, RM_RF, TEST_F,
+FIRST_MAKEFILE, MAKEFILE_OLD, NOECHO, RM_F, RM_RF, TEST_F,
 TOUCH, CP, MV, CHMOD, UMASK_NULL
 
 =cut
@@ -1897,9 +1898,9 @@ sub init_others {	# --- Initialize Other Attributes
     $self->{NOECHO}             = '@' unless defined $self->{NOECHO};
 
     $self->{MAKEFILE}           ||= 'Makefile';
-    $self->{FIRST_MAKEFILE}     ||= '$(MAKEFILE)';
-    $self->{MAKEFILE_OLD}       ||= '$(MAKEFILE).old';
-    $self->{MAKE_APERL_FILE}    ||= '$(MAKEFILE).aperl';
+    $self->{FIRST_MAKEFILE}     ||= $self->{MAKEFILE};
+    $self->{MAKEFILE_OLD}       ||= '$(FIRST_MAKEFILE).old';
+    $self->{MAKE_APERL_FILE}    ||= '$(FIRST_MAKEFILE).aperl';
 
     $self->{SHELL}              ||= $Config{sh} || '/bin/sh';
 
@@ -2241,8 +2242,6 @@ Called by init_main.  Sets up ABSPERL, PERL, FULLPERL and all the
     PERL is allowed to be miniperl
     FULLPERL must be a complete perl
 
-    *PERLSAFE is *PERL safe for use in shell commands
-    
     ABSPERL is PERL converted to an absolute path
 
     *PERLRUN contains everything necessary to run perl, find it's
@@ -2310,11 +2309,9 @@ sub init_PERL {
 
     # How do we run perl?
     foreach my $perl (qw(PERL FULLPERL ABSPERL)) {
-        my $safe = $perl.'SAFE';
         my $run  = $perl.'RUN';
 
-        $self->{$safe} = $self->quote_literal("\$($perl)");
-        $self->{$run}  = "\$($safe)";
+        $self->{$run}  = "\$($perl)";
 
         # Make sure perl can find itself before it's installed.
         $self->{$run} .= q{ "-I$(PERL_LIB)" "-I$(PERL_ARCHLIB)"} 
@@ -2561,7 +2558,7 @@ realclean ::
 	last unless defined $from;
 	my $todir = dirname($to);
 	push @m, "
-$to: $from \$(MAKEFILE) " . File::Spec->catdir($todir,'.exists') . "
+$to: $from \$(FIRST_MAKEFILE) " . File::Spec->catdir($todir,'.exists') . "
 	\$(NOECHO) \$(RM_F) $to
 	\$(CP) $from $to
 	\$(FIXIN) $to
@@ -2659,7 +2656,7 @@ $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE)
 	$(NOECHO) echo Writing \"$(MAKE_APERL_FILE)\" for this $(MAP_TARGET)
 	$(NOECHO) $(PERLRUNINST) \
 		Makefile.PL DIR=}, $dir, q{ \
-		MAKEFILE=$(MAKE_APERL_FILE) LINKTYPE=static \
+		FIRST_MAKEFILE=$(MAKE_APERL_FILE) LINKTYPE=static \
 		MAKEAPERL=1 NORECURS=1 CCCDLFLAGS=};
 
 	foreach (@ARGV){
@@ -2889,11 +2886,11 @@ $(OBJECT) : $(FIRST_MAKEFILE)
     push @m, q{
 # We take a very conservative approach here, but it\'s worth it.
 # We move Makefile to Makefile.old here to avoid gnu make looping.
-$(MAKEFILE) : Makefile.PL $(CONFIGDEP) $(VERSION_FROM)
+$(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP) $(VERSION_FROM)
 	$(NOECHO) echo "Makefile out-of-date with respect to $?"
 	$(NOECHO) echo "Cleaning current config before rebuilding Makefile..."
 	$(NOECHO) $(RM_F) $(MAKEFILE_OLD)
-	$(NOECHO) $(MV)   $(MAKEFILE) $(MAKEFILE_OLD)
+	$(NOECHO) $(MV)   $(FIRST_MAKEFILE) $(MAKEFILE_OLD)
 	-$(MAKE) -f $(MAKEFILE_OLD) clean $(DEV_NULL) || $(NOOP)
 	$(PERLRUN) Makefile.PL }.join(" ",map(qq["$_"],@ARGV)).q{
 	$(NOECHO) echo "==> Your Makefile has been rebuilt. <=="
@@ -3049,7 +3046,7 @@ sub pasthru {
     $sep .= "\\\n\t";
 
     foreach $key (qw(LIB LIBPERL_A LINKTYPE PREFIX OPTIMIZE)) {
-	push @pasthru, "$key=\"\$($key)\"" if defined $self->{$key};
+	push @pasthru, "$key=\"\$($key)\"";
     }
 
     foreach $key (qw(DEFINE INC)) {
@@ -3273,14 +3270,14 @@ sub ppd {
     $author =~ s/@/\\@/g;
 
     my $ppd_xml = sprintf <<'PPD_HTML', $pack_ver, $abstract, $author;
-<SOFTPKG NAME="$(DISTNAME)" VERSION="%s">\n\t<TITLE>$(DISTNAME)</TITLE>\n\t<ABSTRACT>%s</ABSTRACT>\n\t<AUTHOR>%s</AUTHOR>
+<SOFTPKG NAME="$(DISTNAME)" VERSION="%s">\n\t<TITLE>$(DISTNAME)</TITLE>\n\t<ABSTRACT>%s</ABSTRACT>\n\t<AUTHOR>%s</AUTHOR>\n
 PPD_HTML
 
     # strip off that trailing newline.
     chomp $ppd_xml;
 
     my @ppd_oneliners = (); 
-    push @ppd_oneliners, $self->oneliner(qq{print qq{$ppd_xml}."\\n"});
+    push @ppd_oneliners, $self->oneliner(qq{print qq{$ppd_xml}});
 
     $ppd_xml = '\t<IMPLEMENTATION>\n';
     foreach my $prereq (sort keys %{$self->{PREREQ_PM}}) {
@@ -3447,7 +3444,7 @@ realclean purge ::  clean realclean_subdirs
 
     my @files = ();
     push @files, $attribs{FILES} if $attribs{FILES};
-    push @files, '$(MAKEFILE)', '$(MAKEFILE_OLD)';
+    push @files, '$(FIRST_MAKEFILE)', '$(MAKEFILE_OLD)';
 
     # Occasionally files are repeated several times from different sources
     { my(%f) = map { ($_,1) } @files; @files = keys %f; }
@@ -3494,7 +3491,7 @@ NOOP_FRAG
     foreach my $dir (@{$self->{DIR}}){
         $rclean .= sprintf <<'RCLEAN', $dir, $dir;
 	-cd %s && $(TEST_F) $(MAKEFILE_OLD) && $(MAKE) -f $(MAKEFILE_OLD) realclean
-	-cd %s && $(TEST_F) $(MAKEFILE) && $(MAKE) realclean
+	-cd %s && $(TEST_F) $(FIRST_MAKEFILE) && $(MAKE) realclean
 RCLEAN
 
     }
@@ -3605,7 +3602,7 @@ sub static {
     '
 ## $(INST_PM) has been moved to the all: target.
 ## It remains here for awhile to allow for old usage: "make static"
-static :: $(MAKEFILE) $(INST_STATIC)
+static :: $(FIRST_MAKEFILE) $(INST_STATIC)
 	$(NOECHO) $(NOOP)
 ';
 }
@@ -3771,10 +3768,10 @@ test :: \$(TEST_TYPE)
 ");
 
     if ($Is_Win95) {
-        push(@m, map(qq{\t\$(NOECHO) \$(PERLRUN) -e "exit unless -f shift; chdir '$_'; system q{\$(MAKE) test \$(PASTHRU)}" \$(MAKEFILE)\n}, @{$self->{DIR}}));
+        push(@m, map(qq{\t\$(NOECHO) \$(PERLRUN) -e "exit unless -f shift; chdir '$_'; system q{\$(MAKE) test \$(PASTHRU)}" \$(FIRST_MAKEFILE)\n}, @{$self->{DIR}}));
     }
     else {
-        push(@m, map("\t\$(NOECHO) cd $_ && \$(TEST_F) \$(MAKEFILE) && \$(MAKE) test \$(PASTHRU)\n", @{$self->{DIR}}));
+        push(@m, map("\t\$(NOECHO) cd $_ && \$(TEST_F) \$(FIRST_MAKEFILE) && \$(MAKE) test \$(PASTHRU)\n", @{$self->{DIR}}));
     }
 
     push(@m, "\t\$(NOECHO) echo 'No tests defined for \$(NAME) extension.'\n")
@@ -3854,10 +3851,11 @@ sub tools_other {
     my($self) = shift;
     my @m;
 
-    for (qw/ SHELL CHMOD CP LD MV NOOP NOECHO RM_F RM_RF TEST_F TOUCH 
-             UMASK_NULL DEV_NULL/ ) 
+    for my $tool (qw/ SHELL CHMOD CP LD MV NOOP NOECHO RM_F RM_RF TEST_F TOUCH 
+                      UMASK_NULL DEV_NULL/ ) 
     {
-	push @m, "$_ = $self->{$_}\n";
+        next unless defined $self->{$tool};
+        push @m, "$tool = $self->{$tool}\n";
     }
 
     push @m, q{
@@ -4047,7 +4045,7 @@ pure_all :: config pm_to_blib subdirs linkext
 subdirs :: $(MYEXTLIB)
 	$(NOECHO) $(NOOP)
 
-config :: $(MAKEFILE) $(INST_LIBDIR)$(DIRFILESEP).exists
+config :: $(FIRST_MAKEFILE) $(INST_LIBDIR)$(DIRFILESEP).exists
 	$(NOECHO) $(NOOP)
 
 config :: $(INST_ARCHAUTODIR)$(DIRFILESEP).exists

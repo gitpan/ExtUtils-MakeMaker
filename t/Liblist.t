@@ -13,6 +13,7 @@ chdir 't';
 
 use strict;
 use Test::More tests => 5;
+use Data::Dumper;
 
 BEGIN {
     use_ok( 'ExtUtils::Liblist' );
@@ -25,8 +26,7 @@ BEGIN {
     my @out = ExtUtils::Liblist->ext('-ln0tt43r3_perl');
     is( @out, 4, 'enough output' );
     unlike( $out[2], qr/-ln0tt43r3_perl/, 'bogus library not added' );
-    is( @warn, 1, 'had warning');
-    like($warn[0][0],
-         qr/\QNote (probably harmless): No library found for -ln0tt43r3_perl/,
-         'expected warning');
+    ok( @warn, 'had warning');
+
+    is( grep(/\QNote (probably harmless): No library found for -ln0tt43r3_perl/, map { @$_ } @warn), 1 ) || diag Dumper @warn;
 }

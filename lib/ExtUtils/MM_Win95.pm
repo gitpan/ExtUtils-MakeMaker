@@ -153,7 +153,7 @@ NOOP_FRAG
     for my $dir (@{$self->{DIR}}) {
         $clean .= sprintf <<'MAKE_FRAG', $dir;
 	cd %s
-	$(TEST_F) $(MAKEFILE)
+	$(TEST_F) $(FIRST_MAKEFILE)
 	$(MAKE) clean
 	cd ..
 MAKE_FRAG
@@ -182,7 +182,7 @@ NOOP_FRAG
     foreach my $dir (@{$self->{DIR}}){
         $rclean .= sprintf <<'RCLEAN', $dir;
 	-cd %s
-	-$(PERLRUN) -e "exit unless -f shift; system q{$(MAKE) realclean}" $(MAKEFILE)
+	-$(PERLRUN) -e "exit unless -f shift; system q{$(MAKE) realclean}" $(FIRST_MAKEFILE)
 	-cd ..
 RCLEAN
 
@@ -190,7 +190,20 @@ RCLEAN
 
     return $rclean;
 }
-    
+
+
+=item max_exec_len
+
+Setting to 2500, a value obtained by experimentation.
+
+=cut
+
+sub max_exec_len {
+    my $self = shift;
+
+    return $self->{_MAX_EXEC_LEN} ||= 2500;
+}
+
 =back
 
 
