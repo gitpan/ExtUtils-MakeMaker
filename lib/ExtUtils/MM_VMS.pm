@@ -1,8 +1,3 @@
-#   MM_VMS.pm
-#   MakeMaker default methods for VMS
-#
-#   Author:  Charles Bailey  bailey@newman.upenn.edu
-
 package ExtUtils::MM_VMS;
 
 use strict;
@@ -20,8 +15,8 @@ BEGIN {
 
 use File::Basename;
 use vars qw($Revision @ISA $VERSION);
-($VERSION) = '5.71_02';
-($Revision) = q$Revision: 1.116 $ =~ /Revision:\s+(\S+)/;
+($VERSION) = '5.71_03';
+($Revision) = q$Revision: 4056 $ =~ /Revision:\s+(\S+)/;
 
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
@@ -297,6 +292,69 @@ sub perl_script {
     return '';
 }
 
+=item dir_target (override)
+
+Override dir_target because MMS/K cannot have a directory be a target
+directly, but a directory file can be.
+
+Each directory target is translated into a directory file and that the
+target which makes a directory.  Then a directory target is made which
+depends on the dirfile target so the directory can be used as a
+dependency in other targets.
+
+=cut
+
+sub dir_target {
+    my($self, @dirs) = @_;
+
+    my $make = '';
+    foreach my $dir (@dirs) {
+        my $dirfile = $self->_to_dirfile($dir);
+        
+        $make .= sprintf <<'MAKE', $dir, $dirfile;
+%s : %s
+        $(NOECHO) $(NOOP)
+
+MAKE
+
+        $make .= $self->SUPER::dir_target($dirfile);
+    }
+
+    return $make;
+}
+
+
+=begin private
+
+=item _to_dirfile
+
+    my $dirfile = $mm->_to_dirfile($dir);
+
+Translate a directory specification into a directory file.  ie.
+
+    [foo.bar]
+
+to
+
+    [foo]bar.dir
+
+=end private
+
+=cut
+
+sub _to_dirfile {
+    my($self, $dir) = @_;
+
+    $dir = $self->fixpath($dir, 1);
+
+    my($vol, $dirs, $file) = $self->splitpath($dir);
+    my @dirs = $self->splitdir($dirs);
+    my $dirfile = pop @dirs;
+
+    return $self->catpath( $vol, $self->catdir(@dirs), "$dirfile.dir" );
+}
+
+
 =item replace_manpage_separator
 
 Use as separator a character which is legal in a VMS-syntax file name.
@@ -428,11 +486,16 @@ CODE
 
     $self->{SHELL}    ||= 'Posix';
 
+    $self->SUPER::init_others;
+
     $self->{CP} = 'Copy/NoConfirm';
     $self->{MV} = 'Rename/NoConfirm';
     $self->{UMASK_NULL} = '! ';  
 
-    $self->SUPER::init_others;
+    # Redirection on VMS goes before the command, not after as on Unix.
+    # $(DEV_NULL) is used once and its not worth going nuts over making
+    # it work.  However, Unix's DEV_NULL is quite wrong for VMS.
+    $self->{DEV_NULL}   = '';
 
     if ($self->{OBJECT} =~ /\s/) {
         $self->{OBJECT} =~ s/(\\)?\n+\s+/ /g;
@@ -951,7 +1014,7 @@ INST_DYNAMIC_DEP = $inst_dynamic_dep
 
 ";
     push @m, '
-$(INST_DYNAMIC) : $(INST_STATIC) $(PERL_INC)perlshr_attr.opt blibdirs.ts $(EXPORT_LIST) $(PERL_ARCHIVE) $(INST_DYNAMIC_DEP)
+$(INST_DYNAMIC) : $(INST_STATIC) $(PERL_INC)perlshr_attr.opt $(INST_ARCHAUTODIR) $(EXPORT_LIST) $(PERL_ARCHIVE) $(INST_DYNAMIC_DEP)
 	$(NOECHO) $(MKPATH) $(INST_ARCHAUTODIR)
 	If F$TrnLNm("',$shr,'").eqs."" Then Define/NoLog/User ',"$shr Sys\$Share:$shr.$Config{'dlext'}",'
 	Link $(LDFLAGS) /Shareable=$(MMS$TARGET)$(OTHERLDFLAGS) $(BASEEXT).opt/Option,$(PERL_INC)perlshr_attr.opt/Option
@@ -979,7 +1042,7 @@ $(INST_STATIC) :
     my(@m,$lib);
     push @m,'
 # Rely on suffix rule for update action
-$(OBJECT) : blibdirs.ts
+$(OBJECT) : blibdirs
 
 $(INST_STATIC) : $(OBJECT) $(MYEXTLIB)
 ';
@@ -1821,17 +1884,20 @@ sub eliminate_macros {
 
 =item fixpath
 
+   my $path = $mm->fixpath($path);
+   my $path = $mm->fixpath($path, $is_dir);
+
 Catchall routine to clean up problem MM[SK]/Make macros.  Expands macros
 in any directory specification, in order to avoid juxtaposing two
 VMS-syntax directories when MM[SK] is run.  Also expands expressions which
 are all macro, so that we can tell how long the expansion is, and avoid
 overrunning DCL's command buffer when MM[KS] is running.
 
-If optional second argument has a TRUE value, then the return string is
-a VMS-syntax directory specification, if it is FALSE, the return string
-is a VMS-syntax file specification, and if it is not specified, fixpath()
-checks to see whether it matches the name of a directory in the current
-default directory, and returns a directory or file specification accordingly.
+fixpath() checks to see whether the result matches the name of a
+directory in the current default directory and returns a directory or
+file specification accordingly.  C<$is_dir> can be set to true to
+force fixpath() to consider the path to be a directory or false to force
+it to be a file.
 
 NOTE:  This is the canonical version of the method.  The version in
 File::Spec::VMS is deprecated.
@@ -1897,6 +1963,16 @@ sub os_flavor {
 }
 
 =back
+
+
+=head1 AUTHOR
+
+Original author Charles Bailey F<bailey@newman.upenn.edu>
+
+Maintained by Michael G Schwern F<schwern@pobox.com>
+
+See L<ExtUtils::MakeMaker> for patching and contact information.
+
 
 =cut
 

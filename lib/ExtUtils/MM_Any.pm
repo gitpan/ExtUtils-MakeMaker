@@ -2,7 +2,7 @@ package ExtUtils::MM_Any;
 
 use strict;
 use vars qw($VERSION @ISA);
-$VERSION = '0.10_02';
+$VERSION = '0.10_03';
 @ISA = qw(File::Spec);
 
 # We need $Verbose
@@ -352,8 +352,11 @@ MAKE_EXT
 
     my $make_frag = $mm->blibdirs_target;
 
-Creates the blibdirs.ts target which creates all the directories we use in
-blib/.
+Creates the blibdirs target which creates all the directories we use
+in blib/.
+
+The blibdirs.ts target is deprecated.  Depend on blibdirs instead.
+
 
 =cut
 
@@ -365,15 +368,18 @@ sub blibdirs_target {
                                            bin script
                                            man1dir man3dir
                                           );
-    my @mkpath = $self->split_command('$(NOECHO) $(MKPATH)', @dirs);
-    my @chmod  = $self->split_command('$(NOECHO) $(CHMOD) 755', @dirs);
 
-    my $make = "\nblibdirs.ts :\n";
-    $make .= join "", map { "\t$_\n" } @mkpath, @chmod;
-    $make .= <<'MAKE';
-	$(NOECHO) $(TOUCH) $@
+    my $make = sprintf <<'MAKE', join(' ', @dirs);
+blibdirs : %s
+	$(NOECHO) $(NOOP)
+
+# Backwards compat with 6.18 through 6.25
+blibdirs.ts : blibdirs
+	$(NOECHO) $(NOOP)
 
 MAKE
+
+    $make .= $self->dir_target(@dirs);
 
     return $make;
 }
@@ -445,12 +451,12 @@ clean :: clean_subdirs
     { my(%f) = map { ($_ => 1) } @files; @files = keys %f; }
     { my(%d) = map { ($_ => 1) } @dirs;  @dirs  = keys %d; }
 
-    push @m, map "\t$_\n", $self->split_command('-$(RM_F)',  @files);
-    push @m, map "\t$_\n", $self->split_command('-$(RM_RF)', @dirs);
+    push @m, map "\t$_\n", $self->split_command('- $(RM_F)',  @files);
+    push @m, map "\t$_\n", $self->split_command('- $(RM_RF)', @dirs);
 
     # Leave Makefile.old around for realclean
     push @m, <<'MAKE';
-	-$(MV) $(FIRST_MAKEFILE) $(MAKEFILE_OLD) $(DEV_NULL)
+	- $(MV) $(FIRST_MAKEFILE) $(MAKEFILE_OLD) $(DEV_NULL)
 MAKE
 
     push(@m, "\t$attribs{POSTOP}\n")   if $attribs{POSTOP};
@@ -492,18 +498,31 @@ CODE
 }
 
 
-=head3 dir_target B<DEPRECATED>
+=head3 dir_target
 
     my $make_frag = $mm->dir_target(@directories);
 
-I<This function is deprecated> its use is no longer necessary and is
-I<only provided for backwards compatibility>.  It is now a no-op.
-blibdirs_target provides a much simpler mechanism and pm_to_blib() can
-create its own directories anyway.
+Generates targets to create the specified directories and set its
+permission to 0755.
 
 =cut
 
-sub dir_target {}
+sub dir_target {
+    my($self, @dirs) = @_;
+
+    my $make = '';
+    foreach my $dir (@dirs) {
+        $make .= sprintf <<'MAKE', $dir, $dir, $dir;
+%s :
+	$(NOECHO) $(MKPATH) %s
+	$(NOECHO) $(CHMOD) 755 %s
+
+MAKE
+
+    }
+
+    return $make;
+}
 
 
 =head3 distdir
@@ -708,7 +727,7 @@ CODE
 metafile :
 	$(NOECHO) $(ECHO) Generating META.yml
 	%s
-	-$(NOECHO) %s META_new.yml META.yml
+	- $(NOECHO) %s META_new.yml META.yml
 MAKE_FRAG
 
 }
@@ -774,9 +793,9 @@ sub realclean {
     { my(%d) = map { ($_ => 1) } @dirs;   @dirs  = keys %d; }
 
     my $rm_cmd  = join "\n\t", map { "$_" } 
-                    $self->split_command('-$(RM_F)',  @files);
+                    $self->split_command('- $(RM_F)',  @files);
     my $rmf_cmd = join "\n\t", map { "$_" } 
-                    $self->split_command('-$(RM_RF)', @dirs);
+                    $self->split_command('- $(RM_RF)', @dirs);
 
     my $m = sprintf <<'MAKE', $rm_cmd, $rmf_cmd;
 # Delete temporary files (via clean) and also delete dist files
@@ -817,7 +836,7 @@ chdir '%s';  system '$(MAKE) $(USEMAKEFILE) %s realclean' if -f '%s';
 CODE
 
             $rclean .= sprintf <<'RCLEAN', $subrclean;
-	-%s
+	- %s
 RCLEAN
 
         }
