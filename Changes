@@ -1,3 +1,24 @@
+6.06_04 Sun Mar 30 20:34:39 PST 2003
+    - Now looking for ExtUtils::xsubpp through @INC rather than just
+      the perl core directories.  This helps ExtUtils::ParseXS.
+    - Systems which don't put their libraries under their $Config{prefix}
+      (OS X, Debian) weren't putting their libraries in the spot declared
+      in Config.  It was going under $Config{prefix}.
+    - Prerequisites check now deals better with X.Y_Z style alpha versions
+    - ExtUtils::Liblist->ext() was using $Config{perllibs} which is a 5.6.1
+      thing.  Falling back to $Config{libs} if perllibs isn't there.
+    - ExtUtils::Command::MM now reads from @ARGV if called with no
+      args.  Makes the one liner a bit simpler.
+    * Restored ExtUtils::Liblist::ext() for backwards compatibility.
+      Missing since 5.6.1.
+    - Switching to relative dirs for self-building to shorten
+      command line lengths.
+    - Fixing minor test warning on VMS when compiling ExtUtils::Manifest
+    - Skipping STDIN read prompt() tests on 5.5.3.  Can't test due to
+      eof() not honor tied handles.
+    - Config.pm on 5.5.3 doesn't have any concept of vendor*.  This was
+      causing warnings when generating the Makefile.
+
 6.06_03 Sat Mar 29 19:44:53 PST 2003
     - Added AUTHOR and ABSTRACT_FROM info for ppd generation.
     - Added echo() method to portably echo text to a file.

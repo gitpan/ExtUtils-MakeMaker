@@ -216,6 +216,7 @@ sub init_VERSION {
     $self->{MAKEMAKER}  = $INC{'ExtUtils/MakeMaker.pm'};
     $self->{MM_VERSION} = $ExtUtils::MakeMaker::VERSION;
     $self->{MM_REVISION}= $ExtUtils::MakeMaker::Revision;
+    $self->{VERSION_FROM} ||= '';
 
     if ($self->{VERSION_FROM}){
         $self->{VERSION} = $self->parse_version($self->{VERSION_FROM});
@@ -400,13 +401,10 @@ Typical usage:
 sub POD2MAN_EXE_macro {
     my $self = shift;
 
-    my $pod2man = $self->oneliner('pod2man @ARGV', 
-                                  ['-MExtUtils::Command::MM']);
-
 # Need the trailing '--' so perl stops gobbling arguments and - happens
 # to be an alternative end of line seperator on VMS so we quote it
-    return <<END_OF_DEF;
-POD2MAN_EXE = $pod2man "--"
+    return <<'END_OF_DEF';
+POD2MAN_EXE = $(PERLRUN) "-MExtUtils::Command::MM" -e pod2man "--"
 END_OF_DEF
 }
 
