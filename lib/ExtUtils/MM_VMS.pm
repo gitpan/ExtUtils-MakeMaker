@@ -14,17 +14,18 @@ BEGIN {
 }
 
 use File::Basename;
-use vars qw($Revision);
-use vars qw($VERSION @ISA);
-$VERSION = '5.72';
+
+# $Revision can't be on the same line or SVN/K gets confused
+use vars qw($Revision
+            $VERSION @ISA);
+$VERSION = '5.73';
 
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
 @ISA = qw( ExtUtils::MM_Any ExtUtils::MM_Unix );
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
-$Revision = # Can't be on the same line or SVN/K gets confused
-    $ExtUtils::MakeMaker::Revision;
+$Revision = $ExtUtils::MakeMaker::Revision;
 
 
 =head1 NAME

@@ -21,10 +21,8 @@ use vars qw(
 use vars qw($Revision);
 use strict;
 
-$VERSION = '6.26_01';
-($Revision  # can't put this all on one line or SVN/K gets confused about
-            # $Revision
-   = q$Revision: 4303 $) =~ /Revision:\s+(\S+)/;
+$VERSION = '6.27';
+($Revision = q$Revision: 4357 $) =~ /Revision:\s+(\S+)/;
 
 @ISA = qw(Exporter);
 @EXPORT = qw(&WriteMakefile &writeMakefile $Verbose &prompt);
@@ -2085,7 +2083,7 @@ MakeMaker object. The following lines will be parsed o.k.:
 
     $VERSION = '1.00';
     *VERSION = \'1.01';
-    $VERSION = sprintf "%d.%03d", q$Revision: 4303 $ =~ /(\d+)/g;
+    $VERSION = sprintf "%d.%03d", q$Revision: 4357 $ =~ /(\d+)/g;
     $FOO::VERSION = '1.10';
     *FOO::VERSION = \'1.11';
     our $VERSION = 1.2.3;       # new for perl5.6.0 
