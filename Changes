@@ -1,3 +1,17 @@
+=head2 February 11, 1997
+
+Applied a patch by Ulrich Pfeifer who writes:
+
+If perl is compliled with shared library ano currently cannot build
+static extensions with MakeMaker. Also on SUNOS gernerally building
+extensions involving shared libraries does not work sind the linker
+does not like it if you give it the full path to a shared library. And
+MM does this.
+
+The patch fixes the problems on SUNOS and SOLARIS.
+
+Released that as 5.40.
+
 =head2 December 6, 1996
 
 Reducing the size of the MakeMaker distribution by breaking out
