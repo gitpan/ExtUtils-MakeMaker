@@ -1,0 +1,86 @@
+#!/usr/bin/perl
+
+use lib "lib";
+require ExtUtils::MakeMaker;
+ExtUtils::MakeMaker::full_setup();
+
+open F, "lib/ExtUtils/MakeMaker.pm" or die;
+while (<F>) {
+    if (/\$VERSION\s*=/){
+	next if $seenversion++;
+	print;
+    }
+    if (/^__END__/) {
+	$seenend++;
+	next;
+    }
+    next unless $seenend;
+    $switch ||= /^=item C\s*$/;
+    next unless $switch;
+    last if /^=cut/;
+    next unless /^=item\s+([\w-]+)/;
+    $Docu{$1}++;
+}
+
+@Intern = @ExtUtils::MakeMaker::Attrib_help;
+@Intern{@Intern} = (1) x @Intern;
+
+%All = (%Docu, %Intern);
+for (keys %All) {
+    push @Undocu, $_ unless $Docu{$_};
+    push @Miss, $_ unless $Intern{$_};
+}
+
+if (@Miss) {
+    print "Add to attrib_help: ", join(" ", sort @Miss), "\n";
+}
+if (@Undocu) {
+    print "Undocumented: ", join(" ", sort @Undocu), "\n";
+}
+warn "Found errors in the distribution" if @Miss or @Undocu;
+
+%Docu = %Intern = ();
+@Undocu = @Miss = ();
+
+open F, "lib/ExtUtils/MM_Unix.pm" or die;
+while (<F>) {
+    next unless /^=item/;
+    my($method,$overridable) = (split)[1,2];
+    next unless defined $overridable;
+    next unless $overridable =~ /\(.*o.*\)/;
+#    print "$. method [$method] over [$overridable]\n";
+    $Docu{$method}++;
+}
+
+@Intern = @ExtUtils::MakeMaker::Overridable;
+@Intern{@Intern} = (1) x @Intern;
+
+%All = (%Docu, %Intern);
+for (keys %All) {
+    push @Undocu, $_ unless $Docu{$_};
+    push @Miss, $_ unless $Intern{$_};
+}
+
+if (@Miss) {
+    print "Not in \@Overridable: ", join(" ", sort @Miss), "\n";
+}
+if (@Undocu) {
+    print "Add (o) to methods: ", join(" ", sort @Undocu), "\n";
+}
+warn "Found errors in the distribution" if @Miss or @Undocu;
+
+
+if (@Undocu) {
+    die "Cannot change lib/ExtUtils/MM_Unix.pm" unless -w "lib/ExtUtils/MM_Unix.pm";
+    $^I = ".bak";
+    @ARGV = "lib/ExtUtils/MM_Unix.pm";
+    print "Going to change MM_Unix\n";
+    local $\ = "\n";
+    while (<>) {
+	chop;
+	if (/^=item\s+(\w+)/ && $Intern{$1} && !/\(.*o.*\)/) {
+	    $_ .= " (o)";
+	}
+	print;
+    }
+}

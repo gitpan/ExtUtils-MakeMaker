@@ -2,26 +2,6 @@ The FAQ is entirely composed from mail messages which I started to
 collect in May 1995.
 
 
-
-Subject: I do have dynamic linking, but want to build a static perl with this
-         extension. How do I proceed?
-
-    From: Andreas Koenig <koenig@franz.ww.tu-berlin.de>
-
-    It is a little difficult to build static intentionally when you
-    have dynamic loading available on your system. There's probably
-    something to fix or something to document. Off the top of my head I'd
-    say
-
-       make test LINKTYPE=static FULLPERL=./perl
-
-    Wait a minute...
-
-    Yes, it does the trick here, but only if ./perl already exists,
-    otherwise make(1) is not intelligent enough to know, that perl ===
-    ./perl :(
-
-
 Subject: "make clean" moves Makefile to Makefile.old. Why must that happen?
 
     From: Tim Bunce <Tim.Bunce@ig.co.uk>
@@ -108,31 +88,5 @@ Subject: Multiple MYEXTLIBs don't work
 
     I use lib*.a's - shared library is useless if only thing that uses 
     it is dynamically loaded anyway.
-
-
-Subject: Glue Makefiles for several extensions
-
-    From Paul Marquess <pmarquess@bfsec.bt.co.uk>:
-    This is more or less the directory structure I've got for the source
-    filters.
-
-	  Filter::exec    Filter::decrypt   Filter::tee    t (test harness)
-	        |                   |               |               |
-		+-------------------+---------------+---------------+
-				    |
-				  Filter
-
-    The top level (Filter) is just being used to hold the top-level
-    makefile for building each of the filters which are in
-    sub-directories. So the question is - what should the top-level 
-    Makefile.PL look like if there isn't a .xs file in the current directory?
-
-    Answer:
-    WriteMakefile(
-	NAME      => 'Filter',
-	VERSION   => '1.02',
-	'linkext'   => {LINKTYPE => ''}
-    );
-
 
 

@@ -1,3 +1,398 @@
+=head2 v5.32  April 21, 1996 by Andreas Koenig
+
+Skip pods when scanning VERSION_FROM and do so in a separate
+subroutine, so other programs may use this version parsing method
+(parse_version_var($file))
+
+Set $| to 1 if verbose. (Ilya)
+
+Improve catdir in MM_Unix: it now returns "/" on catdir("/"). All "/"
+operations are done via substr and length for maximum performance.
+
+Introduce three new directory methods: curdir, rootdir, updir. All
+three simply return strings: ".", "/", and "..". This is considered an
+interim solution until we have a File::Generic module.
+
+Deprecated ROOTEXT (it as defined as "with leading slash" and broke
+any portability. Introduced PARENT_NAME instead, which is Foo::Bar for
+Foo::Bar::Baz.
+
+Ilya's patch that enables amnual setting of TEST_FILE and TESTDB_SW is
+in. (Undocumented feature: make testdb TEST_FILE=foo TESTDB_SW=-d:DProf)
+
+Ilya's patch to convert OS2 files to unix line ending conventions is
+in.
+
+Applied Charles' NOOP fix (NOOP was lost in a previous patch)
+
+=head2 v5.31  April 21, 1996 by Andreas Koenig
+
+Deleting single entries in %INC still caused troubles in 5.30, at
+least when 5.002_01 built Tk-b11.02 we got a core dump. The only
+remaining chance is to get rid of the code that deletes these keys and
+teach our users not to use ad-hoc libraries in their Makefile.PLs
+except these ad-hoc libraries can have a guaranteed namespace.
+
+The DIR attribute accepted symlinks in all previous
+MakeMakers. Dropped this to force portablility and disable the
+potential for endless loopings.
+
+Fixed the dependency MAP_TARGET -> static.
+
+Install: There is a new macro called VERBINST which determines the
+verbosity of the 'make install' target. Defaults to 1. 0 is pretty
+silent, 2 is rather noisy. I leave it undocumented for now. Let me
+know, how it goes for you. (Just like UNINST, VERBINST is only a macro
+in the Makefile, not an attribute to the MakeMaker object, but I'm
+open for the future)
+
+Ilya's patches "Assorted patches to MakeMaker" of Tue, 16 Apr are in
+except for the one change: $Config{bin_sh} is replaced with
+$Config{sh}.
+
+In manifypods I found a place where a "read on closed filehandle" was
+possible. Fixed that.
+
+Fixed the places with 'while ($something)' spotted by Sarathy.
+
+Moved the $SIG{__WARN__} into inside WriteMakefile with a local()
+declaration.
+
+=head2 v5.29/30  April 11, 1996 by Andreas Koenig
+
+Reenabled testing through subdirectories after MM-5.25's testdb patch
+disabled it.
+
+Made postamble the very last subroutine call again.
+
+Introduced the macro UNINST which is 0 as a default and is not
+settable from Makefile.PL, only on the 'make install' command
+line. UNINST=1 will have the effect, that both shadowing and shadowed
+files are unlinked. UNINST=0, the default, will write a warning at the
+end of the install routine like so:
+
+    ## Differing version of ExtUtils/Install.pm found. You might like to
+    rm /usr/local/perl5.002_01/lib/site_perl/ExtUtils/Install.pm
+    ## Differing versions of ExtUtils/MakeMaker.pm found. You might like to
+    rm /usr/local/perl5.002_01/lib/site_perl/IP22-irix/ExtUtils/MakeMaker.pm
+    rm /usr/local/perl5.002_01/lib/site_perl/ExtUtils/MakeMaker.pm
+    ## Running 'make install UNINST=1' will unlink all those files for you.
+
+Ulrich Pfeifer sent me a fix for manifypods (was not called unless we
+had pods for section 3, now is also called if we have pods for section
+1)
+
+Changed the Makefile.PL so it doesn't autosplit Install anymore.
+
+Fixed the code that deletes selected entries from %INC: It broke
+MakeMaker for the perl distribution.
+
+=head2 v5.28  April 9, 1996 by Andreas Koenig
+
+Dropped support for the %att hash that was in use until MakeMaker-4.18.
+
+Dropped %NORMAL_INC. Background: %NORMAL_INC was used to determine,
+how we have to selectively delete elements of %INC in order to enable
+repeated inclusion of History.pm or Configure.pm or other pm files
+only used to configure one module. This had unpleasant side effects,
+When libraries were in use, that use prototypes: File::Copy was
+forgotten in %NORMAL_INC, and so was use()d several times. Instead of
+adding File::Copy to %NORMAL_INC, I preferred to delete selectively
+any pm file from %INC, that has a relative place in the filesystem.
+
+Fixed the cflags bug (hash-elements/shell-elements mixed wrongly). Oh
+buy, what a stupid bug did I introduce recently...
+
+Reintroduced two blanks in the constants section.
+
+Fixed the quoting in MANIFYPODS, so path names containing '@' will
+work.
+
+
+=head2 v5.27  April 4, 1996 by Andreas Koenig
+
+The prompt function has changed a little: uses prototype, doesn't
+display a default, if their isn't a default.
+
+Rearranged the subroutines in MM_Unix to be in alphabetical order.
+
+Ulrich Pfeifer pointed out, that scripts should be installed into
+INSTALLSCRIPT not INSTALLBIN. So I introduced a new directory
+blib/script and a new attribute INST_SCRIPT and deprecated
+INST_EXE. Till March 97 INST_EXE will be turned into INST_SCRIPT for
+backwards compatibility. A newly introduced INST_BIN directory
+(blib/bin) will hold real binary files.
+
+'make install' now uninstalls both shadowing and shadowed *.pm files
+if they are different from the currently installed file. E.g.:
+# echo junk > /usr/local/perl5.002_01/lib/site_perl/ExtUtils/Install.pm
+# make install 
+/usr/local/perl5.002_01/bin/perl -MAutoSplit -e 'autosplit("lib/ExtUtils/Install.pm","./blib/lib/auto");'
+...
+Skipping /usr/local/perl5.002_01/lib/ExtUtils/Install.pm (unchanged)
+Unlinking /usr/local/perl5.002_01/lib/site_perl/ExtUtils/Install.pm (shadowing?)
+Skipping /usr/local/perl5.002_01/lib/ExtUtils/Manifest.pm (unchanged)
+...
+Skipping /usr/local/perl5.002_01/man/man3/ExtUtils::MM_OS2.3 (unchanged)
+Writing /usr/local/perl5.002_01/lib/IP22-irix/5.00201/auto/ExtUtils/MakeMaker/.packlist
+Appending installation info to /usr/local/perl5.002_01/lib/IP22-irix/5.00201/perllocal.pod
+#
+
+Ilya's unlink_force patch is in Install.
+
+Ilya's speedup for reading DATA handle is in.
+
+Ilya's path_name_is_absolute patch is in.
+
+Reverted back to $Config{osname} instead of $^O, because I want to
+have a MakeMaker that needs only perl5.002.
+
+Reverted back to simple "depend" relations without a NOOP (but leaving
+all other NOOPs after :: dependencies) (Hint from Dean Roehrich)
+
+Reverted back to DISTVNAME = \$(DISTNAME)-\$(VERSION) instead of
+VERSION_SYM. (Hint from Ulrich Pfeifer)
+
+$(INST_STATIC) e.g. DynaLoader.a now gets removed before we build
+it. (Hint from Tim Bunce)
+
+Permissions are now set to a+rX during make install. (Hint from Rodger
+Anderson)
+
+Introduced INST_SCRIPT and INSTALLSCRIPT to take over the role of
+INST_EXE and INSTALLBIN, but leaving the latter intact. (Hint from
+Ulrich Pfeifer)
+
+Dean's patch to remove PMs during make realclean is in.
+
+Dean's patch to check for has_link_code for realclean is in.
+
+Dean's patch for INCLUDE_EXT and EXCLUDE_EXT is in.
+
+Doesn't run all the xsubpp routines anymore if we don't need linking.
+
+OPTIMIZE now is propagated to MAP_LINKCMD.
+
+=head2 v5.26  March, 1996 by Charles Bailey
+
+This is the version that came with perl5.002_01.
+
+=head2 v5.25  February 29, 1996 by Andreas Koenig
+
+Ilya's testdb patch is in. I left it undocumented as it needs more
+thinking. Didn't come around to develop a more generic approach.
+
+Now require()s 5.002.
+
+Now runs autosplit on ExtUtils::Install in time.
+
+Now suppresses the warning "blib/lib doesn't seem to be a perl library
+directory".
+
+Muchly improved documentation of methods overridable in the MY class.
+
+Reduced the number of overridable methods via the MY class. The
+reduction is very defensive. More reductions will follow in the future
+after a careful analysis what's being overriden on CPAN packages.
+
+Replaced the SelfLoader with my own autoloader. I couldn't do that
+before because of NETaa15299 (pods in evals caused memory corruption).
+This brings a further speedup: 
+
+    MM_Unix with Selfloader:
+    perl Makefile.PL  4.34s user 0.57s system 84% cpu 5.844 total
+    make  14.77s user 3.16s system 78% cpu 22.698 total
+    
+    MM_Unix with my own autoloader
+    perl Makefile.PL  3.82s user 0.55s system 73% cpu 5.920 total
+    make  14.70s user 3.27s system 82% cpu 21.714 total
+
+Both measures add up to a significant speedup with Tk-b9.01: 'perl
+Makefile.PL' needs 
+    18.10s user 5.79s system 63% cpu 37.614 total
+compared to 5.23:
+    28.51s user 5.37s system ???
+
+=head2 v5.24  February 27, 1996 by Andreas Koenig
+
+5.23 was not able to install itself if 5.21 was standard
+MakeMaker. Fixed in this version.
+
+What about an attribute that disables Version_check on your request? I
+called it NO_VC. This shouldn't really go into your Makefile.PLs for
+obvious reasons. Try 'perl Makefile.PL NO_VC=1' and enjoy this one
+second for yourself :-)
+
+=head2 v5.23  February 25, 1996 by Andreas Koenig
+
+Ilya's zipdist support patch is in.
+
+Chip's patch to remove targets before copying is in.
+
+Ilya's patch to compute $Is_OS2 earlier is in.
+
+Ilya's patch to catdir is in (trailing slash).
+
+Dean's two C++ patches are in (more filename extensions)
+
+Ilya's pure_all patch is in (no manify for test)
+
+Assorted speedups: Free memory after a Makefile is flushed if we have
+a parent. Skip all sections dist* and install in objects that have a
+parent. Replaced the voluminous comment in extliblist with a pointer
+to ExtUtils::Liblist. Xsubpp_Version is computed only once and stored
+in a global. Reintroduced SelfLoader for MM_Unix and an own AUTOLOADER
+for MakeMaker.
+
+Version_check time:
+
+          MM 5.21            MM 5.23
+         real 5.63          real 1.79
+         user 4.96          user 1.28
+         sys  0.23          sys  0.13
+
+Time for writing the Makefiles for Tk-b9 dropped from
+
+	66.72s user 9.30s system
+
+to
+
+	28.51s user 5.37s system
+
+on my Indy.
+
+This is important: changed the move_all_methods subroutine so that
+only methods that are already defined in MY will be moved to the
+PACKnnnn class. This means, that any direct call to a MY->method
+(instead of a $self->method call) might break the flow. I haven't
+found such a Makefile. Tk-b8 had, I think such a call, but as Tk-b8
+won't build on 5.002, this seems harmless to me.
+
+Replaced the installpm method with an pm_to_blib method. This writes a
+much more compact Makefile and delegates the whole PM hash to a perl
+program (including autosplit) during make. This is much faster
+especially for large extensions. The price is a new timestamp file
+with the name "pm_to_blib".
+
+Do not use FileHandle anymore, it's drag slow. See the top of MM_Unix
+for some timings.
+
+Deleted VERSION_FROM from CONFIG_DEP, instead inserted a warning in
+'make dist' when VERSION_FROM is newer than Makefile.
+
+Corrected documentation of shardist, tardist, zipdist (PREOP after
+distdir)
+
+Deleted the help() function (Note: 'make help' calls perldoc
+ExtUtils::MakeMaker anyway).
+
+ExtUtils::Manifest now uses File::Copy.
+
+Introduced OPTIMIZE (and friends from cflags) as a variable for easy
+setting of -g.
+
+Added ExtUtils::testlib, Tim's clever pragma.
+
+Replaced the Announce file with a README, so it will be seen on CPAN.
+
+Replaced the old mechanism of attrib_help. We used to read the whole
+pod documentation everytime WriteMakefile was called to determine,
+which attributes are allowed in the WriteMakefile call. Now we
+hardcode these attributes in the source, and 'make dist' runs a verify
+script to check if documentation and the array of allowed attributes
+are in sync.
+
+Finally documented *all* MM_Unix methods with pods.
+
+=head2 v5.21  February 6, 1996 by Andreas Koenig (came with 5.002gamma)
+
+Introducing SelfLoader. Splitting into a bunch of new files: MM_Unix,
+MM_VMS, MM_OS2, Install. Overall gain is excellent. Lots of dead
+seconds could be saved. Unfortunately this not true. I couldn't
+convince MakeMaker that it should run with SelfLoader, and I had to
+comment the whole SelfLoader stuff for later investigation. We do have
+considerable speedups still, but not the really big savings I saw with
+SelfLoader. There is one very nasty interaction between SelfLoader and
+Tk's Makefile.PLs, and only with Tk. See the commented stuff in
+eval_in_subdirs in ExtUtils::MakeMaker to get an impression of the
+whole story.
+
+Permissions of the installed files were wrong.
+
+Assorted patched by Ilya for OS/2 (IMPORT attribute).
+
+OS2/ vs os/2 issues solved.
+
+Enabled libscan to filter the directories that go into $self->{DIR} to
+work around OS/2 behaviour, that calls the RCS file of Makefile.PL
+just that: Makefile.PL.
+
+Improved the automated rewriting of the Makefile by properly
+seperating @ARGV for the second call into double quotes.
+
+Made NOECHO complete functional for tricky rewritings of the
+makefile. For example, I set NOECHO="date; time ", and got excellent
+performance statistics without any extra work.
+
+Deprecated exescan and writedoc.
+
+Started to write the pods for ExtUtils::MM_Unix.
+
+Introduced a new file: ExtUtils::Install. Handles install,
+uninstall. .packlist files really work with this.
+
+Liblist::ext is now a method. Safes us duplicate code.
+
+Added basic pods to OS2 and VMS.
+
+=head2 v5.19  February 4, 1996 by Andreas Koenig
+
+Added documentation how the test target works.
+
+Wrapped a comment out of EXPORT_OK that had slipped in there. Thanks,
+Dean!
+
+Added MakeMaker Revision number (RCS based) to generated Makefile for
+easier debugging during development.
+
+Install to sitelib: Introduce INSTALLSITELIB and INSTALLSITEARCH and
+make the relationship between installsitelib and installsitearch the
+same as the one between installprivlib and installarchlib. Introduce
+INSTALLDIRS to enable selection between the two pairs. Introduce
+SITELIBEXP and SITEARCHEXP to read from. Include SITEARCHEXP in the
+directories to be searched for by makeaperl. Split the targets
+install, reorg_packlist, and uninstall each into two, dedicating one
+for "perl" and the other for "site".
+
+Cleaned up method constants: rewritten to use simple foreach loops for
+most of the constants.
+
+Fixed a bug that didn't allow to set NOECHO to "". Makes debugging
+easier for me.
+
+Changed the layout of the blib directory again, sorry: the
+subdirectories now: lib, arch, bin, man1, man3. This enables a
+straightforward mapping of build and install directories.
+
+This layout enables us to do the 'make install' step by simply copying
+the files from the INST_* directories to the INSTALL* directories. The
+copy is done by File::Copy. So this MakeMaker requires File::Copy be
+included in the perl distribution.
+
+The .packlist files are now written during the 'make install' and the
+uninstall target is now a little bit more verbose.
+
+Introduced AR_STATIC_ARGS defaulting to "cr" for making it easier on
+the NeXT.
+
+=head2 v5.18 January 28, 1996 by Andreas Koenig and Charles Bailey
+
+Fixed netvalue() import into ExtUtils::MM_Unix/OS2.
+
+Fixed EQUALIZE_TIMESTAMP.
+
+Incremented the VERSION_OK to
+
 =head2 v5.17 January 21, 1996 by Andreas Koenig and Charles Bailey
 
 Included a big patch by Charles Bailey for mksymlists(). This patch

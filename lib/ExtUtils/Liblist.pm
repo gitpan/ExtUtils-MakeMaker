@@ -2,15 +2,17 @@ package ExtUtils::Liblist;
 
 # Broken out of MakeMaker from version 4.11
 
+$ExtUtils::Liblist::VERSION = substr q$Revision: 1.18 $, 10;
+
 use Config;
-use Cwd;
+use Cwd 'cwd';
 use File::Basename;
 
 my $Config_libext = $Config{lib_ext} || ".a";
 
 sub ext {
-    my($potential_libs, $Verbose) = @_;
-    if ($Config{'osname'} eq 'os2' and $Config{libs}) { 
+    my($self,$potential_libs, $Verbose) = @_;
+    if ($Config{osname} =~ m|^os/?2$|i and $Config{libs}) { 
 	# Dynamic libraries are not transitive, so we may need including
 	# the libraries linked against perl.dll again.
 
@@ -32,7 +34,7 @@ sub ext {
     my(@libpath) = split " ", $Config{'libpth'};
     my(@ldloadlibs, @bsloadlibs, @extralibs, @ld_run_path, %ld_run_path_seen);
     my($fullname, $thislib, $thispth, @fullname);
-    my($pwd) = fastcwd(); # from Cwd.pm
+    my($pwd) = cwd(); # from Cwd.pm
     my($found) = 0;
 
     foreach $thislib (split ' ', $potential_libs){
@@ -70,7 +72,7 @@ sub ext {
 		# For gcc-2.6.2 on linux (March 1995), DLD can not load
 		# .sa libraries, with the exception of libm.sa, so we
 		# deliberately skip them.
-	    if (@fullname = lsdir($thispth,"^lib$thislib\.$so\.[0-9]+")){
+	    if (@fullname = $self->lsdir($thispth,"^lib$thislib\.$so\.[0-9]+")){
 		# Take care that libfoo.so.10 wins against libfoo.so.9.
 		# Compare two libraries to find the most recent version
 		# number.  E.g.  if you have libfoo.so.9.0.7 and
@@ -169,18 +171,8 @@ sub ext {
     ("@extralibs", "@bsloadlibs", "@ldloadlibs",join(":",@ld_run_path));
 }
 
-sub lsdir { #yes, duplicate code seems less hassle than having an
-            #extra file with only lsdir
-    my($dir, $regex) = @_;
-    local(*DIR, @ls);
-    opendir(DIR, $dir || ".") or return ();
-    @ls = readdir(DIR);
-    closedir(DIR);
-    @ls = grep(/$regex/, @ls) if $regex;
-    @ls;
-}
-
 1;
+
 __END__
 
 =head1 NAME

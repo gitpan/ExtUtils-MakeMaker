@@ -1,11 +1,17 @@
-Since 5.16:
+- From Christopher J Madsen <madsen@computek.net>: 
+ >> >   MAN3PODS => { 'Getopt/Mixed.pm' => '$(INST_MAN3DIR)/Getopt.Mixed.3' },
+  > I did that because deleting that line caused MakeMaker to name the
+  > manpage Getopt.Getopt.Mixed.3, which was obviously wrong.  I didn't
+  > understand why it did that, so I took the easy solution.
 
-Patches by Charles 2 or 3
+- Following a request by Gerd Knops <gerti@BITart.com>, I tried to add
+  AR_STATIC_ARGS, defaulting to "cr". NeXT computers should resolve:
+     AR=libtool
+     AR_STATIC_ARGS="-o"
+  to allow for multiple architecture binaries.
 
-Patch for dgux
-
-add PREFIX to PASTHRU
-
+  But this has to be supported by Configure first. There are probalbly
+  too many hardcoded 'ar cr' calls.
 
 - From Tim:
 
@@ -20,8 +26,6 @@ add PREFIX to PASTHRU
 ! >would appear in both places.
   >
 
-- Actually use the PREREQ attribute. Currently it's only a dummy.
-
 - Don't let extensions write to PERL_SRC/lib anymore, build perl from
   the extensions found below ext, run 'make test' and 'make install'
   on each extension (giving room for letting them fail). Move some of
@@ -30,18 +34,7 @@ add PREFIX to PASTHRU
 - ExtUtils::Config, another Config.pm, that may be added to by various
   extensions.
 
-- Run MakeMaker with DProf.
-
-- Watch the config target. It should probably be reworked to allow
-  adding extensions below the current directory without recompiling
-  all packages.
-
 - chmod +x for EXE_FILES
-
-- DEBUG -> $(CC) -g
-
-- Revisit SDBM_File's Makefile.PLs, maybe there's some optimization
-  possible in the meantime.
 
 - Add a FLAVOR variable that makes it easier to build debugging,
   embedded or multiplicity perls. Currently the easiest way to produce
@@ -62,20 +55,6 @@ add PREFIX to PASTHRU
 
   It would be nice, if the Configure step could be dropped. Also nice,
   but maybe expensive, if 'make clobber' wouldn't be needed.
-
-- The uninstall target has to be completed, it's just a sketch. It
-  will be surpassed by a Dump of the objects involved in a single
-  extension or so.
-
-- Reconsider Makefile macros. The output of macro() should be the last
-  before PASTHRU and none should come after that -- tough work. We
-  could do that by letting the RESULT attribute contain real objects
-  (Make objects: macro, rule, etc.) and first print the macros and
-  then the rules. Or we could parse the contents as text.
-
-- Make alternatives to 'ar' possible. The NeXT has libtool(1) with
-  quite a different syntax, but libtool is needed to build MAB
-  libraries.
 
 - Change libperl.a to something like libperl.so.NNN on systems with
   d_shrplib defined. Something like:
