@@ -1,4 +1,4 @@
-# $Id: /local/schwern.org/CPAN/ExtUtils-MakeMaker/trunk/lib/ExtUtils/MakeMaker.pm 4259 2005-03-22T04:36:58.379795Z schwern  $
+# $Id:  $
 package ExtUtils::MakeMaker;
 
 BEGIN {require 5.005_03;}
@@ -21,8 +21,10 @@ use vars qw(
 use vars qw($Revision);
 use strict;
 
-$VERSION = '6.26';
-($Revision) = q$Revision: 4259 $ =~ /Revision:\s+(\S+)/;
+$VERSION = '6.26_01';
+($Revision  # can't put this all on one line or SVN/K gets confused about
+            # $Revision
+   = q$Revision: 4303 $) =~ /Revision:\s+(\S+)/;
 
 @ISA = qw(Exporter);
 @EXPORT = qw(&WriteMakefile &writeMakefile $Verbose &prompt);
@@ -1872,18 +1874,32 @@ See also L<MM_Unix/perm_rwx>.
 
 =item PL_FILES
 
-Ref to hash of files to be processed as perl programs. MakeMaker
-will default to any found *.PL file (except Makefile.PL) being keys
-and the basename of the file being the value. E.g.
+MakeMaker can run programs to generate files for you at build time.
+By default any file named *.PL (except Makefile.PL and Build.PL) in
+the top level directory will be assumed to be a Perl program and run
+passing its own basename in as an argument.  For example...
 
-  {'foobar.PL' => 'foobar'}
+    perl foo.PL foo
 
-The *.PL files are expected to produce output to the target files
-themselves. If multiple files can be generated from the same *.PL
-file then the value in the hash can be a reference to an array of
-target file names. E.g.
+This behavior can be overridden by supplying your own set of files to
+search.  PL_FILES accepts a hash ref, the key being the file to run
+and the value is passed in as the first argument when the PL file is run.
 
-  {'foobar.PL' => ['foobar1','foobar2']}
+  PL_FILES => {'bin/foobar.PL' => 'bin/foobar'}
+
+Would run bin/foobar.PL like this:
+
+    perl bin/foobar.PL bin/foobar
+
+If multiple files from one program are desired an array ref can be used.
+
+  PL_FILES => {'bin/foobar.PL' => [qw(bin/foobar1 bin/foobar2)]}
+
+In this case the program will be run multiple times using each target file.
+
+    perl bin/foobar.PL bin/foobar1
+    perl bin/foobar.PL bin/foobar2
+
 
 =item PM
 
@@ -2069,7 +2085,7 @@ MakeMaker object. The following lines will be parsed o.k.:
 
     $VERSION = '1.00';
     *VERSION = \'1.01';
-    $VERSION = sprintf "%d.%03d", q$Revision: 4259 $ =~ /(\d+)/g;
+    $VERSION = sprintf "%d.%03d", q$Revision: 4303 $ =~ /(\d+)/g;
     $FOO::VERSION = '1.10';
     *FOO::VERSION = \'1.11';
     our $VERSION = 1.2.3;       # new for perl5.6.0 

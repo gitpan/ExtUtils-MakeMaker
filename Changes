@@ -1,3 +1,10 @@
+6.26_01 Mon Mar 28 21:34:39 PST 2005
+    * PL_FILES was broken in the last release.  The .PL files were not being
+      passed the file they were to generate.
+    * How PL_FILES runs the programs and what it does with the value is 
+      now documented.
+    * The default behavior of PL_FILES is now documented.
+
 6.26  Mon Mar 21 20:36:22 PST 2005
 
 6.25_12 Fri Mar 18 16:15:35 PST 2005
