@@ -332,6 +332,20 @@ sub replace_manpage_separator {
     $man;
 }
 
+=item init_main (override)
+
+Override DISTVNAME so it uses VERSION_SYM to avoid getting too many
+dots in the name.
+
+=cut
+
+sub init_main {
+    my($self) = shift;
+
+    $self->SUPER::init_main;
+    $self->{DISTVNAME} = "$self->{DISTNAME}-$self->{VERSION_SYM}";
+}
+
 =item init_others (override)
 
 Provide VMS-specific forms of various utility commands, then hand
@@ -373,6 +387,7 @@ sub constants {
     # Be kind about case for pollution
     for (@ARGV) { $_ = uc($_) if /POLLUTE/i; }
 
+    $self->{DEFINE} ||= '';
     if ($self->{DEFINE} ne '') {
 	my(@terms) = split(/\s+/,$self->{DEFINE});
 	my(@defs,@udefs);
@@ -391,8 +406,12 @@ sub constants {
 	    push @$targ, $def;
 	}
 	$self->{DEFINE} = '';
-	if (@defs)  { $self->{DEFINE}  = '/Define=(' . join(',',@defs)  . ')'; }
-	if (@udefs) { $self->{DEFINE} .= '/Undef=('  . join(',',@udefs) . ')'; }
+	if (@defs)  { 
+            $self->{DEFINE}  = '/Define=(' . join(',',@defs)  . ')'; 
+        }
+	if (@udefs) { 
+            $self->{DEFINE} .= '/Undef=('  . join(',',@udefs) . ')'; 
+        }
     }
 
     if ($self->{OBJECT} =~ /\s/) {
@@ -403,7 +422,7 @@ sub constants {
 
 
     foreach $macro ( qw [
-            INST_BIN INST_SCRIPT INST_LIB INST_ARCHLIB INST_EXE INSTALLPRIVLIB
+            INST_BIN INST_SCRIPT INST_LIB INST_ARCHLIB INSTALLPRIVLIB
             INSTALLARCHLIB INSTALLSCRIPT INSTALLBIN PERL_LIB PERL_ARCHLIB
             PERL_INC PERL_SRC FULLEXT INST_MAN1DIR INSTALLMAN1DIR
             INST_MAN3DIR INSTALLMAN3DIR INSTALLSITELIB INSTALLSITEARCH
@@ -424,13 +443,14 @@ sub constants {
 
     foreach $macro (qw/
 	      AR_STATIC_ARGS NAME DISTNAME NAME_SYM VERSION VERSION_SYM XS_VERSION
-	      INST_BIN INST_EXE INST_LIB INST_ARCHLIB INST_SCRIPT PREFIX
+	      INST_BIN INST_LIB INST_ARCHLIB INST_SCRIPT PREFIX
 	      INSTALLDIRS INSTALLPRIVLIB  INSTALLARCHLIB INSTALLSITELIB
 	      INSTALLSITEARCH INSTALLBIN INSTALLSCRIPT PERL_LIB
 	      PERL_ARCHLIB SITELIBEXP SITEARCHEXP LIBPERL_A MYEXTLIB
 	      FIRST_MAKEFILE MAKE_APERL_FILE PERLMAINCC PERL_SRC PERL_VMS
 	      PERL_INC PERL FULLPERL PERLRUN FULLPERLRUN PERLRUNINST
-          FULLPERLRUNINST TEST_LIBS PERL_CORE NOECHO NOOP
+          FULLPERLRUNINST ABSPERL ABSPERLRUN ABSPERLRUNINST
+          PERL_CORE NOECHO NOOP
 	      / ) {
 	next unless defined $self->{$macro};
 	push @m, "$macro = $self->{$macro}\n";
@@ -631,6 +651,8 @@ sub cflags {
 #    $quals =~ s/,,/,/g; $quals =~ s/\(,/(/g;
     $self->{CCFLAGS} = $quals;
 
+    $self->{PERLTYPE} ||= '';
+
     $self->{OPTIMIZE} ||= $flagoptstr || $Config{'optimize'};
     if ($self->{OPTIMIZE} !~ m!/!) {
 	if    ($self->{OPTIMIZE} =~ m!-g!) { $self->{OPTIMIZE} = '/Debug/NoOptimize' }
@@ -829,7 +851,7 @@ sub xsubpp_version
 
     # first try the -v flag, introduced in 1.921 & 2.000a2
 
-    my $command = "$self->{PERLRUN} $xsubpp -v";
+    my $command = qq{$self->{PERL} "-I$self->{PERL_LIB}" $xsubpp -v};
     print "Running: $command\n" if $Verbose;
     $version = `$command` ;
     if ($?) {
@@ -938,6 +960,8 @@ sub dist {
     # Sanitize these for use in $(DISTVNAME) filespec
     $attribs{VERSION} =~ s/[^\w\$]/_/g;
     $attribs{NAME} =~ s/[^\w\$]/-/g;
+
+    $attribs{DISTVNAME} ||= '$(DISTNAME)-$(VERSION_SYM)';
 
     return $self->SUPER::dist(%attribs);
 }
@@ -1275,8 +1299,8 @@ END
     my(@m);
     push @m,
 qq[POD2MAN_EXE = $pod2man_exe\n],
-q[POD2MAN = $(PERL) -we "%m=@ARGV;for (keys %m){" -
--e "system(qq/$(PERLRUN) $(POD2MAN_EXE) $_ >$m{$_}/);}"
+q[POD2MAN = $(PERLRUN) "-MPod::Man" -we "%m=@ARGV;for(keys %m){" -
+-e "Pod::Man->new->parse_from_file($_,$m{$_}) }"
 ];
     push @m, "\nmanifypods : \$(MAN1PODS) \$(MAN3PODS)\n";
     if (%{$self->{MAN1PODS}} || %{$self->{MAN3PODS}}) {
@@ -1578,7 +1602,7 @@ q{
 disttest : distdir
 	startdir = F$Environment("Default")
 	Set Default [.$(DISTVNAME)]
-	$(PERLRUN) Makefile.PL
+	$(ABSPERLRUN) Makefile.PL
 	$(MMS)$(MMSQUALIFIERS)
 	$(MMS)$(MMSQUALIFIERS) test
 	Set Default 'startdir'
@@ -1619,9 +1643,6 @@ install_perl :: all pure_perl_install doc_perl_install
 
 install_site :: all pure_site_install doc_site_install
 	$(NOECHO) $(NOOP)
-
-install_ :: install_site
-	$(NOECHO) $(SAY) "INSTALLDIRS not defined, defaulting to INSTALLDIRS=site"
 
 pure_install :: pure_$(INSTALLDIRS)_install
 	$(NOECHO) $(NOOP)

@@ -39,3 +39,7 @@ Fix Win32 when perl is installed in C:\Program Files
 Make sure PDL builds
 
 Fix find_perl on Amiga trg@privat.utfors.se
+
+Fix appending of .. when DIRS contains directories not immediately
+below the cwd.
+

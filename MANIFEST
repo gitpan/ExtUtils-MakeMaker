@@ -31,9 +31,12 @@ lib/ExtUtils/Mkbootstrap.pm
 lib/ExtUtils/Mksymlists.pm
 lib/ExtUtils/Packlist.pm
 lib/ExtUtils/testlib.pm
+t/Big-Fat-Dummy/Liar/Makefile.PL
+t/Big-Fat-Dummy/Liar/lib/Big/Fat/Liar.pm
 t/Big-Fat-Dummy/Makefile.PL
 t/Big-Fat-Dummy/lib/Big/Fat/Dummy.pm
 t/Command.t
+t/INST.t
 t/Installed.t
 t/MM_BeOS.t
 t/MM_Cygwin.t
@@ -53,5 +56,6 @@ t/lib/Test/Builder.pm
 t/lib/Test/More.pm
 t/lib/Test/Simple.pm
 t/lib/TieOut.pm
+t/prefixify.t
 t/problems.t
 t/testlib.t
