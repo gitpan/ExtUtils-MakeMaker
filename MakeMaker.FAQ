@@ -1,0 +1,138 @@
+The FAQ is entirely composed from mail messages which I started to
+collect in May 1995.
+
+
+
+Subject: I do have dynamic linking, but want to build a static perl with this
+         extension. How do I proceed?
+
+    From: Andreas Koenig <koenig@franz.ww.tu-berlin.de>
+
+    It is a little difficult to build static intentionally when you
+    have dynamic loading available on your system. There's probably
+    something to fix or something to document. Off the top of my head I'd
+    say
+
+       make test LINKTYPE=static FULLPERL=./perl
+
+    Wait a minute...
+
+    Yes, it does the trick here, but only if ./perl already exists,
+    otherwise make(1) is not intelligent enough to know, that perl ===
+    ./perl :(
+
+
+Subject: "make clean" moves Makefile to Makefile.old. Why must that happen?
+
+    From: Tim Bunce <Tim.Bunce@ig.co.uk>
+
+    The perl makefile realclean target depends on it's clean target.
+    The clean target does a make clean on all the extensions.
+    The realclean target then does a make realclean on all the extensions.
+
+    If the clean target deletes the extension Makefile then the realclean
+    target will not work. If the clean target does not delete the Makefile
+    then it won't get rebuilt by a later make thus negating the make clean.
+
+    Renaming the Makefile seems to be the best compromise.
+
+    The ext/utils/make_ext script colludes with MakeMaker and knows that
+    for *clean targets it can use a Makefile.old if no Makefile exists.
+
+    As for looping with GNU make in these rules:
+
+	    # We take a very conservative approach here, but it's worth it.
+	    # We move Makefile to Makefile.old here to avoid gnu make looping.
+	    Makefile:   Makefile.PL $(CONFIGDEP)
+		@echo "Makefile out-of-date with respect to $?"
+		@echo "Cleaning current config before rebuilding Makefile..."
+		-@mv Makefile Makefile.old
+		-$(MAKE) -f Makefile.old clean >/dev/null 2>&1 || true
+		$(PERL) $(I_PERL_LIBS) Makefile.PL
+		@echo "Now you must rerun make."; false
+
+    The first thing to say is that using Makefile.old here has little to
+    do with using Makefile.old elsewhere. It's just handy temporary name
+    since a later realclean will delete it.
+
+    With regard to the looping, I recall that the nested make clean would
+    trip up on the same Makefile dependency that triggered the nested make
+    clean even though the clean target does not list Makefile as a dependancy.
+
+    It seems that GNU make treats *all* targets as having an implicit
+    dependency on the makefile being used if that makefile declares such a
+    dependancy.
+
+
+Subject: Multiple MYEXTLIBs don't work
+
+    From: koenig@franz.ww.tu-berlin.de
+
+	From:fausey@oclc.org
+	I'd like to build an extension based on multiple C libraries
+	if that's possible.  I tried the following change to the
+	Makefile.PL above:
+
+	    'MYEXTLIB'  => '/home/orb4/fausey/fred/libJF.so.1.0 /home/orb4/fausey/fred/libJF2.so.1.0',
+
+	but perl scripts referencing functions from the second library
+	in the extension produce error messages
+
+    Support for multiple libraries is in the Todo list of MakeMaker
+    4.13. Only Michael Peppler and Nick Simmons have addressed the problem
+    recently, and I'm not sure to understand, what the problem is.
+
+    In your case I'd expect something like
+
+	'LIBS' => ['-L/home/orb4/fausey/fred -lJF -lJF2']
+
+    should work.
+
+    Let us know, if you have tried this, and whatever problems are
+    involved in this topic. If I get an interesting testsuite that I can
+    reproduce at home, we might step ahead with the problem.
+
+
+    Please followup to makemaker@franz.ww.tu-berlin.de, the mailing list
+    daddicated to that sort of stuff.
+
+    From: Nick.Ing-Simmons@tiuk.ti.com
+    >In your case I'd expect something like
+    >
+    >    'LIBS' => ['-L/home/orb4/fausey/fred -lJF -lJF2']
+    >
+    >should work.
+
+    That is essentially what Tk does. Then builds all the lib*.*'s as
+    a dependency of 'config'. 
+
+    I use lib*.a's - shared library is useless if only thing that uses 
+    it is dynamically loaded anyway.
+
+
+Subject: Glue Makefiles for several extensions
+
+    From Paul Marquess <pmarquess@bfsec.bt.co.uk>:
+    This is more or less the directory structure I've got for the source
+    filters.
+
+	  Filter::exec    Filter::decrypt   Filter::tee    t (test harness)
+	        |                   |               |               |
+		+-------------------+---------------+---------------+
+				    |
+				  Filter
+
+    The top level (Filter) is just being used to hold the top-level
+    makefile for building each of the filters which are in
+    sub-directories. So the question is - what should the top-level 
+    Makefile.PL look like if there isn't a .xs file in the current directory?
+
+    Answer:
+    WriteMakefile(
+	NAME      => 'Filter',
+	VERSION   => '1.02',
+	'linkext'   => {LINKTYPE => ''}
+    );
+
+
+

@@ -1,0 +1,13 @@
+MakeMaker 5.13/5.14 are bug fix releases
+
+Mainly for AIX and HPUX.
+
+And it brings VMS support up to date. Thanks, Charles!
+
+And finally a workaround for the AutoSplit bug, that it doesn't accept
+// within the path.
+
+For details see the Changes file.
+
+December 16, 1995
+andreas
