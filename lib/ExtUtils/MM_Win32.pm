@@ -29,7 +29,7 @@ use vars qw(@ISA $VERSION $BORLAND $GCC $DMAKE $NMAKE);
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
 @ISA = qw( ExtUtils::MM_Any ExtUtils::MM_Unix );
-$VERSION = '1.10_05';
+$VERSION = '1.10_06';
 
 $ENV{EMXSHELL} = 'sh'; # to run `commands`
 
@@ -167,6 +167,10 @@ sub init_others {
     $self->{TEST_F}   ||= '$(ABSPERLRUN) -MExtUtils::Command -e test_f';
     $self->{DEV_NULL} ||= '> NUL';
 
+    $self->{FIXIN}    ||= $self->{PERL_CORE} ? 
+      '$(PERLRUN) ../../win32/bin/pl2bat.pl' : 
+      'pl2bat.bat';
+
     $self->{LD}     ||= $Config{ld} || 'link';
     $self->{AR}     ||= $Config{ar} || 'lib';
 
@@ -255,7 +259,7 @@ sub static_lib {
 
     my(@m);
     push(@m, <<'END');
-$(INST_STATIC): $(OBJECT) $(MYEXTLIB) $(INST_ARCHAUTODIR)
+$(INST_STATIC): $(OBJECT) $(MYEXTLIB) $(INST_ARCHAUTODIR)$(DFSEP).exists
 	$(RM_RF) $@
 END
 
@@ -316,7 +320,7 @@ sub dynamic_lib {
 OTHERLDFLAGS = '.$otherldflags.'
 INST_DYNAMIC_DEP = '.$inst_dynamic_dep.'
 
-$(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR) $(EXPORT_LIST) $(PERL_ARCHIVE) $(INST_DYNAMIC_DEP)
+$(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)$(DFSEP).exists $(EXPORT_LIST) $(PERL_ARCHIVE) $(INST_DYNAMIC_DEP)
 ');
     if ($GCC) {
       push(@m,  

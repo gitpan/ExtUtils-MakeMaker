@@ -15,8 +15,8 @@ BEGIN {
 
 use File::Basename;
 use vars qw($Revision @ISA $VERSION);
-($VERSION) = '5.71_03';
-($Revision) = q$Revision: 4068 $ =~ /Revision:\s+(\S+)/;
+($VERSION) = '5.71_06';
+($Revision) = q$Revision: 4150 $ =~ /Revision:\s+(\S+)/;
 
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
@@ -290,68 +290,6 @@ sub perl_script {
     return "$file.com" if -r "$file.com";
     return "$file.pl" if -r "$file.pl";
     return '';
-}
-
-=item dir_target (override)
-
-Override dir_target because MMS/K cannot have a directory be a target
-directly, but a directory file can be.
-
-Each directory target is translated into a directory file and that the
-target which makes a directory.  Then a directory target is made which
-depends on the dirfile target so the directory can be used as a
-dependency in other targets.
-
-=cut
-
-sub dir_target {
-    my($self, @dirs) = @_;
-
-    my $make = '';
-    foreach my $dir (@dirs) {
-        my $dirfile = $self->_to_dirfile($dir);
-        
-        $make .= sprintf <<'MAKE', $dir, $dirfile;
-%s : %s
-	$(NOECHO) $(NOOP)
-
-MAKE
-
-        $make .= $self->SUPER::dir_target($dirfile);
-    }
-
-    return $make;
-}
-
-
-=begin private
-
-=item _to_dirfile
-
-    my $dirfile = $mm->_to_dirfile($dir);
-
-Translate a directory specification into a directory file.  ie.
-
-    [foo.bar]
-
-to
-
-    [foo]bar.dir
-
-=end private
-
-=cut
-
-sub _to_dirfile {
-    my($self, $dir) = @_;
-
-    $dir = $self->fixpath($dir, 1);
-
-    my($vol, $dirs, $file) = $self->splitpath($dir);
-    my @dirs = $self->splitdir($dirs);
-    my $dirfile = pop @dirs;
-
-    return $self->catpath( $vol, $self->catdir(@dirs), "$dirfile.dir" );
 }
 
 
@@ -1016,8 +954,7 @@ INST_DYNAMIC_DEP = $inst_dynamic_dep
 
 ";
     push @m, '
-$(INST_DYNAMIC) : $(INST_STATIC) $(PERL_INC)perlshr_attr.opt $(INST_ARCHAUTODIR) $(EXPORT_LIST) $(PERL_ARCHIVE) $(INST_DYNAMIC_DEP)
-	$(NOECHO) $(MKPATH) $(INST_ARCHAUTODIR)
+$(INST_DYNAMIC) : $(INST_STATIC) $(PERL_INC)perlshr_attr.opt $(INST_ARCHAUTODIR)$(DFSEP).exists $(EXPORT_LIST) $(PERL_ARCHIVE) $(INST_DYNAMIC_DEP)
 	If F$TrnLNm("',$shr,'").eqs."" Then Define/NoLog/User ',"$shr Sys\$Share:$shr.$Config{'dlext'}",'
 	Link $(LDFLAGS) /Shareable=$(MMS$TARGET)$(OTHERLDFLAGS) $(BASEEXT).opt/Option,$(PERL_INC)perlshr_attr.opt/Option
 ';
@@ -1046,7 +983,7 @@ $(INST_STATIC) :
 # Rely on suffix rule for update action
 $(OBJECT) : $(FIRST_MAKEFILE)
 
-$(INST_STATIC) : $(OBJECT) $(MYEXTLIB) $(INST_ARCHAUTODIR)
+$(INST_STATIC) : $(OBJECT) $(MYEXTLIB) $(INST_ARCHAUTODIR)$(DFSEP).exists
 ';
     # If this extension has its own library (eg SDBM_File)
     # then copy that to $(INST_STATIC) and add $(OBJECT) into it.
