@@ -1,6 +1,6 @@
 package ExtUtils::Installed;
 
-use 5.006_001;
+use 5.006;
 use strict;
 use Carp qw();
 use ExtUtils::Packlist;
@@ -108,8 +108,9 @@ my $sub = sub
       my $p = File::Spec->catfile($dir, $modfile);
       if (-f $p)
          {
-         $self->{$module}{version} = MM->parse_version($p);
-         last;
+             require ExtUtils::MM;
+             $self->{$module}{version} = MM->parse_version($p);
+             last;
          }
       }
 
