@@ -1,9 +1,11 @@
 package ExtUtils::Install;
 
+$VERSION = substr q$Revision: 1.11 $, 10;
+# $Id: Install.pm,v 1.11 1996/05/31 07:54:00 k Exp $
+
 use Exporter;
-use SelfLoader;
 use Carp ();
-use Config;
+use Config ();
 use vars qw(@ISA @EXPORT $VERSION);
 @ISA = ('Exporter');
 @EXPORT = ('install','uninstall','pm_to_blib');
@@ -14,16 +16,6 @@ my $Inc_uninstall_warn_handler;
 
 #use vars qw( @EXPORT @ISA $Is_VMS );
 #use strict;
-
-1;
-
-sub ExtUtils::Install::install;
-sub ExtUtils::Install::uninstall;
-sub ExtUtils::Install::pm_to_blib;
-sub ExtUtils::Install::my_cmp;
-sub ExtUtils::Install::forceunlink;
-
-#__DATA__
 
 sub forceunlink {
     chmod 0666, $_[0];
@@ -203,7 +195,7 @@ sub inc_uninstall {
     my $MY = {};
     bless $MY, 'MY';
     my %seen_dir = ();
-    foreach $dir (@INC, @PERL_ENV_LIB, @Config{qw/archlibexp privlibexp sitearchexp sitelibexp/}) {
+    foreach $dir (@INC, @PERL_ENV_LIB, @Config::Config{qw/archlibexp privlibexp sitearchexp sitelibexp/}) {
 	next if $dir eq ".";
 	next if $seen_dir{$dir}++;
 	my($targetfile) = $MY->catfile($dir,$libdir,$file);

@@ -1,11 +1,11 @@
-require 5.002; # MakeMaker 5.17 was the last MakeMaker that was compatible with perl5.001m
+BEGIN {require 5.002;} # MakeMaker 5.17 was the last MakeMaker that was compatible with perl5.001m
 
 package ExtUtils::MakeMaker;
 
-$Version = $VERSION = "5.32";
-$Version_OK = "5.05";	# Makefiles older than $Version_OK will die
+$Version = $VERSION = "5.33";
+$Version_OK = "5.17";	# Makefiles older than $Version_OK will die
 			# (Will be checked from MakeMaker version 4.13 onwards)
-($Revision = substr(q$Revision: 1.199 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.201 $, 10)) =~ s/\s+$//;
 
 
 
@@ -54,6 +54,7 @@ eval {require DynaLoader;};	# Get mod2fname, if defined. Will fail
 {
     package MY;
     @MY::ISA = qw(MM);
+###    sub AUTOLOAD { use Devel::Symdump; print Devel::Symdump->rnew->as_string; Carp::confess "hey why? $AUTOLOAD" }
     package MM;
     sub DESTROY {}
 }
@@ -222,7 +223,7 @@ sub full_setup {
     $Verbose ||= 0;
     $^W=1;
 
-# package name for the classes into which the first object will be blessed
+    # package name for the classes into which the first object will be blessed
     $PACKNAME = "PACK000";
 
     @Attrib_help = qw/
@@ -244,37 +245,50 @@ sub full_setup {
 
 	/;
 
+    # ^^^ installpm is deprecated, will go about Summer 96
 
-    # @Overridable is close to MM_Sections
+    # @Overridable is close to @MM_Sections but not identical.  The
+    # order is important. Many subroutines declare macros. These
+    # depend on each other. Let's try to collect the macros up front,
+    # then pasthru, then the rules.
+
+    # MM_Sections are the sections we have to call explicitly
+    # in Overridable we have subroutines that are used indirectly
+
 
     @MM_Sections = 
 	qw(
 
-	post_initialize const_config constants tool_autosplit
-	tool_xsubpp tools_other dist macro depend post_constants
-	pasthru c_o xs_c xs_o top_targets linkext dlsyms dynamic
-	dynamic_bs dynamic_lib static static_lib manifypods processPL
-	installbin subdirs clean realclean dist_basics dist_core
-	dist_dir dist_test dist_ci install force perldepend makefile
-	staticmake test
+ post_initialize const_config constants tool_autosplit tool_xsubpp
+ tools_other dist macro depend cflags const_loadlibs const_cccmd
+ post_constants
+
+ pasthru
+
+ c_o xs_c xs_o top_targets linkext dlsyms dynamic dynamic_bs
+ dynamic_lib static static_lib manifypods processPL installbin subdirs
+ clean realclean dist_basics dist_core dist_dir dist_test dist_ci
+ install force perldepend makefile staticmake test
 
 	  ); # loses section ordering
 
     @Overridable = @MM_Sections;
-    push @Overridable, qw[ dir_target
-			   libscan makeaperl
-			   needs_linking subdir_x test_via_harness
-			   test_via_script ];
-    push @MM_Sections, qw[
-			  pm_to_blib selfdocument cflags const_loadlibs
-			  const_cccmd
+    push @Overridable, qw[
+
+ dir_target libscan makeaperl needs_linking subdir_x test_via_harness
+ test_via_script
+
 			 ];
-    # Postamble needs to be the last so they can override macros
+
+    push @MM_Sections, qw[
+
+ pm_to_blib selfdocument
+
+			 ];
+
+    # Postamble needs to be the last that was always the case
     push @MM_Sections, "postamble";
     push @Overridable, "postamble";
-
-    #### Can we drop this?
-    #### @MM_Sections{@MM_Sections} = {} x @MM_Sections;
 
     # All sections are valid keys.
     @Recognized_Att_Keys{@MM_Sections} = (1) x @MM_Sections;
@@ -666,7 +680,7 @@ sub mv_all_methods {
 	# %MY:: being intact, we have to fill the hole with an
 	# inheriting method:
 
-	eval "package MY; sub $method {local *$method; shift->MY::$method(\@_); }";
+	eval "package MY; sub $method { shift->SUPER::$method(\@_); }";
     }
 
     # We have to clean out %INC also, because the current directory is
@@ -834,86 +848,29 @@ It splits the task of generating the Makefile into several subroutines
 that can be individually overridden.  Each subroutine returns the text
 it wishes to have written to the Makefile.
 
-=head2 Hintsfile support
+MakeMaker is object oriented. Each directory below the current
+directory that contains a Makefile.PL. Is treated as a separate
+object. This makes it possible to write an unlimited number of
+Makefiles with a single invocation of WriteMakefile().
 
-MakeMaker.pm uses the architecture specific information from
-Config.pm. In addition it evaluates architecture specific hints files
-in a C<hints/> directory. The hints files are expected to be named
-like their counterparts in C<PERL_SRC/hints>, but with an C<.pl> file
-name extension (eg. C<next_3_2.pl>). They are simply C<eval>ed by
-MakeMaker within the WriteMakefile() subroutine, and can be used to
-execute commands as well as to include special variables. The rules
-which hintsfile is chosen are the same as in Configure.
+=head2 How To Write A Makefile.PL
 
-The hintsfile is eval()ed immediately after the arguments given to
-WriteMakefile are stuffed into a hash reference $self but before this
-reference becomes blessed. So if you want to do the equivalent to
-override or create an attribute you would say something like
+The short answer is: Don't. Run h2xs(1) before you start thinking
+about writing a module. For so called pm-only modules that consist of
+C<*.pm> files only, h2xs has the very useful C<-X> switch. This will
+generate dummy files of all kinds that are useful for the module
+developer.
 
-    $self->{LIBS} = ['-ldbm -lucb -lc'];
+The medium answer is:
 
-=head2 What's new in version 5 of MakeMaker
+    use ExtUtils::MakeMaker;
+    WriteMakefile( NAME => "Foo::Bar" );
 
-MakeMaker 5 is pure object oriented. This allows us to write an
-unlimited number of Makefiles with a single perl process. 'perl
-Makefile.PL' with MakeMaker 5 goes through all subdirectories
-immediately and evaluates any Makefile.PL found in the next level
-subdirectories. The benefit of this approach comes in useful for both
-single and multi directories extensions.
-
-Multi directory extensions have an immediately visible speed
-advantage, because there's no startup penalty for any single
-subdirectory Makefile.
-
-Single directory packages benefit from the much improved
-needs_linking() method. As the main Makefile knows everything about
-the subdirectories, a needs_linking() method can now query all
-subdirectories if there is any linking involved down in the tree. The
-speedup for PM-only Makefiles seems to be around 1 second on my
-Indy 100 MHz.
-
-=head2 Incompatibilities between MakeMaker 5.00 and 4.23
-
-There are no incompatibilities in the short term, as all changes are
-accompanied by short-term workarounds that guarantee full backwards
-compatibility.
-
-You are likely to face a few warnings that expose deprecations which
-will result in incompatibilities in the long run:
-
-You should not call the class methods MM->something anymore. Instead
-you should call the superclass. Something like
-
-    sub MY::constants {
-        my $self = shift;
-        $self->MM::constants();
-    }
-
-Especially the libscan() and exescan() methods should be altered
-towards OO programming, that means do not expect that $_ contains
-the path but rather $_[1].
-
-Try to build several extensions simultanously to debug your
-Makefile.PL. You can unpack a bunch of distributed packages within one
-directory and run
-
-    perl -MExtUtils::MakeMaker -e 'WriteMakefile()'
-
-That's actually fun to watch :)
-
-Do not use exit() in your Makefile.PL. MakeMaker tries hard to enable
-multi-module builds in one go.
-
-Final suggestion: Try to delete all of your MY:: subroutines and
-watch, if you really still need them. MakeMaker might already do what
-you want without them. If you see no way to avoid your own subroutine
-solution, please let us know about the problem.
-
+The long answer is below.
 
 =head2 Default Makefile Behaviour
 
-The automatically generated Makefile enables the user of the extension
-to invoke
+The generated Makefile enables the user of the extension to invoke
 
   perl Makefile.PL # optionally "perl Makefile.PL verbose"
   make
@@ -983,29 +940,6 @@ searched by perl, run
 
     perl -le 'print join $/, @INC'
 
-
-=head2 Which architecture dependent directory?
-
-If you don't want to keep the defaults for the INSTALL* macros,
-MakeMaker helps you to minimize the typing needed: the usual
-relationship between INSTALLPRIVLIB and INSTALLARCHLIB is determined
-by Configure at perl compilation time. MakeMaker supports the user who
-sets INSTALLPRIVLIB. If INSTALLPRIVLIB is set, but INSTALLARCHLIB not,
-then MakeMaker defaults the latter to be the same subdirectory of
-INSTALLPRIVLIB as Configure decided for the counterparts in %Config ,
-otherwise it defaults to INSTALLPRIVLIB. The same relationship holds
-for INSTALLSITELIB and INSTALLSITEARCH.
-
-MakeMaker gives you much more freedom than needed to configure
-internal variables and get different results. It is worth to mention,
-that make(1) also lets you configure most of the variables that are
-used in the Makefile. But in the majority of situations this will not
-be necessary, and should only be done, if the author of a package
-recommends it (or you know what you're doing).
-
-=cut
-
-#'
 
 =head2 PREFIX attribute
 
@@ -1141,6 +1075,25 @@ of the perl library. The other variables default to the following:
 If perl has not yet been installed then PERL_SRC can be defined on the
 command line as shown in the previous section.
 
+
+=head2 Which architecture dependent directory?
+
+If you don't want to keep the defaults for the INSTALL* macros,
+MakeMaker helps you to minimize the typing needed: the usual
+relationship between INSTALLPRIVLIB and INSTALLARCHLIB is determined
+by Configure at perl compilation time. MakeMaker supports the user who
+sets INSTALLPRIVLIB. If INSTALLPRIVLIB is set, but INSTALLARCHLIB not,
+then MakeMaker defaults the latter to be the same subdirectory of
+INSTALLPRIVLIB as Configure decided for the counterparts in %Config ,
+otherwise it defaults to INSTALLPRIVLIB. The same relationship holds
+for INSTALLSITELIB and INSTALLSITEARCH.
+
+MakeMaker gives you much more freedom than needed to configure
+internal variables and get different results. It is worth to mention,
+that make(1) also lets you configure most of the variables that are
+used in the Makefile. But in the majority of situations this will not
+be necessary, and should only be done, if the author of a package
+recommends it (or you know what you're doing).
 
 =head2 Using Attributes and Parameters
 
@@ -1446,7 +1399,7 @@ this boolean variable yourself.
 
 =item NOECHO
 
-Defaults the C<@>. By setting it to an empty string you can generate a
+Defaults to C<@>. By setting it to an empty string you can generate a
 Makefile that echos all commands. Mainly used in debugging MakeMaker
 itself.
 
@@ -1569,7 +1522,7 @@ B<after> the eval() will be assigned to the VERSION attribute of the
 MakeMaker object. The following lines will be parsed o.k.:
 
     $VERSION = '1.00';
-    ( $VERSION ) = '$Revision: 1.199 $ ' =~ /\$Revision:\s+([^\s]+)/;
+    ( $VERSION ) = '$Revision: 1.201 $ ' =~ /\$Revision:\s+([^\s]+)/;
     $FOO::VERSION = '1.10';
 
 but these will fail:
@@ -1691,15 +1644,15 @@ either say:
 or you can edit the default by saying something like:
 
 	sub MY::c_o {
-	    my $self = shift;
-	    local *c_o;
-            $_=$self->MM::c_o;
-	    s/old text/new text/;
-	    $_;
+            my($inherited) = shift->SUPER::c_o(@_);
+	    $inherited =~ s/old text/new text/;
+	    $inherited;
 	}
 
-Both methods above are available for backwards compatibility with
-older Makefile.PLs.
+If you running experiments with embedding perl as a library into other
+applications, you might find MakeMaker not sufficient. You'd better
+have a look at ExtUtils::embed which is a collection of utilities for
+embedding.
 
 If you still need a different solution, try to develop another
 subroutine, that fits your needs and submit the diffs to
@@ -1717,6 +1670,24 @@ Makefile:
     ';
     }
 
+
+=head2 Hintsfile support
+
+MakeMaker.pm uses the architecture specific information from
+Config.pm. In addition it evaluates architecture specific hints files
+in a C<hints/> directory. The hints files are expected to be named
+like their counterparts in C<PERL_SRC/hints>, but with an C<.pl> file
+name extension (eg. C<next_3_2.pl>). They are simply C<eval>ed by
+MakeMaker within the WriteMakefile() subroutine, and can be used to
+execute commands as well as to include special variables. The rules
+which hintsfile is chosen are the same as in Configure.
+
+The hintsfile is eval()ed immediately after the arguments given to
+WriteMakefile are stuffed into a hash reference $self but before this
+reference becomes blessed. So if you want to do the equivalent to
+override or create an attribute you would say something like
+
+    $self->{LIBS} = ['-ldbm -lucb -lc'];
 
 =head2 Distribution Support
 
@@ -1819,6 +1790,10 @@ An example:
 
     WriteMakefile( 'dist' => { COMPRESS=>"gzip", SUFFIX=>"gz" })
 
+=head1 SEE ALSO
+
+ExtUtils::MM_Unix, ExtUtils::Manifest, ExtUtils::testlib,
+ExtUtils::Install, ExtUtils::embed
 
 =head1 AUTHORS
 
@@ -1829,14 +1804,5 @@ F<E<lt>bailey@genetics.upenn.eduE<gt>>. OS/2 support by Ilya
 Zakharevich F<E<lt>ilya@math.ohio-state.eduE<gt>>. Contact the
 makemaker mailing list C<mailto:makemaker@franz.ww.tu-berlin.de>, if
 you have any questions.
-
-=head1 MODIFICATION HISTORY
-
-For a more complete documentation see the file Changes in the
-MakeMaker distribution package.
-
-=head1 TODO
-
-See the file Todo in the MakeMaker distribution package.
 
 =cut

@@ -47,9 +47,9 @@ sub ext {
 			if $Verbose;
 		next;
 	    }
-	    if ($thislib !~ m|^/|) {
+	    unless ($self->file_name_is_absolute($thislib)) {
 	      print STDOUT "Warning: $ptype$thislib changed to $ptype$pwd/$thislib\n";
-	      $thislib = "$pwd/$thislib";
+	      $thislib = $self->catdir($pwd,$thislib);
 	    }
 	    push(@searchpath, $thislib);
 	    push(@extralibs,  "$ptype$thislib");

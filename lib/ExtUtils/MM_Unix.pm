@@ -1,6 +1,7 @@
 package ExtUtils::MM_Unix;
 
-# $Id: MM_Unix.pm,v 1.24 1996/05/04 22:17:38 k Exp $
+$VERSION = substr q$Revision: 1.100 $, 10;
+# $Id: MM_Unix.pm,v 1.100 1996/05/30 08:09:46 k Exp k $
 
 require Exporter;
 use Config;
@@ -72,10 +73,10 @@ path. On UNIX eliminated successive slashes and successive "/.".
 
 sub canonpath {
     my($self,$path) = @_;
-    $path =~ s|/+|/|g ;       # xx////xx  -> xx/xx
-    $path =~ s|(/\.)+/|/|g ;  # xx/././xx -> xx/xx
-    $path =~ s|^(\./)+||;     # ./xx      -> xx
-    $path =~ s|/$||;          # xx/       -> xx
+    $path =~ s|/+|/|g ;                            # xx////xx  -> xx/xx
+    $path =~ s|(/\.)+/|/|g ;                       # xx/././xx -> xx/xx
+    $path =~ s|^(\./)+|| unless $path eq "./";     # ./xx      -> xx
+    $path =~ s|/$|| unless $path eq "/";           # xx/       -> xx
     $path;
 }
 
@@ -91,7 +92,7 @@ trailing slash :-)
 
 # ';
 
-sub catdir  {
+sub catdir {
     shift;
     my @args = @_;
     for (@args) {
@@ -125,98 +126,104 @@ sub catfile {
 
 =item curdir
 
-Returns a string representing of the current directory.  "." on UNIX. 
+Returns a string representing of the current directory.  "." on UNIX.
 
 =cut
 
-sub curdir { "." }
+sub curdir {
+    return "." ;
+}
 
 =item rootdir
 
-Returns a string representing of the root directory.  "/" on UNIX. 
+Returns a string representing of the root directory.  "/" on UNIX.
 
 =cut
 
-sub rootdir { "/" }
+sub rootdir {
+    return "/";
+}
 
 =item updir
 
-Returns a string representing of the parent directory.  ".." on UNIX. 
+Returns a string representing of the parent directory.  ".." on UNIX.
 
 =cut
 
-sub updir { ".." }
+sub updir {
+    return "..";
+}
 
-
-sub ExtUtils::MM_Unix::guess_name ;
-sub ExtUtils::MM_Unix::init_main ;
-sub ExtUtils::MM_Unix::init_dirscan ;
-sub ExtUtils::MM_Unix::init_others ;
-sub ExtUtils::MM_Unix::find_perl ;
-sub ExtUtils::MM_Unix::post_initialize ;
-sub ExtUtils::MM_Unix::const_config ;
-sub ExtUtils::MM_Unix::constants ;
-sub ExtUtils::MM_Unix::const_loadlibs ;
-sub ExtUtils::MM_Unix::const_cccmd ;
-sub ExtUtils::MM_Unix::tool_autosplit ;
-sub ExtUtils::MM_Unix::tool_xsubpp ;
-sub ExtUtils::MM_Unix::xsubpp_version ;
-sub ExtUtils::MM_Unix::tools_other ;
-sub ExtUtils::MM_Unix::dist ;
-sub ExtUtils::MM_Unix::macro ;
-sub ExtUtils::MM_Unix::depend ;
-sub ExtUtils::MM_Unix::post_constants ;
-sub ExtUtils::MM_Unix::pasthru ;
 sub ExtUtils::MM_Unix::c_o ;
-sub ExtUtils::MM_Unix::xs_c ;
-sub ExtUtils::MM_Unix::xs_o ;
-sub ExtUtils::MM_Unix::top_targets ;
-sub ExtUtils::MM_Unix::linkext ;
+sub ExtUtils::MM_Unix::clean ;
+sub ExtUtils::MM_Unix::const_cccmd ;
+sub ExtUtils::MM_Unix::const_config ;
+sub ExtUtils::MM_Unix::const_loadlibs ;
+sub ExtUtils::MM_Unix::constants ;
+sub ExtUtils::MM_Unix::depend ;
+sub ExtUtils::MM_Unix::dir_target ;
+sub ExtUtils::MM_Unix::dist ;
+sub ExtUtils::MM_Unix::dist_basics ;
+sub ExtUtils::MM_Unix::dist_ci ;
+sub ExtUtils::MM_Unix::dist_core ;
+sub ExtUtils::MM_Unix::dist_dir ;
+sub ExtUtils::MM_Unix::dist_test ;
 sub ExtUtils::MM_Unix::dlsyms ;
 sub ExtUtils::MM_Unix::dynamic ;
 sub ExtUtils::MM_Unix::dynamic_bs ;
 sub ExtUtils::MM_Unix::dynamic_lib ;
+sub ExtUtils::MM_Unix::exescan ;
+sub ExtUtils::MM_Unix::extliblist ;
+sub ExtUtils::MM_Unix::file_name_is_absolute ;
+sub ExtUtils::MM_Unix::find_perl ;
+sub ExtUtils::MM_Unix::force ;
+sub ExtUtils::MM_Unix::guess_name ;
+sub ExtUtils::MM_Unix::has_link_code ;
+sub ExtUtils::MM_Unix::init_dirscan ;
+sub ExtUtils::MM_Unix::init_main ;
+sub ExtUtils::MM_Unix::init_others ;
+sub ExtUtils::MM_Unix::install ;
+sub ExtUtils::MM_Unix::installbin ;
+sub ExtUtils::MM_Unix::libscan ;
+sub ExtUtils::MM_Unix::linkext ;
+sub ExtUtils::MM_Unix::lsdir ;
+sub ExtUtils::MM_Unix::macro ;
+sub ExtUtils::MM_Unix::makeaperl ;
+sub ExtUtils::MM_Unix::makefile ;
+sub ExtUtils::MM_Unix::manifypods ;
+sub ExtUtils::MM_Unix::maybe_command ;
+sub ExtUtils::MM_Unix::maybe_command_in_dirs ;
+sub ExtUtils::MM_Unix::needs_linking ;
+sub ExtUtils::MM_Unix::nicetext ;
+sub ExtUtils::MM_Unix::parse_version ;
+sub ExtUtils::MM_Unix::pasthru ;
+sub ExtUtils::MM_Unix::path ;
+sub ExtUtils::MM_Unix::perl_script ;
+sub ExtUtils::MM_Unix::perldepend ;
+sub ExtUtils::MM_Unix::pm_to_blib ;
+sub ExtUtils::MM_Unix::post_constants ;
+sub ExtUtils::MM_Unix::post_initialize ;
+sub ExtUtils::MM_Unix::postamble ;
+sub ExtUtils::MM_Unix::prefixify ;
+sub ExtUtils::MM_Unix::processPL ;
+sub ExtUtils::MM_Unix::realclean ;
+sub ExtUtils::MM_Unix::replace_manpage_separator ;
 sub ExtUtils::MM_Unix::static ;
 sub ExtUtils::MM_Unix::static_lib ;
-sub ExtUtils::MM_Unix::pm_to_blib ;
-sub ExtUtils::MM_Unix::manifypods ;
-sub ExtUtils::MM_Unix::processPL ;
-sub ExtUtils::MM_Unix::installbin ;
-sub ExtUtils::MM_Unix::subdirs ;
-sub ExtUtils::MM_Unix::subdir_x ;
-sub ExtUtils::MM_Unix::clean ;
-sub ExtUtils::MM_Unix::realclean ;
-sub ExtUtils::MM_Unix::dist_basics ;
-sub ExtUtils::MM_Unix::dist_core ;
-sub ExtUtils::MM_Unix::dist_dir ;
-sub ExtUtils::MM_Unix::dist_test ;
-sub ExtUtils::MM_Unix::dist_ci ;
-sub ExtUtils::MM_Unix::install ;
-sub ExtUtils::MM_Unix::force ;
-sub ExtUtils::MM_Unix::perldepend ;
-sub ExtUtils::MM_Unix::makefile ;
 sub ExtUtils::MM_Unix::staticmake ;
+sub ExtUtils::MM_Unix::subdir_x ;
+sub ExtUtils::MM_Unix::subdirs ;
 sub ExtUtils::MM_Unix::test ;
 sub ExtUtils::MM_Unix::test_via_harness ;
 sub ExtUtils::MM_Unix::test_via_script ;
-sub ExtUtils::MM_Unix::postamble ;
-sub ExtUtils::MM_Unix::makeaperl ;
-sub ExtUtils::MM_Unix::extliblist ;
-sub ExtUtils::MM_Unix::dir_target ;
-sub ExtUtils::MM_Unix::needs_linking ;
-sub ExtUtils::MM_Unix::has_link_code ;
+sub ExtUtils::MM_Unix::tool_autosplit ;
+sub ExtUtils::MM_Unix::tool_xsubpp ;
+sub ExtUtils::MM_Unix::tools_other ;
+sub ExtUtils::MM_Unix::top_targets ;
 sub ExtUtils::MM_Unix::writedoc ;
-sub ExtUtils::MM_Unix::perl_script ;
-sub ExtUtils::MM_Unix::maybe_command ;
-sub ExtUtils::MM_Unix::maybe_command_in_dirs ;
-sub ExtUtils::MM_Unix::prefixify ;
-sub ExtUtils::MM_Unix::file_name_is_absolute ;
-sub ExtUtils::MM_Unix::replace_manpage_separator ;
-sub ExtUtils::MM_Unix::path ;
-sub ExtUtils::MM_Unix::lsdir ;
-sub ExtUtils::MM_Unix::exescan ;
-sub ExtUtils::MM_Unix::libscan ;
-sub ExtUtils::MM_Unix::nicetext ;
+sub ExtUtils::MM_Unix::xs_c ;
+sub ExtUtils::MM_Unix::xs_o ;
+sub ExtUtils::MM_Unix::xsubpp_version ;
 
 package ExtUtils::MM_Unix;
 
@@ -259,7 +266,7 @@ sub c_o {
     join "", @m;
 }
 
-=item cflags
+=item cflags (o)
 
 Does very much the same as the cflags script in the perl
 distribution. It doesn't return the whole compiler command line, but
@@ -398,7 +405,7 @@ clean ::
     join("", @m);
 }
 
-=item const_cccmd
+=item const_cccmd (o)
 
 Returns the full compiler call for C programs and stores the
 definition in CONST_CCCMD.
@@ -439,7 +446,7 @@ sub const_config {
     join('', @m);
 }
 
-=item const_loadlibs
+=item const_loadlibs (o)
 
 Defines EXTRALIBS, LDLOADLIBS, BSLOADLIBS, LD_RUN_PATH. See
 L<ExtUtils::Liblist> for details.
@@ -536,7 +543,12 @@ MAN3PODS = ".join(" \\\n\t", sort keys %{$self->{MAN3PODS}})."
 	push @m, "$tmp = $self->{$tmp}\n";
     }
 
-    push @m, "
+    push @m, q{
+.NO_CONFIG_REC: Makefile
+} if $ENV{CLEARCASE_ROOT};
+
+    # why not q{} ? -- emacs
+    push @m, qq{
 # work around a famous dec-osf make(1) feature(?):
 makemakerdflt: all
 
@@ -552,7 +564,7 @@ makemakerdflt: all
 
 # Where is the Config information that we are using/depend on
 CONFIGDEP = \$(PERL_ARCHLIB)/Config.pm \$(PERL_INC)/config.h
-";
+};
 
     my @parentdir = split(/::/, $self->{PARENT_NAME});
     push @m, q{
@@ -688,11 +700,11 @@ sub dist {
     my($preop)    = $attribs{PREOP}    || "$self->{NOECHO}\$(NOOP)"; # eg update MANIFEST
     my($postop)   = $attribs{POSTOP}   || "$self->{NOECHO}\$(NOOP)"; # eg remove the distdir
 
-    my($to_unix)  = $attribs{TO_UNIX} || ($Is_OS2 
-					  ? "$self->{NOECHO}" 
-					  . 'test -f tmp.zip && $(RM) tmp.zip;' 
+    my($to_unix)  = $attribs{TO_UNIX} || ($Is_OS2
+					  ? "$self->{NOECHO}"
+					  . 'test -f tmp.zip && $(RM) tmp.zip;'
 					  . ' $(ZIP) -ll -mr tmp.zip $(DISTVNAME) && unzip -o tmp.zip && $(RM) tmp.zip'
-					  : "$self->{NOECHO}\$(NOOP)"); 
+					  : "$self->{NOECHO}\$(NOOP)");
 
     my($ci)       = $attribs{CI}       || 'ci -u';
     my($rcs_label)= $attribs{RCS_LABEL}|| 'rcs -Nv$(VERSION_SYM): -q';
@@ -830,7 +842,7 @@ sub dist_dir {
     push @m, q{
 distdir :
 	$(RM_RF) $(DISTVNAME)
-	$(PERL) -I$(PERL_ARCHLIB) -I$(PERL_LIB) -e 'use ExtUtils::Manifest "/mani/";' \\
+	$(PERL) -I$(PERL_ARCHLIB) -I$(PERL_LIB) -MExtUtils::Manifest=manicopy,maniread \\
 		-e 'manicopy(maniread(),"$(DISTVNAME)", "$(DIST_CP)");'
 };
     join "", @m;
@@ -1582,7 +1594,7 @@ EOM
     # Determine VERSION and VERSION_FROM
     ($self->{DISTNAME}=$self->{NAME}) =~ s#(::)#-#g unless $self->{DISTNAME};
     if ($self->{VERSION_FROM}){
-	$self->{VERSION} = $self->parse_version_var($self->{VERSION_FROM}) or 
+	$self->{VERSION} = $self->parse_version($self->{VERSION_FROM}) or
 	    Carp::carp "WARNING: Setting VERSION via file '$self->{VERSION_FROM}' failed\n"
     }
 
@@ -2157,13 +2169,13 @@ put them into the INST_* directories.
 
 sub manifypods {
     my($self, %attribs) = @_;
-    return "\nmanifypods :\n" unless %{$self->{MAN3PODS}} or %{$self->{MAN1PODS}};
+    return "\nmanifypods :\n\t\$(NOOP)\n" unless %{$self->{MAN3PODS}} or %{$self->{MAN1PODS}};
     my($dist);
     my($pod2man_exe);
     if (defined $self->{PERL_SRC}) {
 	$pod2man_exe = $self->catfile($self->{PERL_SRC},'pod','pod2man');
     } else {
-	$pod2man_exe = $self->catfile($Config{bin},'pod2man');
+	$pod2man_exe = $self->catfile($Config{scriptdirexp},'pod2man');
     }
     unless ($self->perl_script($pod2man_exe)) {
 	# No pod2man but some MAN3PODS to be installed
@@ -2289,13 +2301,13 @@ sub nicetext {
     $text;
 }
 
-=item parse_version_var
+=item parse_version
 
 parse a file and return what you think is $VERSION in this file set to
 
 =cut
 
-sub parse_version_var {
+sub parse_version {
     my($self,$parsefile) = @_;
     my $result;
     local *FH;
@@ -2358,14 +2370,15 @@ sub path {
 
 =item perl_script
 
-Returns true, if the argument is likely to be a perl script. On
-MM_Unix this is true for any ordinary, readable file.
+Takes one argument, a file name, and returns the file name, if the
+argument is likely to be a perl script. On MM_Unix this is true for
+any ordinary, readable file.
 
 =cut
 
 sub perl_script {
     my($self,$file) = @_;
-    return 1 if -r $file && ! -d $file;
+    return $file if -r $file && -f _;
     return;
 }
 
@@ -2379,39 +2392,39 @@ distribution.
 sub perldepend {
     my($self) = shift;
     my(@m);
-    push(@m,'
-PERL_HDRS = $(PERL_INC)/EXTERN.h $(PERL_INC)/INTERN.h \
-    $(PERL_INC)/XSUB.h	$(PERL_INC)/av.h	$(PERL_INC)/cop.h \
-    $(PERL_INC)/cv.h	$(PERL_INC)/dosish.h	$(PERL_INC)/embed.h \
-    $(PERL_INC)/form.h	$(PERL_INC)/gv.h	$(PERL_INC)/handy.h \
-    $(PERL_INC)/hv.h	$(PERL_INC)/keywords.h	$(PERL_INC)/mg.h \
-    $(PERL_INC)/op.h	$(PERL_INC)/opcode.h	$(PERL_INC)/patchlevel.h \
-    $(PERL_INC)/perl.h	$(PERL_INC)/perly.h	$(PERL_INC)/pp.h \
-    $(PERL_INC)/proto.h	$(PERL_INC)/regcomp.h	$(PERL_INC)/regexp.h \
-    $(PERL_INC)/scope.h	$(PERL_INC)/sv.h	$(PERL_INC)/unixish.h \
-    $(PERL_INC)/util.h	$(PERL_INC)/config.h
-
-');
-
-    push @m, '
-$(OBJECT) : $(PERL_HDRS)
-' if $self->{OBJECT};
-
-    push(@m,'
+    push @m, q{
 # Check for unpropogated config.sh changes. Should never happen.
 # We do NOT just update config.h because that is not sufficient.
 # An out of date config.h is not fatal but complains loudly!
 $(PERL_INC)/config.h: $(PERL_SRC)/config.sh
-	-'.$self->{NOECHO}.'echo "Warning: $(PERL_INC)/config.h out of date with $(PERL_SRC)/config.sh"; false
+	-}.$self->{NOECHO}.q{echo "Warning: $(PERL_INC)/config.h out of date with $(PERL_SRC)/config.sh"; false
 
 $(PERL_ARCHLIB)/Config.pm: $(PERL_SRC)/config.sh
-	'.$self->{NOECHO}.'echo "Warning: $(PERL_ARCHLIB)/Config.pm may be out of date with $(PERL_SRC)/config.sh"
+	}.$self->{NOECHO}.q{echo "Warning: $(PERL_ARCHLIB)/Config.pm may be out of date with $(PERL_SRC)/config.sh"
 	cd $(PERL_SRC) && $(MAKE) lib/Config.pm
-') if $self->{PERL_SRC};
+} if $self->{PERL_SRC};
 
-    push(@m, join(" ", values %{$self->{XS}})." : \$(XSUBPPDEPS)\n")
-	if %{$self->{XS}};
-    join("\n",@m);
+    return join "", @m unless $self->needs_linking;
+
+    push @m, q{
+PERL_HDRS = \
+$(PERL_INC)/EXTERN.h       $(PERL_INC)/gv.h           $(PERL_INC)/pp.h       \
+$(PERL_INC)/INTERN.h       $(PERL_INC)/handy.h        $(PERL_INC)/proto.h    \
+$(PERL_INC)/XSUB.h         $(PERL_INC)/hv.h           $(PERL_INC)/regcomp.h  \
+$(PERL_INC)/av.h           $(PERL_INC)/keywords.h     $(PERL_INC)/regexp.h   \
+$(PERL_INC)/config.h       $(PERL_INC)/mg.h           $(PERL_INC)/scope.h    \
+$(PERL_INC)/cop.h          $(PERL_INC)/op.h           $(PERL_INC)/sv.h	     \
+$(PERL_INC)/cv.h           $(PERL_INC)/opcode.h       $(PERL_INC)/unixish.h  \
+$(PERL_INC)/dosish.h       $(PERL_INC)/patchlevel.h   $(PERL_INC)/util.h     \
+$(PERL_INC)/embed.h        $(PERL_INC)/perl.h				     \
+$(PERL_INC)/form.h         $(PERL_INC)/perly.h
+
+$(OBJECT) : $(PERL_HDRS)
+} if $self->{OBJECT};
+
+    push @m, join(" ", values %{$self->{XS}})." : \$(XSUBPPDEPS)\n"  if %{$self->{XS}};
+
+    join "\n", @m;
 }
 
 =item pm_to_blib
@@ -2428,7 +2441,7 @@ sub pm_to_blib {
 pm_to_blib: $(TO_INST_PM)
 	}.$self->{NOECHO}.q{$(PERL) "-I$(INST_ARCHLIB)" "-I$(INST_LIB)" \
 	"-I$(PERL_ARCHLIB)" "-I$(PERL_LIB)" -MExtUtils::Install \
-	-e 'pm_to_blib({@ARGV},"}.$autodir.q{")' $(PM_TO_BLIB)
+        -e 'pm_to_blib({qw{$(PM_TO_BLIB)}},"}.$autodir.q{")'
 	}.$self->{NOECHO}.q{$(TOUCH) $@
 };
 }

@@ -1,23 +1,54 @@
-=head2 v5.32  April 21, 1996 by Andreas Koenig
+=head2 v5.33  June ???, 1996 by Andreas Koenig
+
+Replaced the self knitted SUPER in mv_all_methods with a real SUPER
+call.
+
+Added an Intro chapter to the manpage and deleted the details of the
+upgrade from 4.23 to 5.00.
+
+Changed the search for pod2man to look into scriptdirexp instead of
+lib (Thanks, Ulrich Pfeifer!)
+
+Made VMS::manifypod and Unix::manifypod more similar, preparing a
+split into two smaller methods.
+
+Moved cflags, const_loadlibs, and const_cccmd in front of
+postconstants and pasthru. Very important bug fix!
+
+Fixed the two my ... masks earlier declaration in same scope bugs in
+Manifest. (Thanks, Gurusamy Sarathy!)
+
+Added a pointer to ExtUtils::embed to the manpage.
+
+Added .NO_CONFIG_REC for clearcase users.
+
+=head2 v5.32  May 5, 1996 by Andreas Koenig
+
+This release's main purpose is to eliminate left over hard coded
+slashes, dots, dot-dots etc. to make porting easier for Matthias
+Neeracher, the Mac porter. Thanks, for the helpful comments, Matthias.
 
 Skip pods when scanning VERSION_FROM and do so in a separate
 subroutine, so other programs may use this version parsing method
-(parse_version_var($file))
+(MM->parse_version($file))
 
 Set $| to 1 if verbose. (Ilya)
 
-Improve catdir in MM_Unix: it now returns "/" on catdir("/"). All "/"
+Improve catdir in MM_Unix: it now returns "/" on &catdir("/"). All "/"
 operations are done via substr and length for maximum performance.
 
 Introduce three new directory methods: curdir, rootdir, updir. All
 three simply return strings: ".", "/", and "..". This is considered an
 interim solution until we have a File::Generic module.
 
-Deprecated ROOTEXT (it as defined as "with leading slash" and broke
+Canonpath removes successive slashes, successive "/.", trailing
+slashes and leading "./".
+
+Deprecated ROOTEXT (it was defined as "with leading slash" and broke
 any portability. Introduced PARENT_NAME instead, which is Foo::Bar for
 Foo::Bar::Baz.
 
-Ilya's patch that enables amnual setting of TEST_FILE and TESTDB_SW is
+Ilya's patch that enables manual setting of TEST_FILE and TESTDB_SW is
 in. (Undocumented feature: make testdb TEST_FILE=foo TESTDB_SW=-d:DProf)
 
 Ilya's patch to convert OS2 files to unix line ending conventions is

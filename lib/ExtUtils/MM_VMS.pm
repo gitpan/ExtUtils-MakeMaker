@@ -1421,19 +1421,16 @@ to specify fallback location at build time if we can't find pod2man.
 
 =cut
 
+
 sub manifypods {
     my($self, %attribs) = @_;
-    unless (ref $self){
-	ExtUtils::MakeMaker::TieAtt::warndirectuse((caller(0))[3]);
-	$self = $ExtUtils::MakeMaker::Parent[-1];
-    }
-    return "\nmanifypods :\n\t\$(NOOP)\n" unless %{$self->{MAN3PODS}};
+    return "\nmanifypods :\n\t\$(NOOP)\n" unless %{$self->{MAN3PODS}} or %{$self->{MAN1PODS}};
     my($dist);
-    my($pod2man_exe,$found_pod2man);
+    my($pod2man_exe);
     if (defined $self->{PERL_SRC}) {
 	$pod2man_exe = $self->catfile($self->{PERL_SRC},'pod','pod2man');
     } else {
-	$pod2man_exe = $self->catfile($Config{bin},'pod2man');
+	$pod2man_exe = $self->catfile($Config{scriptdirexp},'pod2man');
     }
     if ($pod2man_exe = $self->perl_script($pod2man_exe)) { $found_pod2man = 1; }
     else {
