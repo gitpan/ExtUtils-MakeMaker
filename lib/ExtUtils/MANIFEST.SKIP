@@ -1,6 +1,7 @@
 # Avoid version control files.
 \bRCS\b
 \bCVS\b
+\bSCCS\b
 ,v$
 \B\.svn\b
 
@@ -10,7 +11,7 @@
 \bblib/
 \bMakeMaker-\d
 \bpm_to_blib$
-\bblibdirs$
+\bblibdirs\.ts$
 
 # Avoid Module::Build generated and utility files.
 \bBuild$

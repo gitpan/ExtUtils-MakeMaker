@@ -11,10 +11,10 @@ use File::Basename qw(basename dirname);
 use DirHandle;
 
 use vars qw($VERSION @ISA
-            $Is_Mac $Is_OS2 $Is_VMS $Is_Win32 $Is_Win95  $Is_Dos $Is_VOS
+            $Is_OS2 $Is_VMS $Is_Win32 $Is_Win95  $Is_Dos $Is_VOS
             $Is_QNX $Is_AIX $Is_OSF $Is_IRIX  $Is_NetBSD $Is_BSD
             $Is_SunOS4 $Is_Solaris $Is_SunOS
-            $Verbose %pm %static
+            $Verbose %pm
             %Config_Override
            );
 
@@ -26,7 +26,6 @@ require ExtUtils::MM_Any;
 @ISA = qw(ExtUtils::MM_Any);
 
 $Is_OS2     = $^O eq 'os2';
-$Is_Mac     = $^O eq 'MacOS';
 $Is_Win32   = $^O eq 'MSWin32' || $Config{osname} eq 'NetWare';
 $Is_Win95   = $Is_Win32 && Win32::IsWin95();
 $Is_Dos     = $^O eq 'dos';
@@ -296,7 +295,7 @@ clean :: clean_subdirs
                          $(INST_ARCHAUTODIR)/extralibs.all
                          $(INST_ARCHAUTODIR)/extralibs.ld
 			 perlmain.c tmon.out mon.out so_locations 
-                         blibdirs pm_to_blib
+                         blibdirs.ts pm_to_blib.ts
 			 *$(OBJ_EXT) *$(LIB_EXT) perl.exe perl perl$(EXE_EXT)
 			 $(BOOTSTRAP) $(BASEEXT).bso
 			 $(BASEEXT).def lib$(BASEEXT).def
@@ -557,72 +556,6 @@ sub depend {
 	push @m, "$key : $val\n";
     }
     join "", @m;
-}
-
-
-=item dir_target B<DEPRECATED>
-
-    my $make_frag = $mm->dir_target(@directories);
-
-I<This function is deprecated> its use is no longer necessary and is I<only
-provided for backwards compatibility>.  blibdirs_target provides a much
-simpler mechanism and pm_to_blib() can create its own directories anyway.
-
-Returns a Makefile entry for a .exists file in each of the @directories.
-The purpose is to create a directory and provide a make target to depend on.
-The make target is a .exists file in each of those directories.
-
-For example
-
-    $mm->dir_target('$(INST_ARCHDIR)');
-
-would return the make target C<$(INST_ARCHDIR)/.exists> which would
-create $(INST_ARCHDIR) and touch .exists.  You would depend on this target
-to make sure $(INST_ARCHDIR) is created.
-
-Ignores directories which have already gone through dir_target() so you
-might wind up getting nothing.
-
-=cut
-
-sub dir_target {
-    my($self, @dirs) = @_;
-
-    my @targs = ();
-    my $make = '';
-    foreach my $dir (@dirs) {
-        my $targ = $self->catfile($dir, '.exists');
-
-        my $targdir;
-        if ($Is_VMS) { # Just remove file name; dirspec is often in macro
-            ($targdir = $targ) =~ s:/?\.exists\z::;
-        }
-        else { # while elsewhere we expect to see the dir separator in $targ
-            $targdir = dirname($targ);
-        }
-
-        next if $self->{DIR_TARGET}{$self}{$targdir}++;
-
-        push @targs, $targ;
-        $make .= <<MAKE_FRAG;
-$targ ::
-	\$(NOECHO) \$(MKPATH) $targdir
-	\$(NOECHO) \$(TOUCH) $targ
-	\$(NOECHO) \$(CHMOD) \$(PERM_RWX) $targdir
-
-MAKE_FRAG
-
-    }
-
-    # So these new .exists targets get called along with blibdirs.
-    my $blib_addition = '';
-    $blib_addition = <<MAKE_FRAG if @targs;
-blibdirs :: @targs
-	\$(NOECHO) \$(NOOP)
-
-MAKE_FRAG
-
-    return $blib_addition . $make;
 }
 
 
@@ -1078,17 +1011,17 @@ BOOTSTRAP = $(BASEEXT).bs
 # As Mkbootstrap might not write a file (if none is required)
 # we use touch to prevent make continually trying to remake it.
 # The DynaLoader only reads a non-empty file.
-$(BOOTSTRAP): $(FIRST_MAKEFILE) $(BOOTDEP) blibdirs
+$(BOOTSTRAP): $(FIRST_MAKEFILE) $(BOOTDEP) blibdirs.ts
 	$(NOECHO) $(ECHO) "Running Mkbootstrap for $(NAME) ($(BSLOADLIBS))"
 	$(NOECHO) $(PERLRUN) \
 		"-MExtUtils::Mkbootstrap" \
 		-e "Mkbootstrap('$(BASEEXT)','$(BSLOADLIBS)');"
-	$(NOECHO) $(TOUCH) $(BOOTSTRAP)
+	$(NOECHO) $(TOUCH) $@
 	$(CHMOD) $(PERM_RW) $@
 
-$(INST_BOOT): $(BOOTSTRAP) blibdirs
-	$(NOECHO) $(RM_RF) $(INST_BOOT)
-	-$(CP) $(BOOTSTRAP) $(INST_BOOT)
+$(INST_BOOT): $(BOOTSTRAP) blibdirs.ts
+	$(NOECHO) $(RM_RF) $@
+	-$(CP) $(BOOTSTRAP) $@
 	$(CHMOD) $(PERM_RW) $@
 MAKE_FRAG
 }
@@ -1121,7 +1054,7 @@ OTHERLDFLAGS = '.$ld_opt.$otherldflags.'
 INST_DYNAMIC_DEP = '.$inst_dynamic_dep.'
 INST_DYNAMIC_FIX = '.$ld_fix.'
 
-$(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) blibdirs $(EXPORT_LIST) $(PERL_ARCHIVE) $(PERL_ARCHIVE_AFTER) $(INST_DYNAMIC_DEP)
+$(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) blibdirs.ts $(EXPORT_LIST) $(PERL_ARCHIVE) $(PERL_ARCHIVE_AFTER) $(INST_DYNAMIC_DEP)
 ');
     if ($armaybe ne ':'){
 	$ldfrom = 'tmp$(LIB_EXT)';
@@ -1237,7 +1170,7 @@ WARNING
             next unless $self->maybe_command($abs);
             print "Executing $abs\n" if ($trace >= 2);
 
-            my $version_check = qq{$abs -e "require $ver; print qq{VER_OK\n}"};
+            my $version_check = qq{$abs -le "require $ver; print qq{VER_OK}"};
             # To avoid using the unportable 2>&1 to supress STDERR,
             # we close it before running the command.
             # However, thanks to a thread library bug in many BSDs
@@ -1789,8 +1722,6 @@ sub init_main {
 		&&
 		-s $self->catfile($self->{PERL_SRC},'perlshr_attr.opt')
 		or
-		$Is_Mac
-		or
 		$Is_Win32
 	       ){
 	    warn qq{
@@ -1963,9 +1894,9 @@ sub init_others {	# --- Initialize Other Attributes
     $self->{CP}         ||= "cp";
     $self->{MV}         ||= "mv";
     $self->{CHMOD}      ||= "chmod";
-    $self->{MKPATH}     ||= '$(PERLRUN) "-MExtUtils::Command" -e mkpath';
+    $self->{MKPATH}     ||= '$(ABSPERLRUN) "-MExtUtils::Command" -e mkpath';
     $self->{EQUALIZE_TIMESTAMP} ||= 
-      '$(PERLRUN) "-MExtUtils::Command" -e eqtime';
+      '$(ABSPERLRUN) "-MExtUtils::Command" -e eqtime';
 
     $self->{UNINST}     ||= 0;
     $self->{VERBINST}   ||= 0;
@@ -1974,11 +1905,11 @@ sub init_others {	# --- Initialize Other Attributes
 install({@ARGV}, '$(VERBINST)', 0, '$(UNINST)');
 CODE
     $self->{DOC_INSTALL} ||= 
-      '$(PERLRUN) "-MExtUtils::Command::MM" -e perllocal_install';
+      '$(ABSPERLRUN) "-MExtUtils::Command::MM" -e perllocal_install';
     $self->{UNINSTALL}   ||= 
-      '$(PERLRUN) "-MExtUtils::Command::MM" -e uninstall';
+      '$(ABSPERLRUN) "-MExtUtils::Command::MM" -e uninstall';
     $self->{WARN_IF_OLD_PACKLIST} ||= 
-      '$(PERLRUN) "-MExtUtils::Command::MM" -e warn_if_old_packlist';
+      '$(ABSPERLRUN) "-MExtUtils::Command::MM" -e warn_if_old_packlist';
 
     $self->{UMASK_NULL}         ||= "umask 0";
     $self->{DEV_NULL}           ||= "> /dev/null 2>&1";
@@ -2641,7 +2572,7 @@ realclean ::
 	last unless defined $from;
 	my $todir = dirname($to);
 	push @m, "
-$to: $from \$(FIRST_MAKEFILE) blibdirs
+$to : $from \$(FIRST_MAKEFILE) blibdirs.ts
 	\$(NOECHO) \$(RM_F) $to
 	\$(CP) $from $to
 	\$(FIXIN) $to
@@ -2773,12 +2704,16 @@ $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE)
     $linkcmd =~ s,(perl\.exp),\$(PERL_INC)/$1,;
 
     # Which *.a files could we make use of...
-    local(%static);
+    my %static;
     require File::Find;
     File::Find::find(sub {
 	return unless m/\Q$self->{LIB_EXT}\E$/;
-	return if m/^libperl/;
-	# Skip purified versions of libraries (e.g., DynaLoader_pure_p1_c0_032.a)
+
+        # Skip perl's libraries.
+        return if m/^libperl/ or m/^perl\Q$self->{LIB_EXT}\E$/;
+
+	# Skip purified versions of libraries 
+        # (e.g., DynaLoader_pure_p1_c0_032.a)
 	return if m/_pure_\w+_\w+_\w+\.\w+$/ and -f "$File::Find::dir/.pure";
 
 	if( exists $self->{INCLUDE_EXT} ){
@@ -2889,7 +2824,7 @@ LLIBPERL    = $llibperl
 ";
 
     push @m, "
-\$(INST_ARCHAUTODIR)/extralibs.all: blibdirs ".join(" \\\n\t", @$extra).'
+\$(INST_ARCHAUTODIR)/extralibs.all: blibdirs.ts ".join(" \\\n\t", @$extra).'
 	$(NOECHO) $(RM_F)  $@
 	$(NOECHO) $(TOUCH) $@
 ';
@@ -2972,8 +2907,8 @@ $(OBJECT) : $(FIRST_MAKEFILE)
 $(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP)
 	$(NOECHO) $(ECHO) "Makefile out-of-date with respect to $?"
 	$(NOECHO) $(ECHO) "Cleaning current config before rebuilding Makefile..."
-	$(NOECHO) $(RM_F) $(MAKEFILE_OLD)
-	$(NOECHO) $(MV)   $(FIRST_MAKEFILE) $(MAKEFILE_OLD)
+	-$(NOECHO) $(RM_F) $(MAKEFILE_OLD)
+	-$(NOECHO) $(MV)   $(FIRST_MAKEFILE) $(MAKEFILE_OLD)
 	-$(MAKE) -f $(MAKEFILE_OLD) clean $(DEV_NULL) || $(NOOP)
 	$(PERLRUN) Makefile.PL }.join(" ",map(qq["$_"],@ARGV)).q{
 	$(NOECHO) $(ECHO) "==> Your Makefile has been rebuilt. <=="
@@ -3272,7 +3207,7 @@ sub pm_to_blib {
     my $self = shift;
     my($autodir) = $self->catdir('$(INST_LIB)','auto');
     my $r = q{
-pm_to_blib: $(TO_INST_PM)
+pm_to_blib.ts: $(TO_INST_PM)
 };
 
     my $pm_to_blib = $self->oneliner(<<CODE, ['-MExtUtils::Install']);
@@ -3526,20 +3461,20 @@ realclean purge ::  clean realclean_subdirs
     # Occasionally files are repeated several times from different sources
     { my(%f) = map { ($_,1) } @files; @files = keys %f; }
 
-    # Issue a several little RM_F commands rather than risk creating a
+    # Issue a several little RM_RF commands rather than risk creating a
     # very long command line (useful for extensions such as Encode
     # that have many files).
     my $line = "";
     foreach my $file (@files) {
         if (length($line) + length($file) > 200) {
-            push @m, "\t\$(RM_F) $line\n";
+            push @m, "\t\$(RM_RF) $line\n";
             $line = $file;
         }
         else {
             $line .= " $file"; 
         }
     }
-    push @m, "\t\$(RM_F) $line\n" if $line;
+    push @m, "\t\$(RM_RF) $line\n" if $line;
     push(@m, "\t$attribs{POSTOP}\n")      if $attribs{POSTOP};
 
     join("", @m);
@@ -3613,7 +3548,7 @@ sub oneliner {
 
     $switches = join ' ', @$switches;
 
-    return qq{\$(PERLRUN) $switches -e $cmd};   
+    return qq{\$(ABSPERLRUN) $switches -e $cmd};   
 }
 
 
@@ -3698,7 +3633,7 @@ sub static_lib {
     my(@m);
     push(@m, <<'END');
 
-$(INST_STATIC): $(OBJECT) $(MYEXTLIB) blibdirs
+$(INST_STATIC): $(OBJECT) $(MYEXTLIB) blibdirs.ts
 	$(RM_RF) $@
 END
 
@@ -3845,7 +3780,7 @@ test :: \$(TEST_TYPE)
 ");
 
     if ($Is_Win95) {
-        push(@m, map(qq{\t\$(NOECHO) \$(PERLRUN) -e "exit unless -f shift; chdir '$_'; system q{\$(MAKE) test \$(PASTHRU)}" \$(FIRST_MAKEFILE)\n}, @{$self->{DIR}}));
+        push(@m, map(qq{\t\$(NOECHO) \$(PERLRUN) -e "exit unless -f shift; chdir '$_'; system q[\$(MAKE) test \$(PASTHRU)]" \$(FIRST_MAKEFILE)\n}, @{$self->{DIR}}));
     }
     else {
         push(@m, map("\t\$(NOECHO) cd $_ && \$(TEST_F) \$(FIRST_MAKEFILE) && \$(MAKE) test \$(PASTHRU)\n", @{$self->{DIR}}));
@@ -3954,7 +3889,12 @@ sub tool_xsubpp {
     return "" unless $self->needs_linking;
 
     my $xsdir;
-    foreach my $dir (@INC) {
+    my @xsubpp_dirs = @INC;
+
+    # Make sure we pick up the new xsubpp if we're building perl.
+    unshift @xsubpp_dirs, $self->{PERL_LIB} if $self->{PERL_CORE};
+
+    foreach my $dir (@xsubpp_dirs) {
         $xsdir = $self->catdir($dir, 'ExtUtils');
         if( -r $self->catfile($xsdir, "xsubpp") ) {
             last;
@@ -4024,13 +3964,13 @@ sub top_targets {
     push @m, $self->all_target, "\n" unless $self->{SKIPHASH}{'all'};
 
     push @m, '
-pure_all :: config pm_to_blib subdirs linkext
+pure_all :: config pm_to_blib.ts subdirs linkext
 	$(NOECHO) $(NOOP)
 
 subdirs :: $(MYEXTLIB)
 	$(NOECHO) $(NOOP)
 
-config :: $(FIRST_MAKEFILE) blibdirs
+config :: $(FIRST_MAKEFILE) blibdirs.ts
 	$(NOECHO) $(NOOP)
 ';
 
@@ -4039,7 +3979,7 @@ $(O_FILES): $(H_FILES)
 ' if @{$self->{O_FILES} || []} && @{$self->{H} || []};
 
     push @m, q{
-help:
+help :
 	perldoc ExtUtils::MakeMaker
 };
 

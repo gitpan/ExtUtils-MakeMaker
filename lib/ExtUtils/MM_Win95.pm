@@ -7,8 +7,8 @@ require ExtUtils::MM_Win32;
 @ISA = qw(ExtUtils::MM_Win32);
 
 use Config;
-my $DMAKE = 1 if $Config{'make'} =~ /^dmake/i;
-my $NMAKE = 1 if $Config{'make'} =~ /^nmake/i;
+my $DMAKE = $Config{'make'} =~ /^dmake/i;
+my $NMAKE = $Config{'make'} =~ /^nmake/i;
 
 
 =head1 NAME
@@ -189,6 +189,20 @@ RCLEAN
     }
 
     return $rclean;
+}
+
+
+=item max_exec_len
+
+Win98 chokes on things like Encode if we set the max length to nmake's max
+of 2K.  So we go for a more conservative value of 1K.
+
+=cut
+
+sub max_exec_len {
+    my $self = shift;
+
+    return $self->{_MAX_EXEC_LEN} ||= 1024;
 }
 
 
