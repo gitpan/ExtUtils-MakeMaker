@@ -1,3 +1,27 @@
+5.90_01 Thu Apr 11 01:11:54 EDT 2002
+    [[ API Changes ]]
+    * Implementation of the new PREFIX logic.
+    * Added new INSTALL targets:
+        INSTALLSITEBIN
+        INSTALLSITEMAN1DIR   INSTALLSITEMAN3DIR 
+        INSTALLVENDORMAN1DIR INSTALLVENDORMAN3DIR
+        INSTALLVENDORBIN INSTALLVENDORLIB INSTALLVENDORARCH
+        SITEPREFIX VENDORPREFIX
+    * INSTALLDIRS=site now properly using $Config{siteprefixexp}
+      (Thieved from Debian.  Thanks!)
+    * Added INSTALLDIRS=vendor & support for vendor directories
+      (Thieved from Debian.  Thanks!)
+
+    [[ Bug Fixes ]]
+    - nmake syntax nits from Mattia Barbon
+    - ExtUtils::Packlist fix for files with spaces in them from Jan Dubois
+      (bleadperl@15800)
+    - Old, old, old dmake bug in MM_Win32->pm_to_blib fixed by Nick
+      (bleadperl 15847)
+
+    [[ Internals ]]
+    - Purging leftover PDP compiler flags.
+
 5.55_03 Sat Apr  6 21:57:01 EST 2002
     - Reversing "fix" for RT 444.  It wasn't really fixed and it
       caused havoc with Compress::Zlib and Tk.
