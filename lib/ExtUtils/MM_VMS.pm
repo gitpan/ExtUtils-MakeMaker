@@ -14,7 +14,7 @@ use VMS::Filespec;
 use File::Basename;
 use File::Spec;
 use vars qw($Revision @ISA $VERSION);
-($VERSION) = $Revision = '5.62_01';
+($VERSION) = $Revision = '5.63_01';
 
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
@@ -703,7 +703,7 @@ sub const_cccmd {
         push @m,'
 .FIRST
 	',$self->{NOECHO},'If F$TrnLnm("Sys").eqs."" .and. F$TrnLnm("DECC$System_Include").eqs."" Then Define/NoLog SYS ',
-		($Config{'arch'} eq 'VMS_AXP' ? 'Sys$Library' : 'DECC$Library_Include'),'
+		($Config{'archname'} eq 'VMS_AXP' ? 'Sys$Library' : 'DECC$Library_Include'),'
 	',$self->{NOECHO},'If F$TrnLnm("Sys").eqs."" .and. F$TrnLnm("DECC$System_Include").nes."" Then Define/NoLog SYS DECC$System_Include';
     }
 
@@ -1658,8 +1658,8 @@ doc__install : doc_site_install
 
 # This hack brought to you by DCL's 255-character command line limit
 pure_perl_install ::
-	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'read '.File::Spec->catfile('$(PERL_ARCHLIB)','auto','$(FULLEXT)','.packlist') " >.MM_tmp
-	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'write '.File::Spec->catfile('$(INSTALLARCHLIB)','auto','$(FULLEXT)','.packlist') " >>.MM_tmp
+	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'read '.File::Spec->catfile('$(PERL_ARCHLIB)','auto','$(FULLEXT)','.packlist').' '" >.MM_tmp
+	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'write '.File::Spec->catfile('$(INSTALLARCHLIB)','auto','$(FULLEXT)','.packlist').' '" >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_LIB) $(INSTALLPRIVLIB) '" >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_ARCHLIB) $(INSTALLARCHLIB) '" >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_BIN) $(INSTALLBIN) '" >>.MM_tmp
@@ -1672,8 +1672,8 @@ pure_perl_install ::
 
 # Likewise
 pure_site_install ::
-	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'read '.File::Spec->catfile('$(SITEARCHEXP)','auto','$(FULLEXT)','.packlist') " >.MM_tmp
-	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'write '.File::Spec->catfile('$(INSTALLSITEARCH)','auto','$(FULLEXT)','.packlist') " >>.MM_tmp
+	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'read '.File::Spec->catfile('$(SITEARCHEXP)','auto','$(FULLEXT)','.packlist').' '" >.MM_tmp
+	$(NOECHO) $(PERLRUN) "-MFile::Spec" -e "print 'write '.File::Spec->catfile('$(INSTALLSITEARCH)','auto','$(FULLEXT)','.packlist').' '" >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_LIB) $(INSTALLSITELIB) '" >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_ARCHLIB) $(INSTALLSITEARCH) '" >>.MM_tmp
 	$(NOECHO) $(PERL) -e "print '$(INST_BIN) $(INSTALLBIN) '" >>.MM_tmp
@@ -1764,7 +1764,7 @@ $(OBJECT) : $(PERL_INC)util.h, $(PERL_INC)vmsish.h, $(PERL_INC)warnings.h
     if ($self->{PERL_SRC}) {
 	my(@macros);
 	my($mmsquals) = '$(USEMAKEFILE)[.vms]$(MAKEFILE)';
-	push(@macros,'__AXP__=1') if $Config{'arch'} eq 'VMS_AXP';
+	push(@macros,'__AXP__=1') if $Config{'archname'} eq 'VMS_AXP';
 	push(@macros,'DECC=1')    if $Config{'vms_cc_type'} eq 'decc';
 	push(@macros,'GNUC=1')    if $Config{'vms_cc_type'} eq 'gcc';
 	push(@macros,'SOCKET=1')  if $Config{'d_has_sockets'};
