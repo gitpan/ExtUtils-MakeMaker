@@ -1,7 +1,7 @@
 # This Makefile is for the ExtUtils::MakeMaker extension to perl.
 #
 # It was generated automatically by MakeMaker version
-# 6.25_03 (Revision: 4056) from the contents of
+# 6.25_04 (Revision: 4056) from the contents of
 # Makefile.PL. Don't edit this file, edit Makefile.PL instead.
 #
 #       ANY CHANGES MADE HERE WILL BE LOST!
@@ -15,7 +15,7 @@
 #     EXE_FILES => [q[bin/instmodsh]]
 #     INSTALLDIRS => q[perl]
 #     NAME => q[ExtUtils::MakeMaker]
-#     PREREQ_PM => { DirHandle=>q[0], Pod::Man=>q[0], File::Spec=>q[0.8], File::Basename=>q[0] }
+#     PREREQ_PM => { File::Spec=>q[0.8], File::Basename=>q[0], Pod::Man=>q[0], DirHandle=>q[0] }
 #     VERSION_FROM => q[lib/ExtUtils/MakeMaker.pm]
 
 # --- MakeMaker post_initialize section:
@@ -55,11 +55,11 @@ AR_STATIC_ARGS = cr
 DIRFILESEP = /
 NAME = ExtUtils::MakeMaker
 NAME_SYM = ExtUtils_MakeMaker
-VERSION = 6.25_03
+VERSION = 6.25_04
 VERSION_MACRO = VERSION
-VERSION_SYM = 6_25_03
+VERSION_SYM = 6_25_04
 DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-XS_VERSION = 6.25_03
+XS_VERSION = 6.25_04
 XS_VERSION_MACRO = XS_VERSION
 XS_DEFINE_VERSION = -D$(XS_VERSION_MACRO)=\"$(XS_VERSION)\"
 INST_ARCHLIB = blib/arch
@@ -130,7 +130,7 @@ PERM_RW = 644
 PERM_RWX = 755
 
 MAKEMAKER   = lib/ExtUtils/MakeMaker.pm
-MM_VERSION  = 6.25_03
+MM_VERSION  = 6.25_04
 MM_REVISION = 4056
 
 # FULLEXT = Pathname for extension directory (eg Foo/Bar/Oracle).
@@ -242,80 +242,80 @@ TO_INST_PM = lib/ExtUtils/Command.pm \
 	lib/ExtUtils/Packlist.pm \
 	lib/ExtUtils/testlib.pm
 
-PM_TO_BLIB = lib/ExtUtils/Liblist/Kid.pm \
-	blib/lib/ExtUtils/Liblist/Kid.pm \
-	lib/ExtUtils/testlib.pm \
-	blib/lib/ExtUtils/testlib.pm \
-	lib/ExtUtils/MM_Cygwin.pm \
-	blib/lib/ExtUtils/MM_Cygwin.pm \
-	lib/ExtUtils/MM_MacOS.pm \
-	blib/lib/ExtUtils/MM_MacOS.pm \
-	lib/ExtUtils/MakeMaker/Config.pm \
-	blib/lib/ExtUtils/MakeMaker/Config.pm \
-	lib/ExtUtils/MakeMaker/vmsish.pm \
-	blib/lib/ExtUtils/MakeMaker/vmsish.pm \
-	lib/ExtUtils/MANIFEST.SKIP \
-	blib/lib/ExtUtils/MANIFEST.SKIP \
-	lib/ExtUtils/MM_UWIN.pm \
-	blib/lib/ExtUtils/MM_UWIN.pm \
+PM_TO_BLIB = lib/ExtUtils/MM_DOS.pm \
+	blib/lib/ExtUtils/MM_DOS.pm \
 	lib/ExtUtils/MM_OS2.pm \
 	blib/lib/ExtUtils/MM_OS2.pm \
-	lib/ExtUtils/Command.pm \
-	blib/lib/ExtUtils/Command.pm \
-	lib/ExtUtils/MM_VOS.pm \
-	blib/lib/ExtUtils/MM_VOS.pm \
 	lib/ExtUtils/MY.pm \
 	blib/lib/ExtUtils/MY.pm \
-	lib/ExtUtils/Packlist.pm \
-	blib/lib/ExtUtils/Packlist.pm \
-	lib/ExtUtils/MM_Unix.pm \
-	blib/lib/ExtUtils/MM_Unix.pm \
-	lib/ExtUtils/Installed.pm \
-	blib/lib/ExtUtils/Installed.pm \
-	lib/ExtUtils/MM_Any.pm \
-	blib/lib/ExtUtils/MM_Any.pm \
-	lib/ExtUtils/Mkbootstrap.pm \
-	blib/lib/ExtUtils/Mkbootstrap.pm \
-	lib/ExtUtils/MM_QNX.pm \
-	blib/lib/ExtUtils/MM_QNX.pm \
-	lib/ExtUtils/Liblist.pm \
-	blib/lib/ExtUtils/Liblist.pm \
-	lib/ExtUtils/MM_NW5.pm \
-	blib/lib/ExtUtils/MM_NW5.pm \
-	lib/ExtUtils/Command/MM.pm \
-	blib/lib/ExtUtils/Command/MM.pm \
-	lib/ExtUtils/MM_DOS.pm \
-	blib/lib/ExtUtils/MM_DOS.pm \
-	lib/ExtUtils/MM.pm \
-	blib/lib/ExtUtils/MM.pm \
-	lib/ExtUtils/MakeMaker/Tutorial.pod \
-	blib/lib/ExtUtils/MakeMaker/Tutorial.pod \
 	lib/ExtUtils/Mksymlists.pm \
 	blib/lib/ExtUtils/Mksymlists.pm \
-	lib/ExtUtils/Install.pm \
-	blib/lib/ExtUtils/Install.pm \
+	lib/ExtUtils/MM_MacOS.pm \
+	blib/lib/ExtUtils/MM_MacOS.pm \
+	lib/ExtUtils/Liblist/Kid.pm \
+	blib/lib/ExtUtils/Liblist/Kid.pm \
+	lib/ExtUtils/Packlist.pm \
+	blib/lib/ExtUtils/Packlist.pm \
+	lib/ExtUtils/Manifest.pm \
+	blib/lib/ExtUtils/Manifest.pm \
+	lib/ExtUtils/Liblist.pm \
+	blib/lib/ExtUtils/Liblist.pm \
+	lib/ExtUtils/Command/MM.pm \
+	blib/lib/ExtUtils/Command/MM.pm \
+	lib/ExtUtils/MANIFEST.SKIP \
+	blib/lib/ExtUtils/MANIFEST.SKIP \
+	lib/ExtUtils/MM_Win32.pm \
+	blib/lib/ExtUtils/MM_Win32.pm \
 	lib/ExtUtils/MakeMaker/bytes.pm \
 	blib/lib/ExtUtils/MakeMaker/bytes.pm \
 	lib/ExtUtils/MM_BeOS.pm \
 	blib/lib/ExtUtils/MM_BeOS.pm \
-	lib/ExtUtils/Manifest.pm \
-	blib/lib/ExtUtils/Manifest.pm \
-	lib/ExtUtils/MM_VMS.pm \
-	blib/lib/ExtUtils/MM_VMS.pm \
+	lib/ExtUtils/MM_Any.pm \
+	blib/lib/ExtUtils/MM_Any.pm \
+	lib/ExtUtils/MM_Cygwin.pm \
+	blib/lib/ExtUtils/MM_Cygwin.pm \
+	lib/ExtUtils/MM_VOS.pm \
+	blib/lib/ExtUtils/MM_VOS.pm \
+	lib/ExtUtils/MakeMaker/vmsish.pm \
+	blib/lib/ExtUtils/MakeMaker/vmsish.pm \
+	lib/ExtUtils/Command.pm \
+	blib/lib/ExtUtils/Command.pm \
 	lib/ExtUtils/MM_AIX.pm \
 	blib/lib/ExtUtils/MM_AIX.pm \
-	lib/ExtUtils/MM_Win32.pm \
-	blib/lib/ExtUtils/MM_Win32.pm \
+	lib/ExtUtils/testlib.pm \
+	blib/lib/ExtUtils/testlib.pm \
+	lib/ExtUtils/MM.pm \
+	blib/lib/ExtUtils/MM.pm \
+	lib/ExtUtils/MakeMaker/Config.pm \
+	blib/lib/ExtUtils/MakeMaker/Config.pm \
+	lib/ExtUtils/Mkbootstrap.pm \
+	blib/lib/ExtUtils/Mkbootstrap.pm \
+	lib/ExtUtils/MM_QNX.pm \
+	blib/lib/ExtUtils/MM_QNX.pm \
+	lib/ExtUtils/MakeMaker/FAQ.pod \
+	blib/lib/ExtUtils/MakeMaker/FAQ.pod \
+	lib/ExtUtils/MM_VMS.pm \
+	blib/lib/ExtUtils/MM_VMS.pm \
 	lib/ExtUtils/MM_Win95.pm \
 	blib/lib/ExtUtils/MM_Win95.pm \
+	lib/ExtUtils/MakeMaker/Tutorial.pod \
+	blib/lib/ExtUtils/MakeMaker/Tutorial.pod \
+	lib/ExtUtils/Installed.pm \
+	blib/lib/ExtUtils/Installed.pm \
 	lib/ExtUtils/MakeMaker.pm \
 	blib/lib/ExtUtils/MakeMaker.pm \
-	lib/ExtUtils/MakeMaker/FAQ.pod \
-	blib/lib/ExtUtils/MakeMaker/FAQ.pod
+	lib/ExtUtils/MM_NW5.pm \
+	blib/lib/ExtUtils/MM_NW5.pm \
+	lib/ExtUtils/Install.pm \
+	blib/lib/ExtUtils/Install.pm \
+	lib/ExtUtils/MM_UWIN.pm \
+	blib/lib/ExtUtils/MM_UWIN.pm \
+	lib/ExtUtils/MM_Unix.pm \
+	blib/lib/ExtUtils/MM_Unix.pm
 
 
 # --- MakeMaker platform_constants section:
-MM_Unix_VERSION = 1.46_03
+MM_Unix_VERSION = 1.46_04
 PERL_MALLOC_DEF = -DPERL_EXTMALLOC_DEF -Dmalloc=Perl_malloc -Dfree=Perl_mfree -Drealloc=Perl_realloc -Dcalloc=Perl_calloc
 
 
@@ -377,7 +377,7 @@ RCS_LABEL = rcs -Nv$(VERSION_SYM): -q
 DIST_CP = best
 DIST_DEFAULT = tardist
 DISTNAME = ExtUtils-MakeMaker
-DISTVNAME = ExtUtils-MakeMaker-6.25_03
+DISTVNAME = ExtUtils-MakeMaker-6.25_04
 
 
 # --- MakeMaker macro section:
@@ -523,108 +523,108 @@ POD2MAN = $(POD2MAN_EXE)
 
 manifypods : pure_all  \
 	bin/instmodsh \
-	lib/ExtUtils/testlib.pm \
+	lib/ExtUtils/MM_DOS.pm \
 	lib/ExtUtils/MM_Cygwin.pm \
+	lib/ExtUtils/MM_VOS.pm \
+	lib/ExtUtils/MM_OS2.pm \
+	lib/ExtUtils/MakeMaker/vmsish.pm \
+	lib/ExtUtils/Command.pm \
+	lib/ExtUtils/MM_AIX.pm \
+	lib/ExtUtils/testlib.pm \
+	lib/ExtUtils/MY.pm \
+	lib/ExtUtils/MM.pm \
+	lib/ExtUtils/Mksymlists.pm \
 	lib/ExtUtils/MM_MacOS.pm \
 	lib/ExtUtils/MakeMaker/Config.pm \
-	lib/ExtUtils/MakeMaker/vmsish.pm \
-	lib/ExtUtils/MM_UWIN.pm \
-	lib/ExtUtils/MM_OS2.pm \
-	lib/ExtUtils/Command.pm \
-	lib/ExtUtils/MM_VOS.pm \
-	lib/ExtUtils/MY.pm \
-	lib/ExtUtils/Packlist.pm \
-	lib/ExtUtils/MM_Unix.pm \
-	lib/ExtUtils/Installed.pm \
-	lib/ExtUtils/MM_Any.pm \
 	lib/ExtUtils/Mkbootstrap.pm \
 	lib/ExtUtils/MM_QNX.pm \
-	lib/ExtUtils/Liblist.pm \
-	lib/ExtUtils/MM_NW5.pm \
-	lib/ExtUtils/Command/MM.pm \
-	lib/ExtUtils/MM_DOS.pm \
-	lib/ExtUtils/MM.pm \
-	lib/ExtUtils/MakeMaker/Tutorial.pod \
-	lib/ExtUtils/Mksymlists.pm \
-	lib/ExtUtils/Install.pm \
-	lib/ExtUtils/MakeMaker/bytes.pm \
-	lib/ExtUtils/MM_BeOS.pm \
 	lib/ExtUtils/Manifest.pm \
-	lib/ExtUtils/MM_VMS.pm \
-	lib/ExtUtils/MM_AIX.pm \
-	lib/ExtUtils/MM_Win32.pm \
-	lib/ExtUtils/MM_Win95.pm \
-	lib/ExtUtils/MakeMaker.pm \
+	lib/ExtUtils/Packlist.pm \
 	lib/ExtUtils/MakeMaker/FAQ.pod \
-	lib/ExtUtils/testlib.pm \
+	lib/ExtUtils/Liblist.pm \
+	lib/ExtUtils/MM_VMS.pm \
+	lib/ExtUtils/MM_Win95.pm \
+	lib/ExtUtils/MakeMaker/Tutorial.pod \
+	lib/ExtUtils/Installed.pm \
+	lib/ExtUtils/Command/MM.pm \
+	lib/ExtUtils/MakeMaker.pm \
+	lib/ExtUtils/MM_NW5.pm \
+	lib/ExtUtils/Install.pm \
+	lib/ExtUtils/MM_Win32.pm \
+	lib/ExtUtils/MM_BeOS.pm \
+	lib/ExtUtils/MakeMaker/bytes.pm \
+	lib/ExtUtils/MM_Any.pm \
+	lib/ExtUtils/MM_UWIN.pm \
+	lib/ExtUtils/MM_Unix.pm \
+	lib/ExtUtils/MM_DOS.pm \
 	lib/ExtUtils/MM_Cygwin.pm \
+	lib/ExtUtils/MM_VOS.pm \
+	lib/ExtUtils/MM_OS2.pm \
+	lib/ExtUtils/MakeMaker/vmsish.pm \
+	lib/ExtUtils/Command.pm \
+	lib/ExtUtils/MM_AIX.pm \
+	lib/ExtUtils/testlib.pm \
+	lib/ExtUtils/MY.pm \
+	lib/ExtUtils/MM.pm \
+	lib/ExtUtils/Mksymlists.pm \
 	lib/ExtUtils/MM_MacOS.pm \
 	lib/ExtUtils/MakeMaker/Config.pm \
-	lib/ExtUtils/MakeMaker/vmsish.pm \
-	lib/ExtUtils/MM_UWIN.pm \
-	lib/ExtUtils/MM_OS2.pm \
-	lib/ExtUtils/Command.pm \
-	lib/ExtUtils/MM_VOS.pm \
-	lib/ExtUtils/MY.pm \
-	lib/ExtUtils/Packlist.pm \
-	lib/ExtUtils/MM_Unix.pm \
-	lib/ExtUtils/Installed.pm \
-	lib/ExtUtils/MM_Any.pm \
 	lib/ExtUtils/Mkbootstrap.pm \
 	lib/ExtUtils/MM_QNX.pm \
-	lib/ExtUtils/Liblist.pm \
-	lib/ExtUtils/MM_NW5.pm \
-	lib/ExtUtils/Command/MM.pm \
-	lib/ExtUtils/MM_DOS.pm \
-	lib/ExtUtils/MM.pm \
-	lib/ExtUtils/MakeMaker/Tutorial.pod \
-	lib/ExtUtils/Mksymlists.pm \
-	lib/ExtUtils/Install.pm \
-	lib/ExtUtils/MakeMaker/bytes.pm \
-	lib/ExtUtils/MM_BeOS.pm \
 	lib/ExtUtils/Manifest.pm \
+	lib/ExtUtils/Packlist.pm \
+	lib/ExtUtils/MakeMaker/FAQ.pod \
+	lib/ExtUtils/Liblist.pm \
 	lib/ExtUtils/MM_VMS.pm \
-	lib/ExtUtils/MM_AIX.pm \
-	lib/ExtUtils/MM_Win32.pm \
 	lib/ExtUtils/MM_Win95.pm \
+	lib/ExtUtils/MakeMaker/Tutorial.pod \
+	lib/ExtUtils/Installed.pm \
+	lib/ExtUtils/Command/MM.pm \
 	lib/ExtUtils/MakeMaker.pm \
-	lib/ExtUtils/MakeMaker/FAQ.pod
+	lib/ExtUtils/MM_NW5.pm \
+	lib/ExtUtils/Install.pm \
+	lib/ExtUtils/MM_Win32.pm \
+	lib/ExtUtils/MM_BeOS.pm \
+	lib/ExtUtils/MakeMaker/bytes.pm \
+	lib/ExtUtils/MM_Any.pm \
+	lib/ExtUtils/MM_UWIN.pm \
+	lib/ExtUtils/MM_Unix.pm
 	$(NOECHO) $(POD2MAN) --section=1 --perm_rw=$(PERM_RW) \
 	  bin/instmodsh $(INST_MAN1DIR)/instmodsh.$(MAN1EXT) 
 	$(NOECHO) $(POD2MAN) --section=3 --perm_rw=$(PERM_RW) \
-	  lib/ExtUtils/testlib.pm $(INST_MAN3DIR)/ExtUtils::testlib.$(MAN3EXT) \
+	  lib/ExtUtils/MM_DOS.pm $(INST_MAN3DIR)/ExtUtils::MM_DOS.$(MAN3EXT) \
 	  lib/ExtUtils/MM_Cygwin.pm $(INST_MAN3DIR)/ExtUtils::MM_Cygwin.$(MAN3EXT) \
+	  lib/ExtUtils/MM_VOS.pm $(INST_MAN3DIR)/ExtUtils::MM_VOS.$(MAN3EXT) \
+	  lib/ExtUtils/MM_OS2.pm $(INST_MAN3DIR)/ExtUtils::MM_OS2.$(MAN3EXT) \
+	  lib/ExtUtils/MakeMaker/vmsish.pm $(INST_MAN3DIR)/ExtUtils::MakeMaker::vmsish.$(MAN3EXT) \
+	  lib/ExtUtils/Command.pm $(INST_MAN3DIR)/ExtUtils::Command.$(MAN3EXT) \
+	  lib/ExtUtils/MM_AIX.pm $(INST_MAN3DIR)/ExtUtils::MM_AIX.$(MAN3EXT) \
+	  lib/ExtUtils/testlib.pm $(INST_MAN3DIR)/ExtUtils::testlib.$(MAN3EXT) \
+	  lib/ExtUtils/MY.pm $(INST_MAN3DIR)/ExtUtils::MY.$(MAN3EXT) \
+	  lib/ExtUtils/MM.pm $(INST_MAN3DIR)/ExtUtils::MM.$(MAN3EXT) \
+	  lib/ExtUtils/Mksymlists.pm $(INST_MAN3DIR)/ExtUtils::Mksymlists.$(MAN3EXT) \
 	  lib/ExtUtils/MM_MacOS.pm $(INST_MAN3DIR)/ExtUtils::MM_MacOS.$(MAN3EXT) \
 	  lib/ExtUtils/MakeMaker/Config.pm $(INST_MAN3DIR)/ExtUtils::MakeMaker::Config.$(MAN3EXT) \
-	  lib/ExtUtils/MakeMaker/vmsish.pm $(INST_MAN3DIR)/ExtUtils::MakeMaker::vmsish.$(MAN3EXT) \
-	  lib/ExtUtils/MM_UWIN.pm $(INST_MAN3DIR)/ExtUtils::MM_UWIN.$(MAN3EXT) \
-	  lib/ExtUtils/MM_OS2.pm $(INST_MAN3DIR)/ExtUtils::MM_OS2.$(MAN3EXT) \
-	  lib/ExtUtils/Command.pm $(INST_MAN3DIR)/ExtUtils::Command.$(MAN3EXT) \
-	  lib/ExtUtils/MM_VOS.pm $(INST_MAN3DIR)/ExtUtils::MM_VOS.$(MAN3EXT) \
-	  lib/ExtUtils/MY.pm $(INST_MAN3DIR)/ExtUtils::MY.$(MAN3EXT) \
-	  lib/ExtUtils/Packlist.pm $(INST_MAN3DIR)/ExtUtils::Packlist.$(MAN3EXT) \
-	  lib/ExtUtils/MM_Unix.pm $(INST_MAN3DIR)/ExtUtils::MM_Unix.$(MAN3EXT) \
-	  lib/ExtUtils/Installed.pm $(INST_MAN3DIR)/ExtUtils::Installed.$(MAN3EXT) \
-	  lib/ExtUtils/MM_Any.pm $(INST_MAN3DIR)/ExtUtils::MM_Any.$(MAN3EXT) \
 	  lib/ExtUtils/Mkbootstrap.pm $(INST_MAN3DIR)/ExtUtils::Mkbootstrap.$(MAN3EXT) \
 	  lib/ExtUtils/MM_QNX.pm $(INST_MAN3DIR)/ExtUtils::MM_QNX.$(MAN3EXT) \
-	  lib/ExtUtils/Liblist.pm $(INST_MAN3DIR)/ExtUtils::Liblist.$(MAN3EXT) \
-	  lib/ExtUtils/MM_NW5.pm $(INST_MAN3DIR)/ExtUtils::MM_NW5.$(MAN3EXT) \
-	  lib/ExtUtils/Command/MM.pm $(INST_MAN3DIR)/ExtUtils::Command::MM.$(MAN3EXT) \
-	  lib/ExtUtils/MM_DOS.pm $(INST_MAN3DIR)/ExtUtils::MM_DOS.$(MAN3EXT) \
-	  lib/ExtUtils/MM.pm $(INST_MAN3DIR)/ExtUtils::MM.$(MAN3EXT) \
-	  lib/ExtUtils/MakeMaker/Tutorial.pod $(INST_MAN3DIR)/ExtUtils::MakeMaker::Tutorial.$(MAN3EXT) \
-	  lib/ExtUtils/Mksymlists.pm $(INST_MAN3DIR)/ExtUtils::Mksymlists.$(MAN3EXT) \
-	  lib/ExtUtils/Install.pm $(INST_MAN3DIR)/ExtUtils::Install.$(MAN3EXT) \
-	  lib/ExtUtils/MakeMaker/bytes.pm $(INST_MAN3DIR)/ExtUtils::MakeMaker::bytes.$(MAN3EXT) \
-	  lib/ExtUtils/MM_BeOS.pm $(INST_MAN3DIR)/ExtUtils::MM_BeOS.$(MAN3EXT) \
 	  lib/ExtUtils/Manifest.pm $(INST_MAN3DIR)/ExtUtils::Manifest.$(MAN3EXT) \
+	  lib/ExtUtils/Packlist.pm $(INST_MAN3DIR)/ExtUtils::Packlist.$(MAN3EXT) \
+	  lib/ExtUtils/MakeMaker/FAQ.pod $(INST_MAN3DIR)/ExtUtils::MakeMaker::FAQ.$(MAN3EXT) \
+	  lib/ExtUtils/Liblist.pm $(INST_MAN3DIR)/ExtUtils::Liblist.$(MAN3EXT) \
 	  lib/ExtUtils/MM_VMS.pm $(INST_MAN3DIR)/ExtUtils::MM_VMS.$(MAN3EXT) \
-	  lib/ExtUtils/MM_AIX.pm $(INST_MAN3DIR)/ExtUtils::MM_AIX.$(MAN3EXT) \
-	  lib/ExtUtils/MM_Win32.pm $(INST_MAN3DIR)/ExtUtils::MM_Win32.$(MAN3EXT) \
 	  lib/ExtUtils/MM_Win95.pm $(INST_MAN3DIR)/ExtUtils::MM_Win95.$(MAN3EXT) \
+	  lib/ExtUtils/MakeMaker/Tutorial.pod $(INST_MAN3DIR)/ExtUtils::MakeMaker::Tutorial.$(MAN3EXT) \
+	  lib/ExtUtils/Installed.pm $(INST_MAN3DIR)/ExtUtils::Installed.$(MAN3EXT) \
+	  lib/ExtUtils/Command/MM.pm $(INST_MAN3DIR)/ExtUtils::Command::MM.$(MAN3EXT) \
 	  lib/ExtUtils/MakeMaker.pm $(INST_MAN3DIR)/ExtUtils::MakeMaker.$(MAN3EXT) \
-	  lib/ExtUtils/MakeMaker/FAQ.pod $(INST_MAN3DIR)/ExtUtils::MakeMaker::FAQ.$(MAN3EXT) 
+	  lib/ExtUtils/MM_NW5.pm $(INST_MAN3DIR)/ExtUtils::MM_NW5.$(MAN3EXT) \
+	  lib/ExtUtils/Install.pm $(INST_MAN3DIR)/ExtUtils::Install.$(MAN3EXT) \
+	  lib/ExtUtils/MM_Win32.pm $(INST_MAN3DIR)/ExtUtils::MM_Win32.$(MAN3EXT) \
+	  lib/ExtUtils/MM_BeOS.pm $(INST_MAN3DIR)/ExtUtils::MM_BeOS.$(MAN3EXT) \
+	  lib/ExtUtils/MakeMaker/bytes.pm $(INST_MAN3DIR)/ExtUtils::MakeMaker::bytes.$(MAN3EXT) \
+	  lib/ExtUtils/MM_Any.pm $(INST_MAN3DIR)/ExtUtils::MM_Any.$(MAN3EXT) \
+	  lib/ExtUtils/MM_UWIN.pm $(INST_MAN3DIR)/ExtUtils::MM_UWIN.$(MAN3EXT) \
+	  lib/ExtUtils/MM_Unix.pm $(INST_MAN3DIR)/ExtUtils::MM_Unix.$(MAN3EXT) 
 
 
 
@@ -645,7 +645,7 @@ realclean ::
 	$(RM_F) \
 	  $(INST_SCRIPT)/instmodsh 
 
-$(INST_SCRIPT)/instmodsh : bin/instmodsh $(FIRST_MAKEFILE) blibdirs
+$(INST_SCRIPT)/instmodsh : bin/instmodsh $(FIRST_MAKEFILE) $(INST_SCRIPT) $(INST_BIN)
 	$(NOECHO) $(RM_F) $(INST_SCRIPT)/instmodsh
 	$(CP) bin/instmodsh $(INST_SCRIPT)/instmodsh
 	$(FIXIN) $(INST_SCRIPT)/instmodsh
@@ -668,20 +668,20 @@ clean_subdirs :
 
 clean :: clean_subdirs
 	- $(RM_F) \
-	  perl$(EXE_EXT) *perl.core \
-	  $(BASEEXT).x *$(LIB_EXT) \
-	  $(BASEEXT).def $(INST_ARCHAUTODIR)/extralibs.ld \
-	  core.[0-9][0-9] perl \
-	  $(MAKE_APERL_FILE) $(BOOTSTRAP) \
-	  core perl.exe \
-	  so_locations core.[0-9][0-9][0-9] \
-	  pm_to_blib.ts $(BASEEXT).bso \
-	  core.[0-9][0-9][0-9][0-9][0-9] mon.out \
-	  *$(OBJ_EXT) core.[0-9][0-9][0-9][0-9] \
-	  lib$(BASEEXT).def perlmain.c \
-	  core.[0-9] core.*perl.*.? \
-	  blibdirs.ts tmon.out \
-	  $(INST_ARCHAUTODIR)/extralibs.all $(BASEEXT).exp 
+	  core.[0-9][0-9][0-9][0-9] $(INST_ARCHAUTODIR)/extralibs.all \
+	  core.[0-9][0-9][0-9][0-9][0-9] core \
+	  lib$(BASEEXT).def $(BASEEXT).bso \
+	  $(MAKE_APERL_FILE) tmon.out \
+	  $(INST_ARCHAUTODIR)/extralibs.ld $(BOOTSTRAP) \
+	  core.[0-9][0-9][0-9] core.[0-9][0-9] \
+	  core.*perl.*.? $(BASEEXT).exp \
+	  perl so_locations \
+	  perlmain.c core.[0-9] \
+	  *$(OBJ_EXT) blibdirs.ts \
+	  $(BASEEXT).x perl$(EXE_EXT) \
+	  $(BASEEXT).def *perl.core \
+	  perl.exe pm_to_blib.ts \
+	  mon.out *$(LIB_EXT) 
 	- $(RM_RF) \
 	  blib 
 	- $(MV) $(FIRST_MAKEFILE) $(MAKEFILE_OLD) $(DEV_NULL)
@@ -707,7 +707,7 @@ metafile :
 	$(NOECHO) $(ECHO) '# http://module-build.sourceforge.net/META-spec.html' > META_new.yml
 	$(NOECHO) $(ECHO) '#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#' >> META_new.yml
 	$(NOECHO) $(ECHO) 'name:         ExtUtils-MakeMaker' >> META_new.yml
-	$(NOECHO) $(ECHO) 'version:      6.25_03' >> META_new.yml
+	$(NOECHO) $(ECHO) 'version:      6.25_04' >> META_new.yml
 	$(NOECHO) $(ECHO) 'version_from: lib/ExtUtils/MakeMaker.pm' >> META_new.yml
 	$(NOECHO) $(ECHO) 'installdirs:  perl' >> META_new.yml
 	$(NOECHO) $(ECHO) 'requires:' >> META_new.yml
@@ -717,7 +717,7 @@ metafile :
 	$(NOECHO) $(ECHO) '    Pod::Man:                      0' >> META_new.yml
 	$(NOECHO) $(ECHO) '' >> META_new.yml
 	$(NOECHO) $(ECHO) 'distribution_type: module' >> META_new.yml
-	$(NOECHO) $(ECHO) 'generated_by: ExtUtils::MakeMaker version 6.25_03' >> META_new.yml
+	$(NOECHO) $(ECHO) 'generated_by: ExtUtils::MakeMaker version 6.25_04' >> META_new.yml
 	- $(NOECHO) $(ABSPERLRUN) -MExtUtils::Command -MFile::Compare -e 'compare(@ARGV) != 0 ? (mv or warn "Cannot move @ARGV: $$!\n") : unlink(shift);' META_new.yml META.yml
 
 
@@ -1003,7 +1003,7 @@ testdb_static :: testdb_dynamic
 # --- MakeMaker ppd section:
 # Creates a PPD (Perl Package Description) for a binary distribution.
 ppd:
-	$(NOECHO) $(ECHO) '<SOFTPKG NAME="$(DISTNAME)" VERSION="6,25_03,0,0">' > $(DISTNAME).ppd
+	$(NOECHO) $(ECHO) '<SOFTPKG NAME="$(DISTNAME)" VERSION="6,25_04,0,0">' > $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <TITLE>$(DISTNAME)</TITLE>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <ABSTRACT>Create a module Makefile</ABSTRACT>' >> $(DISTNAME).ppd
 	$(NOECHO) $(ECHO) '    <AUTHOR>Michael G Schwern &lt;schwern@pobox.com&gt;</AUTHOR>' >> $(DISTNAME).ppd
@@ -1027,41 +1027,41 @@ pm_to_blib: pm_to_blib.ts
 
 pm_to_blib.ts: $(TO_INST_PM)
 	$(NOECHO) $(ABSPERLRUN) -MExtUtils::Install -e 'pm_to_blib({@ARGV}, '\''$(INST_LIB)/auto'\'', '\''$(PM_FILTER)'\'')' \
-	  lib/ExtUtils/Liblist/Kid.pm blib/lib/ExtUtils/Liblist/Kid.pm \
-	  lib/ExtUtils/testlib.pm blib/lib/ExtUtils/testlib.pm \
-	  lib/ExtUtils/MM_Cygwin.pm blib/lib/ExtUtils/MM_Cygwin.pm \
-	  lib/ExtUtils/MM_MacOS.pm blib/lib/ExtUtils/MM_MacOS.pm \
-	  lib/ExtUtils/MakeMaker/Config.pm blib/lib/ExtUtils/MakeMaker/Config.pm \
-	  lib/ExtUtils/MakeMaker/vmsish.pm blib/lib/ExtUtils/MakeMaker/vmsish.pm \
-	  lib/ExtUtils/MANIFEST.SKIP blib/lib/ExtUtils/MANIFEST.SKIP \
-	  lib/ExtUtils/MM_UWIN.pm blib/lib/ExtUtils/MM_UWIN.pm \
-	  lib/ExtUtils/MM_OS2.pm blib/lib/ExtUtils/MM_OS2.pm \
-	  lib/ExtUtils/Command.pm blib/lib/ExtUtils/Command.pm \
-	  lib/ExtUtils/MM_VOS.pm blib/lib/ExtUtils/MM_VOS.pm \
-	  lib/ExtUtils/MY.pm blib/lib/ExtUtils/MY.pm \
-	  lib/ExtUtils/Packlist.pm blib/lib/ExtUtils/Packlist.pm \
-	  lib/ExtUtils/MM_Unix.pm blib/lib/ExtUtils/MM_Unix.pm \
-	  lib/ExtUtils/Installed.pm blib/lib/ExtUtils/Installed.pm \
-	  lib/ExtUtils/MM_Any.pm blib/lib/ExtUtils/MM_Any.pm \
-	  lib/ExtUtils/Mkbootstrap.pm blib/lib/ExtUtils/Mkbootstrap.pm \
-	  lib/ExtUtils/MM_QNX.pm blib/lib/ExtUtils/MM_QNX.pm \
-	  lib/ExtUtils/Liblist.pm blib/lib/ExtUtils/Liblist.pm \
-	  lib/ExtUtils/MM_NW5.pm blib/lib/ExtUtils/MM_NW5.pm \
-	  lib/ExtUtils/Command/MM.pm blib/lib/ExtUtils/Command/MM.pm \
 	  lib/ExtUtils/MM_DOS.pm blib/lib/ExtUtils/MM_DOS.pm \
-	  lib/ExtUtils/MM.pm blib/lib/ExtUtils/MM.pm \
-	  lib/ExtUtils/MakeMaker/Tutorial.pod blib/lib/ExtUtils/MakeMaker/Tutorial.pod \
+	  lib/ExtUtils/MM_OS2.pm blib/lib/ExtUtils/MM_OS2.pm \
+	  lib/ExtUtils/MY.pm blib/lib/ExtUtils/MY.pm \
 	  lib/ExtUtils/Mksymlists.pm blib/lib/ExtUtils/Mksymlists.pm \
-	  lib/ExtUtils/Install.pm blib/lib/ExtUtils/Install.pm \
+	  lib/ExtUtils/MM_MacOS.pm blib/lib/ExtUtils/MM_MacOS.pm \
+	  lib/ExtUtils/Liblist/Kid.pm blib/lib/ExtUtils/Liblist/Kid.pm \
+	  lib/ExtUtils/Packlist.pm blib/lib/ExtUtils/Packlist.pm \
+	  lib/ExtUtils/Manifest.pm blib/lib/ExtUtils/Manifest.pm \
+	  lib/ExtUtils/Liblist.pm blib/lib/ExtUtils/Liblist.pm \
+	  lib/ExtUtils/Command/MM.pm blib/lib/ExtUtils/Command/MM.pm \
+	  lib/ExtUtils/MANIFEST.SKIP blib/lib/ExtUtils/MANIFEST.SKIP \
+	  lib/ExtUtils/MM_Win32.pm blib/lib/ExtUtils/MM_Win32.pm \
 	  lib/ExtUtils/MakeMaker/bytes.pm blib/lib/ExtUtils/MakeMaker/bytes.pm \
 	  lib/ExtUtils/MM_BeOS.pm blib/lib/ExtUtils/MM_BeOS.pm \
-	  lib/ExtUtils/Manifest.pm blib/lib/ExtUtils/Manifest.pm \
-	  lib/ExtUtils/MM_VMS.pm blib/lib/ExtUtils/MM_VMS.pm \
+	  lib/ExtUtils/MM_Any.pm blib/lib/ExtUtils/MM_Any.pm \
+	  lib/ExtUtils/MM_Cygwin.pm blib/lib/ExtUtils/MM_Cygwin.pm \
+	  lib/ExtUtils/MM_VOS.pm blib/lib/ExtUtils/MM_VOS.pm \
+	  lib/ExtUtils/MakeMaker/vmsish.pm blib/lib/ExtUtils/MakeMaker/vmsish.pm \
+	  lib/ExtUtils/Command.pm blib/lib/ExtUtils/Command.pm \
 	  lib/ExtUtils/MM_AIX.pm blib/lib/ExtUtils/MM_AIX.pm \
-	  lib/ExtUtils/MM_Win32.pm blib/lib/ExtUtils/MM_Win32.pm \
+	  lib/ExtUtils/testlib.pm blib/lib/ExtUtils/testlib.pm \
+	  lib/ExtUtils/MM.pm blib/lib/ExtUtils/MM.pm \
+	  lib/ExtUtils/MakeMaker/Config.pm blib/lib/ExtUtils/MakeMaker/Config.pm \
+	  lib/ExtUtils/Mkbootstrap.pm blib/lib/ExtUtils/Mkbootstrap.pm \
+	  lib/ExtUtils/MM_QNX.pm blib/lib/ExtUtils/MM_QNX.pm \
+	  lib/ExtUtils/MakeMaker/FAQ.pod blib/lib/ExtUtils/MakeMaker/FAQ.pod \
+	  lib/ExtUtils/MM_VMS.pm blib/lib/ExtUtils/MM_VMS.pm \
 	  lib/ExtUtils/MM_Win95.pm blib/lib/ExtUtils/MM_Win95.pm \
+	  lib/ExtUtils/MakeMaker/Tutorial.pod blib/lib/ExtUtils/MakeMaker/Tutorial.pod \
+	  lib/ExtUtils/Installed.pm blib/lib/ExtUtils/Installed.pm \
 	  lib/ExtUtils/MakeMaker.pm blib/lib/ExtUtils/MakeMaker.pm \
-	  lib/ExtUtils/MakeMaker/FAQ.pod blib/lib/ExtUtils/MakeMaker/FAQ.pod 
+	  lib/ExtUtils/MM_NW5.pm blib/lib/ExtUtils/MM_NW5.pm \
+	  lib/ExtUtils/Install.pm blib/lib/ExtUtils/Install.pm \
+	  lib/ExtUtils/MM_UWIN.pm blib/lib/ExtUtils/MM_UWIN.pm \
+	  lib/ExtUtils/MM_Unix.pm blib/lib/ExtUtils/MM_Unix.pm 
 	$(NOECHO) $(TOUCH) $@
 
 # --- MakeMaker selfdocument section:

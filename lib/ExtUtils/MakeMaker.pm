@@ -1,4 +1,4 @@
-# $Id: /mirror/CPAN/ExtUtils-MakeMaker/trunk/lib/ExtUtils/MakeMaker.pm 4066 2004-12-21T04:08:17.492202Z schwern  $
+# $Id: /mirror/CPAN/ExtUtils-MakeMaker/trunk/lib/ExtUtils/MakeMaker.pm 4069 2004-12-21T05:54:35.338294Z schwern  $
 package ExtUtils::MakeMaker;
 
 BEGIN {require 5.005_03;}
@@ -21,7 +21,7 @@ use vars qw(
 use vars qw($Revision);
 use strict;
 
-$VERSION = '6.25_03';
+$VERSION = '6.25_04';
 ($Revision) = q$Revision: 4056 $ =~ /Revision:\s+(\S+)/;
 
 @ISA = qw(Exporter);
