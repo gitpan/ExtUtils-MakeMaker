@@ -20,26 +20,36 @@ use vars qw($VERSION @ISA
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
-$VERSION = '1.46';
+$VERSION = '1.46_01';
 
 require ExtUtils::MM_Any;
 @ISA = qw(ExtUtils::MM_Any);
 
-$Is_OS2     = $^O eq 'os2';
-$Is_Win32   = $^O eq 'MSWin32' || $Config{osname} eq 'NetWare';
-$Is_Win95   = $Is_Win32 && Win32::IsWin95();
-$Is_Dos     = $^O eq 'dos';
-$Is_VOS     = $^O eq 'vos';
-$Is_VMS     = $^O eq 'VMS';
-$Is_QNX     = $^O eq 'qnx';
-$Is_AIX     = $^O eq 'aix';
-$Is_OSF     = $^O eq 'dec_osf';
-$Is_IRIX    = $^O eq 'irix';
-$Is_NetBSD  = $^O eq 'netbsd';
-$Is_SunOS4  = $^O eq 'sunos';
-$Is_Solaris = $^O eq 'solaris';
-$Is_SunOS   = $Is_SunOS4 || $Is_Solaris;
-$Is_BSD     = $^O =~ /^(?:free|net|open)bsd|bsdos$/;
+BEGIN { 
+    $Is_OS2     = $^O eq 'os2';
+    $Is_Win32   = $^O eq 'MSWin32' || $Config{osname} eq 'NetWare';
+    $Is_Win95   = $Is_Win32 && Win32::IsWin95();
+    $Is_Dos     = $^O eq 'dos';
+    $Is_VOS     = $^O eq 'vos';
+    $Is_VMS     = $^O eq 'VMS';
+    $Is_QNX     = $^O eq 'qnx';
+    $Is_AIX     = $^O eq 'aix';
+    $Is_OSF     = $^O eq 'dec_osf';
+    $Is_IRIX    = $^O eq 'irix';
+    $Is_NetBSD  = $^O eq 'netbsd';
+    $Is_SunOS4  = $^O eq 'sunos';
+    $Is_Solaris = $^O eq 'solaris';
+    $Is_SunOS   = $Is_SunOS4 || $Is_Solaris;
+    $Is_BSD     = $^O =~ /^(?:free|net|open)bsd|bsdos$/;
+}
+
+BEGIN {
+    if( $Is_VMS ) {
+        # For things like vmsify()
+        require VMS::Filespec;
+        VMS::Filespec->import;
+    }
+}
 
 
 =head1 NAME
@@ -343,9 +353,11 @@ NOOP_FRAG
     my $clean = "clean_subdirs :\n";
 
     for my $dir (@{$self->{DIR}}) {
-        $clean .= sprintf <<'MAKE_FRAG', $dir;
-	-cd %s && $(TEST_F) $(FIRST_MAKEFILE) && $(MAKE) clean
-MAKE_FRAG
+        my $subclean = $self->oneliner(sprintf <<'CODE', $dir);
+chdir '%s';  system '$(MAKE) clean' if -f '$(FIRST_MAKEFILE)';
+CODE
+
+        $clean .= "\t$subclean\n";
     }
 
     return $clean;
@@ -492,6 +504,7 @@ MM_REVISION = $self->{MM_REVISION}
 };
 
     for my $macro (qw/
+              MAKE
 	      FULLEXT BASEEXT PARENT_NAME DLBASE VERSION_FROM INC DEFINE OBJECT
 	      LDFROM LINKTYPE PM_FILTER
 	      /	) 
@@ -916,14 +929,34 @@ before tar-ing (or shar-ing).
 sub distdir {
     my($self) = shift;
 
-    return <<'MAKE_FRAG';
-distdir : metafile metafile_addtomanifest signature
+    my $mpl_args = join " ", map(qq["$_"], @ARGV);
+    my $metafile = $self->cd('$(DISTVNAME)', 
+            '$(ABSPERLRUN) Makefile.PL '.$mpl_args,
+            '$(MAKE) metafile $(MACROSTART)$(PASTHRU)$(MACROEND)',
+            '$(MAKE) metafile_addtomanifest $(MACROSTART)$(PASTHRU)$(MACROEND)'
+    );
+
+    my $distdir = sprintf <<'MAKE_FRAG', $metafile;
+distdir :
 	$(RM_RF) $(DISTVNAME)
 	$(PERLRUN) "-MExtUtils::Manifest=manicopy,maniread" \
 		-e "manicopy(maniread(),'$(DISTVNAME)', '$(DIST_CP)');"
-
+	%s
 MAKE_FRAG
 
+    if( $self->{SIGN} ) {
+	my $sign = $self->cd('$(DISTVNAME)', 
+                     '$(MAKE) signature $(MACROSTART)$(PASTHRU)$(MACROEND)'
+                   );
+
+	$distdir .= sprintf <<'MAKE_FRAG', $sign;
+	%s
+MAKE_FRAG
+    }
+
+    $distdir .= "\n";
+
+    return $distdir;
 }
 
 =item dist_test
@@ -936,14 +969,19 @@ subdirectory.
 
 sub dist_test {
     my($self) = shift;
-    my @m;
-    push @m, q{
+
+    my $test = $self->cd('$(DISTVNAME)',
+                         '$(MAKE) $(MACROSTART)$(PASTHRU)$(MACROEND)',
+                         '$(MAKE) test $(MACROSTART)$(PASTHRU)$(MACROEND)'
+                        );
+
+    return sprintf <<'MAKE_FRAG', $test;
 disttest : distdir
-	cd $(DISTVNAME) && $(ABSPERLRUN) Makefile.PL
-	cd $(DISTVNAME) && $(MAKE) $(PASTHRU)
-	cd $(DISTVNAME) && $(MAKE) test $(PASTHRU)
-};
-    join "", @m;
+	%s
+
+MAKE_FRAG
+
+
 }
 
 =item dlsyms (o)
@@ -1012,7 +1050,9 @@ sub dynamic_bs {
 BOOTSTRAP =
 ' unless $self->has_link_code();
 
-    return <<'MAKE_FRAG';
+    my $target = $Is_VMS ? '$(MMS$TARGET)' : '$@';
+
+    return sprintf <<'MAKE_FRAG', ($target) x 5;
 BOOTSTRAP = $(BASEEXT).bs
 
 # As Mkbootstrap might not write a file (if none is required)
@@ -1023,13 +1063,13 @@ $(BOOTSTRAP): $(FIRST_MAKEFILE) $(BOOTDEP) blibdirs.ts
 	$(NOECHO) $(PERLRUN) \
 		"-MExtUtils::Mkbootstrap" \
 		-e "Mkbootstrap('$(BASEEXT)','$(BSLOADLIBS)');"
-	$(NOECHO) $(TOUCH) $@
-	$(CHMOD) $(PERM_RW) $@
+	$(NOECHO) $(TOUCH) %s
+	$(CHMOD) $(PERM_RW) %s
 
 $(INST_BOOT): $(BOOTSTRAP) blibdirs.ts
-	$(NOECHO) $(RM_RF) $@
-	-$(CP) $(BOOTSTRAP) $@
-	$(CHMOD) $(PERM_RW) $@
+	$(NOECHO) $(RM_RF) %s
+	-$(CP) $(BOOTSTRAP) %s
+	$(CHMOD) $(PERM_RW) %s
 MAKE_FRAG
 }
 
@@ -1223,7 +1263,7 @@ tests in t/*.t.
 
 sub find_tests {
     my($self) = shift;
-    return 't/*.t';
+    return -d 't' ? 't/*.t' : '';
 }
 
 =back
@@ -1898,6 +1938,14 @@ sub init_others {	# --- Initialize Other Attributes
     $self->{MAKEFILE_OLD}       ||= $self->{MAKEFILE}.'.old';
     $self->{MAKE_APERL_FILE}    ||= $self->{MAKEFILE}.'.aperl';
 
+    # Some makes require a wrapper around macros passed in on the command 
+    # line.
+    $self->{MACROSTART}         ||= '';
+    $self->{MACROEND}           ||= '';
+
+    # Not everybody uses -f to indicate "use this Makefile instead"
+    $self->{USEMAKEFILE}        ||= '-f';
+
     $self->{SHELL}              ||= $Config{sh} || '/bin/sh';
 
     $self->{ECHO}       ||= 'echo';
@@ -2436,16 +2484,22 @@ sub install {
 
     push @m, q{
 install :: all pure_install doc_install
+	$(NOECHO) $(NOOP)
 
 install_perl :: all pure_perl_install doc_perl_install
+	$(NOECHO) $(NOOP)
 
 install_site :: all pure_site_install doc_site_install
+	$(NOECHO) $(NOOP)
 
 install_vendor :: all pure_vendor_install doc_vendor_install
+	$(NOECHO) $(NOOP)
 
 pure_install :: pure_$(INSTALLDIRS)_install
+	$(NOECHO) $(NOOP)
 
 doc_install :: doc_$(INSTALLDIRS)_install
+	$(NOECHO) $(NOOP)
 
 pure__install : pure_site_install
 	$(NOECHO) $(ECHO) INSTALLDIRS not defined, defaulting to INSTALLDIRS=site
@@ -2528,6 +2582,7 @@ doc_vendor_install ::
 
     push @m, q{
 uninstall :: uninstall_from_$(INSTALLDIRS)dirs
+	$(NOECHO) $(NOOP)
 
 uninstall_from_perldirs ::
 	$(NOECHO) $(UNINSTALL) }.$self->catfile('$(PERL_ARCHLIB)','auto','$(FULLEXT)','.packlist').q{
@@ -2550,17 +2605,25 @@ Defines targets to make and to install EXE_FILES.
 
 sub installbin {
     my($self) = shift;
+
     return "" unless $self->{EXE_FILES} && ref $self->{EXE_FILES} eq "ARRAY";
-    return "" unless @{$self->{EXE_FILES}};
-    my(@m, $from, $to, %fromto, @to);
-    for $from (@{$self->{EXE_FILES}}) {
+    my @exefiles = @{$self->{EXE_FILES}};
+    return "" unless @exefiles;
+
+    @exefiles = map vmsify($_), @exefiles if $Is_VMS;
+
+    my %fromto;
+    for my $from (@exefiles) {
 	my($path)= $self->catfile('$(INST_SCRIPT)', basename($from));
+
 	local($_) = $path; # for backwards compatibility
-	$to = $self->libscan($path);
+	my $to = $self->libscan($path);
 	print "libscan($from) => '$to'\n" if ($Verbose >=2);
-	$fromto{$from}=$to;
+
+        $to = vmsify($to) if $Is_VMS;
+	$fromto{$from} = $to;
     }
-    @to   = values %fromto;
+    my @to   = values %fromto;
 
     my $fixin;
     if( $Is_Win32 ) {
@@ -2571,8 +2634,9 @@ sub installbin {
         $fixin = q{$(PERLRUN) "-MExtUtils::MY" -e "MY->fixin(shift)"};
     }
 
+    my @m;
     push(@m, qq{
-EXE_FILES = @{$self->{EXE_FILES}}
+EXE_FILES = @exefiles
 
 FIXIN = $fixin
 
@@ -2580,12 +2644,17 @@ pure_all :: @to
 	\$(NOECHO) \$(NOOP)
 
 realclean ::
-	\$(RM_F) @to
 });
 
-    while (($from,$to) = each %fromto) {
+    # realclean can get rather large.
+    push @m, map "\t$_\n", $self->split_command('$(RM_F)', @to);
+
+
+    # A target for each exe file.
+    while (my($from,$to) = each %fromto) {
 	last unless defined $from;
-	my $todir = dirname($to);
+	my $todir = $self->_todir($to);
+
 	push @m, "
 $to : $from \$(FIRST_MAKEFILE) blibdirs.ts
 	\$(NOECHO) \$(RM_F) $to
@@ -2595,6 +2664,28 @@ $to : $from \$(FIRST_MAKEFILE) blibdirs.ts
 ";
     }
     join "", @m;
+}
+
+
+sub _todir {
+    my($self, $to) = @_;
+    my $todir;
+
+    if( $Is_VMS ) {
+        # XXX I'm not quite sure what this is all about
+	if ($to =~ m#[/>:\]]#) {
+            $todir = dirname($to); 
+        }
+	else { 
+            ($todir = $to) =~ s/[^\)]+$//; 
+        }
+	$todir = $self->fixpath($todir,1);
+    }
+    else {
+        $todir = dirname($to);
+    }
+
+    return $todir;
 }
 
 
@@ -2679,7 +2770,7 @@ FULLPERL      = $self->{FULLPERL}
     unless ($self->{MAKEAPERL}) {
 	push @m, q{
 $(MAP_TARGET) :: static $(MAKE_APERL_FILE)
-	$(MAKE) -f $(MAKE_APERL_FILE) $@
+	$(MAKE) $(USEMAKEFILE) $(MAKE_APERL_FILE) $@
 
 $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE)
 	$(NOECHO) $(ECHO) Writing \"$(MAKE_APERL_FILE)\" for this $(MAP_TARGET)
@@ -2853,13 +2944,13 @@ push @m, "
 \$(MAP_TARGET) :: $tmp/perlmain\$(OBJ_EXT) \$(MAP_LIBPERL) \$(MAP_STATIC) \$(INST_ARCHAUTODIR)/extralibs.all
 	\$(MAP_LINKCMD) -o \$\@ \$(OPTIMIZE) $tmp/perlmain\$(OBJ_EXT) \$(LDFROM) \$(MAP_STATIC) \$(LLIBPERL) `cat \$(INST_ARCHAUTODIR)/extralibs.all` \$(MAP_PRELIBS)
 	\$(NOECHO) \$(ECHO) 'To install the new \"\$(MAP_TARGET)\" binary, call'
-	\$(NOECHO) \$(ECHO) '    make -f $makefilename inst_perl MAP_TARGET=\$(MAP_TARGET)'
+	\$(NOECHO) \$(ECHO) '    \$(MAKE) \$(USEMAKEFILE) $makefilename inst_perl MAP_TARGET=\$(MAP_TARGET)'
 	\$(NOECHO) \$(ECHO) 'To remove the intermediate files say'
-	\$(NOECHO) \$(ECHO) '    make -f $makefilename map_clean'
+	\$(NOECHO) \$(ECHO) '    \$(MAKE) \$(USEMAKEFILE) $makefilename map_clean'
 
 $tmp/perlmain\$(OBJ_EXT): $tmp/perlmain.c
 ";
-    push @m, qq{\tcd $tmp && $cccmd "-I\$(PERL_INC)" perlmain.c\n};
+    push @m, "\t".$self->cd($tmp, qq[$cccmd "-I\$(PERL_INC)" perlmain.c])."\n";
 
     push @m, qq{
 $tmp/perlmain.c: $makefilename}, q{
@@ -2908,31 +2999,34 @@ Defines how to rewrite the Makefile.
 
 sub makefile {
     my($self) = shift;
-    my @m;
+    my $m;
     # We do not know what target was originally specified so we
     # must force a manual rerun to be sure. But as it should only
     # happen very rarely it is not a significant problem.
-    push @m, '
+    $m = '
 $(OBJECT) : $(FIRST_MAKEFILE)
 ' if $self->{OBJECT};
 
-    push @m, q{
+    my $newer_than_target = $Is_VMS ? '$(MMS$SOURCE_LIST)' : '$?';
+    my $mpl_args = join " ", map qq["$_"], @ARGV;
+
+    $m .= sprintf <<'MAKE_FRAG', $newer_than_target, $mpl_args;
 # We take a very conservative approach here, but it's worth it.
 # We move Makefile to Makefile.old here to avoid gnu make looping.
 $(FIRST_MAKEFILE) : Makefile.PL $(CONFIGDEP)
-	$(NOECHO) $(ECHO) "Makefile out-of-date with respect to $?"
+	$(NOECHO) $(ECHO) "Makefile out-of-date with respect to %s"
 	$(NOECHO) $(ECHO) "Cleaning current config before rebuilding Makefile..."
 	-$(NOECHO) $(RM_F) $(MAKEFILE_OLD)
 	-$(NOECHO) $(MV)   $(FIRST_MAKEFILE) $(MAKEFILE_OLD)
-	-$(MAKE) -f $(MAKEFILE_OLD) clean $(DEV_NULL) || $(NOOP)
-	$(PERLRUN) Makefile.PL }.join(" ",map(qq["$_"],@ARGV)).q{
+	-$(MAKE) $(USEMAKEFILE) $(MAKEFILE_OLD) clean $(DEV_NULL)
+	$(PERLRUN) Makefile.PL %s
 	$(NOECHO) $(ECHO) "==> Your Makefile has been rebuilt. <=="
-	$(NOECHO) $(ECHO) "==> Please rerun the make command.  <=="
+	$(NOECHO) $(ECHO) "==> Please rerun the $(MAKE) command.  <=="
 	false
 
-};
+MAKE_FRAG
 
-    join "", @m;
+    return $m;
 }
 
 
@@ -3116,7 +3210,10 @@ distribution.
 sub perldepend {
     my($self) = shift;
     my(@m);
-    push @m, q{
+
+    my $make_config = $self->cd('$(PERL_SRC)', '$(MAKE) lib/Config.pm');
+
+    push @m, sprintf <<'MAKE_FRAG', $make_config if $self->{PERL_SRC};
 # Check for unpropogated config.sh changes. Should never happen.
 # We do NOT just update config.h because that is not sufficient.
 # An out of date config.h is not fatal but complains loudly!
@@ -3125,8 +3222,8 @@ $(PERL_INC)/config.h: $(PERL_SRC)/config.sh
 
 $(PERL_ARCHLIB)/Config.pm: $(PERL_SRC)/config.sh
 	$(NOECHO) $(ECHO) "Warning: $(PERL_ARCHLIB)/Config.pm may be out of date with $(PERL_SRC)/config.sh"
-	cd $(PERL_SRC) && $(MAKE) lib/Config.pm
-} if $self->{PERL_SRC};
+	%s
+MAKE_FRAG
 
     return join "", @m unless $self->needs_linking;
 
@@ -3416,25 +3513,36 @@ Defines targets to run *.PL files.
 =cut
 
 sub processPL {
-    my($self) = shift;
-    return "" unless $self->{PL_FILES};
-    my(@m, $plfile);
-    foreach $plfile (sort keys %{$self->{PL_FILES}}) {
-        my $list = ref($self->{PL_FILES}->{$plfile})
-		? $self->{PL_FILES}->{$plfile}
-		: [$self->{PL_FILES}->{$plfile}];
-	my $target;
-	foreach $target (@$list) {
-	push @m, "
-all :: $target
-	\$(NOECHO) \$(NOOP)
+    my $self = shift;
+    my $pl_files = $self->{PL_FILES};
 
-$target :: $plfile
-	\$(PERLRUNINST) $plfile $target
-";
+    return "" unless $pl_files;
+
+    my $m = '';
+    foreach my $plfile (sort keys %$pl_files) {
+        my $list = ref($pl_files->{$plfile})
+                     ?  $pl_files->{$plfile}
+		     : [$pl_files->{$plfile}];
+
+	foreach my $target (@$list) {
+            if( $Is_VMS ) {
+                $plfile = vmsify($plfile);
+                $target = vmsify($target);
+            }
+
+            $m .= sprintf <<'MAKE_FRAG', ($target) x 2, ($plfile) x 2, $target;
+
+all :: %s
+	$(NOECHO) $(NOOP)
+
+%s :: %s
+	$(PERLRUNINST) %s
+MAKE_FRAG
+
 	}
     }
-    join "", @m;
+
+    return $m;
 }
 
 =item quote_paren
@@ -3461,44 +3569,40 @@ Defines the realclean target.
 
 sub realclean {
     my($self, %attribs) = @_;
-    my(@m);
 
-    push(@m,'
-# Delete temporary files (via clean) and also delete installed files
-realclean purge ::  clean realclean_subdirs
-	$(RM_RF) $(INST_AUTODIR) $(INST_ARCHAUTODIR)
-	$(RM_RF) $(DISTVNAME)
-');
+    my @files = qw($(INST_AUTODIR) $(INST_ARCHAUTODIR) $(DISTVNAME));
+
+    push @files, values %{$self->{PM}}, 
+                 qw($(FIRST_MAKEFILE) $(MAKEFILE_OLD));
 
     if( $self->has_link_code ){
-        push(@m, "	\$(RM_F) \$(INST_DYNAMIC) \$(INST_BOOT)\n");
-        push(@m, "	\$(RM_F) \$(INST_STATIC)\n");
+        push @files, qw($(INST_DYNAMIC) $(INST_BOOT) $(INST_STATIC) $(OBJECT));
     }
 
-    my @files = values %{$self->{PM}};
-    push @files, $attribs{FILES} if $attribs{FILES};
-    push @files, '$(FIRST_MAKEFILE)', '$(MAKEFILE_OLD)';
-
-    # Occasionally files are repeated several times from different sources
-    { my(%f) = map { ($_,1) } @files; @files = keys %f; }
-
-    # Issue a several little RM_RF commands rather than risk creating a
-    # very long command line (useful for extensions such as Encode
-    # that have many files).
-    my $line = "";
-    foreach my $file (@files) {
-        if (length($line) + length($file) > 200) {
-            push @m, "\t\$(RM_RF) $line\n";
-            $line = $file;
+    if( $attribs{FILES} ) {
+        if( ref $attribs{FILES} ) {
+            push @files, @{ $attribs{FILES} };
         }
         else {
-            $line .= " $file"; 
+            push @files, split /\s+/, $attribs{FILES};
         }
     }
-    push @m, "\t\$(RM_RF) $line\n" if $line;
-    push(@m, "\t$attribs{POSTOP}\n")      if $attribs{POSTOP};
 
-    join("", @m);
+    # Occasionally files are repeated several times from different sources
+    { my(%f) = map { ($_ => 1) } @files;  @files = keys %f; }
+
+    my $rm_cmd = join "\n\t", map { "$_" } 
+                   $self->split_command('$(RM_RF)', @files);
+
+    my $m = sprintf <<'MAKE', $rm_cmd;
+# Delete temporary files (via clean) and also delete installed files
+realclean purge ::  clean realclean_subdirs
+	%s
+MAKE
+
+    $m .= "\t$attribs{POSTOP}\n" if $attribs{POSTOP};
+
+    return $m;
 }
 
 
@@ -3521,12 +3625,17 @@ NOOP_FRAG
 
     my $rclean = "realclean_subdirs :\n";
 
-    foreach my $dir (@{$self->{DIR}}){
-        $rclean .= sprintf <<'RCLEAN', $dir, $dir;
-	-cd %s && $(TEST_F) $(MAKEFILE_OLD) && $(MAKE) -f $(MAKEFILE_OLD) realclean
-	-cd %s && $(TEST_F) $(FIRST_MAKEFILE) && $(MAKE) realclean
+    foreach my $dir (@{$self->{DIR}}) {
+        foreach my $makefile ('$(MAKEFILE_OLD)', '$(FIRST_MAKEFILE)' ) {
+            my $rclean .= $self->oneliner(sprintf <<'CODE', $dir, ($makefile) x 2);
+chdir '%s';  system '$(MAKE) $(USEMAKEFILE) %s realclean' if -f '%s';
+CODE
+
+            $rclean .= sprintf <<'RCLEAN', $rclean;
+	-%s
 RCLEAN
 
+        }
     }
 
     return $rclean;
@@ -3550,6 +3659,19 @@ sub replace_manpage_separator {
     return $man;
 }
 
+
+=item cd (o)
+
+=cut
+
+sub cd {
+    my($self, $dir, @cmds) = @_;
+
+    # No leading tab and no trailing newline makes for easier embedding
+    my $make_frag = join "\n\t", map { "cd $dir && $_" } @cmds;
+
+    return $make_frag;
+}
 
 =item oneliner (o)
 
@@ -3736,11 +3858,16 @@ Helper subroutine for subdirs
 
 sub subdir_x {
     my($self, $subdir) = @_;
-    return sprintf <<'EOT', $subdir;
+
+    my $subdir_cmd = $self->cd($subdir, 
+      '$(MAKE) $(USEMAKEFILE) $(FIRST_MAKEFILE) all $(MACROSTART)$(PASTHRU)$(MACROEND)'
+    );
+    return sprintf <<'EOT', $subdir_cmd;
 
 subdirs ::
-	$(NOECHO)cd %s && $(MAKE) -f $(FIRST_MAKEFILE) all $(PASTHRU)
+	$(NOECHO) %s
 EOT
+
 }
 
 =item subdirs (o)
@@ -3800,11 +3927,14 @@ testdb :: testdb_\$(LINKTYPE)
 test :: \$(TEST_TYPE)
 ");
 
-    if ($Is_Win95) {
-        push(@m, map(qq{\t\$(NOECHO) \$(PERLRUN) -e "exit unless -f shift; chdir '$_'; system q[\$(MAKE) test \$(PASTHRU)]" \$(FIRST_MAKEFILE)\n}, @{$self->{DIR}}));
-    }
-    else {
-        push(@m, map("\t\$(NOECHO) cd $_ && \$(TEST_F) \$(FIRST_MAKEFILE) && \$(MAKE) test \$(PASTHRU)\n", @{$self->{DIR}}));
+    foreach my $dir (@{ $self->{DIR} }) {
+        my $test = $self->oneliner(sprintf <<'CODE', $dir);
+chdir '%s';  
+system '$(MAKE) test $(MACROSTART)$(PASTHRU)$(MACROEND)' 
+    if -f '$(FIRST_MAKEFILE)';
+CODE
+
+        push(@m, "\t\$(NOECHO) $test\n");
     }
 
     push(@m, "\t\$(NOECHO) \$(ECHO) 'No tests defined for \$(NAME) extension.'\n")
@@ -3874,7 +4004,7 @@ Returns a make fragment containing definitions for:
 SHELL, CHMOD, CP, MV, NOOP, NOECHO, RM_F, RM_RF, TEST_F, TOUCH,
 DEV_NULL, UMASK_NULL, MKPATH, EQUALIZE_TIMESTAMP,
 WARN_IF_OLD_PACKLIST, UNINST, VERBINST, MOD_INSTALL, DOC_INSTALL and
-UNINSTALL
+UNINSTALL, MACROSTART, MACROEND
 
 init_others() initializes all these values.
 
@@ -3890,6 +4020,7 @@ sub tools_other {
                       UNINST VERBINST
                       MOD_INSTALL DOC_INSTALL UNINSTALL
                       WARN_IF_OLD_PACKLIST
+                      MACROSTART MACROEND USEMAKEFILE
                     } ) 
     {
         next unless defined $self->{$tool};
@@ -3941,12 +4072,21 @@ sub tool_xsubpp {
  	unshift( @tmargs, $self->{XSOPT} );
     }
 
+    if ($Is_VMS                          &&
+        $Config{'ldflags'}               && 
+        $Config{'ldflags'} =~ m!/Debug!i &&
+        (!exists($self->{XSOPT}) || $self->{XSOPT} !~ /linenumbers/)
+       ) 
+    {
+        unshift(@tmargs,'-nolinenumbers');
+    }
+
 
     $self->{XSPROTOARG} = "" unless defined $self->{XSPROTOARG};
 
     return qq{
 XSUBPPDIR = $xsdir
-XSUBPP = \$(XSUBPPDIR)/xsubpp
+XSUBPP = \$(PERLRUN) \$(XSUBPPDIR)/xsubpp
 XSPROTOARG = $self->{XSPROTOARG}
 XSUBPPDEPS = @tmdeps \$(XSUBPP)
 XSUBPPARGS = @tmargs
@@ -4033,7 +4173,7 @@ sub xs_c {
     return '' unless $self->needs_linking();
     '
 .xs.c:
-	$(PERLRUN) $(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $(XSUBPP_EXTRA_ARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.c
+	$(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $(XSUBPP_EXTRA_ARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.c
 ';
 }
 
@@ -4048,7 +4188,7 @@ sub xs_cpp {
     return '' unless $self->needs_linking();
     '
 .xs.cpp:
-	$(PERLRUN) $(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.cpp
+	$(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.cpp
 ';
 }
 
@@ -4064,7 +4204,7 @@ sub xs_o {	# many makes are too dumb to use xs_c then c_o
     return '' unless $self->needs_linking();
     '
 .xs$(OBJ_EXT):
-	$(PERLRUN) $(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.c
+	$(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.xsc && $(MV) $*.xsc $*.c
 	$(CCCMD) $(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE) $*.c
 ';
 }

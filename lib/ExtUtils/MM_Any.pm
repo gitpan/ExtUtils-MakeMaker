@@ -2,7 +2,7 @@ package ExtUtils::MM_Any;
 
 use strict;
 use vars qw($VERSION @ISA);
-$VERSION = '0.10';
+$VERSION = '0.10_01';
 @ISA = qw(File::Spec);
 
 use Config;
@@ -672,13 +672,8 @@ Writes the file SIGNATURE with "cpansign -s".
 sub signature_target {
     my $self = shift;
 
-    return <<'MAKE_FRAG' if !$self->{SIGN};
-signature :
-	$(NOECHO) $(NOOP)
-MAKE_FRAG
-
     return <<'MAKE_FRAG';
-signature :  signature_addtomanifest
+signature : signature_addtomanifest
 	cpansign -s
 MAKE_FRAG
 
@@ -753,6 +748,29 @@ Methods which cannot be made cross-platform and each subclass will
 have to do their own implementation.
 
 =over 4
+
+=item cd
+
+  my $subdir_cmd = $MM->cd($subdir, @cmds);
+
+This will generate a make fragment which runs the @cmds in the given
+$dir.  The rough equivalent to this, except cross platform.
+
+  cd $subdir && $cmd
+
+Currently $dir can only go down one level.  "foo" is fine.  "foo/bar" is
+not.  "../foo" is right out.
+
+The resulting $subdir_cmd has no leading tab nor trailing newline.  This
+makes it easier to embed in a make string.  For example.
+
+      my $make = sprintf <<'CODE', $subdir_cmd;
+  foo :
+      $(ECHO) what
+      %s
+      $(ECHO) mouche
+  CODE
+
 
 =item oneliner
 

@@ -29,7 +29,7 @@ use vars qw(@ISA $VERSION $BORLAND $GCC $DMAKE $NMAKE);
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
 @ISA = qw( ExtUtils::MM_Any ExtUtils::MM_Unix );
-$VERSION = '1.10';
+$VERSION = '1.10_01';
 
 $ENV{EMXSHELL} = 'sh'; # to run `commands`
 
@@ -118,20 +118,6 @@ sub maybe_command {
 	}
     }
     return;
-}
-
-
-=item B<find_tests>
-
-The Win9x shell does not expand globs and I'll play it safe and assume
-other Windows variants don't either.
-
-So we do it for them.
-
-=cut
-
-sub find_tests {
-    return join(' ', <t\\*.t>);
 }
 
 

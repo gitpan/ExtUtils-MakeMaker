@@ -1,7 +1,7 @@
 package ExtUtils::MM_Win95;
 
 use vars qw($VERSION @ISA);
-$VERSION = 0.03;
+$VERSION = '0.03_01';
 
 require ExtUtils::MM_Win32;
 @ISA = qw(ExtUtils::MM_Win32);
@@ -26,64 +26,11 @@ to get MakeMaker playing nice with command.com and other Win9Xisms.
 
 =head2 Overriden methods
 
-Most of these make up for limitations in the Win9x command shell.
-Namely the lack of && and that a chdir is global, so you have to chdir
-back at the end.
+Most of these make up for limitations in the Win9x/nmake command shell.
+Mostly its lack of &&.
 
 =over 4
 
-=item dist_test
-
-&& and chdir problem.
-
-=cut
-
-sub dist_test {
-    my($self) = shift;
-    return q{
-disttest : distdir
-	cd $(DISTVNAME)
-	$(ABSPERLRUN) Makefile.PL
-	$(MAKE) $(PASTHRU)
-	$(MAKE) test $(PASTHRU)
-	cd ..
-};
-}
-
-=item subdir_x
-
-&& and chdir problem.
-
-Also, dmake has an odd way of making a command series silent.
-
-=cut
-
-sub subdir_x {
-    my($self, $subdir) = @_;
-
-    # Win-9x has nasty problem in command.com that can't cope with
-    # &&.  Also, Dmake has an odd way of making a commandseries silent:
-    if ($DMAKE) {
-      return sprintf <<'EOT', $subdir;
-
-subdirs ::
-@[
-	cd %s
-	$(MAKE) all $(PASTHRU)
-	cd ..
-]
-EOT
-    }
-    else {
-        return sprintf <<'EOT', $subdir;
-
-subdirs ::
-	$(NOECHO)cd %s
-	$(NOECHO)$(MAKE) all $(PASTHRU)
-	$(NOECHO)cd ..
-EOT
-    }
-}
 
 =item xs_c
 
@@ -96,7 +43,7 @@ sub xs_c {
     return '' unless $self->needs_linking();
     '
 .xs.c:
-	$(PERLRUN) $(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.c
+	$(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.c
 	'
 }
 
@@ -112,7 +59,7 @@ sub xs_cpp {
     return '' unless $self->needs_linking();
     '
 .xs.cpp:
-	$(PERLRUN) $(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.cpp
+	$(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.cpp
 	';
 }
 
@@ -127,68 +74,33 @@ sub xs_o {
     return '' unless $self->needs_linking();
     '
 .xs$(OBJ_EXT):
-	$(PERLRUN) $(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.c
+	$(XSUBPP) $(XSPROTOARG) $(XSUBPPARGS) $*.xs > $*.c
 	$(CCCMD) $(CCCDLFLAGS) -I$(PERL_INC) $(DEFINE) $*.c
 	';
 }
 
-=item clean_subdirs_target
 
-&& and chdir problem.
+=item cd
+
+This cd can only go one level down.
 
 =cut
 
-sub clean_subdirs_target {
-    my($self) = shift;
+sub cd {
+    my($self, $dir, @cmds) = @_;
 
-    # No subdirectories, no cleaning.
-    return <<'NOOP_FRAG' unless @{$self->{DIR}};
-clean_subdirs :
-	$(NOECHO)$(NOOP)
-NOOP_FRAG
+    my $cmd = join "\n\t", map "$_", @cmds;
 
-
-    my $clean = "clean_subdirs :\n";
-
-    for my $dir (@{$self->{DIR}}) {
-        $clean .= sprintf <<'MAKE_FRAG', $dir;
-	cd %s
-	$(TEST_F) $(FIRST_MAKEFILE)
-	$(MAKE) clean
+    # No leading tab and no trailing newline makes for easier embedding.
+    my $make_frag = sprintf <<'MAKE_FRAG', $dir, $cmd;
+cd %s
+	%s
 	cd ..
 MAKE_FRAG
-    }
 
-    return $clean;
-}
+    chomp $make_frag;
 
-
-=item realclean_subdirs_target
-
-&& and chdir problem.
-
-=cut
-
-sub realclean_subdirs_target {
-    my $self = shift;
-
-    return <<'NOOP_FRAG' unless @{$self->{DIR}};
-realclean_subdirs :
-	$(NOECHO)$(NOOP)
-NOOP_FRAG
-
-    my $rclean = "realclean_subdirs :\n";
-
-    foreach my $dir (@{$self->{DIR}}){
-        $rclean .= sprintf <<'RCLEAN', $dir;
-	-cd %s
-	-$(PERLRUN) -e "exit unless -f shift; system q{$(MAKE) realclean}" $(FIRST_MAKEFILE)
-	-cd ..
-RCLEAN
-
-    }
-
-    return $rclean;
+    return $make_frag;
 }
 
 
