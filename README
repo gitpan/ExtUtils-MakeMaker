@@ -3,8 +3,8 @@ distribution. It writes Makefiles for perl extensions. It provides all
 sorts of support to make development of extensions easy: building,
 testing, installing, distributing and archiving extensions/modules.
 
-Version 5.4002 is the same version that comes with perl5.004 and is
-only distributed in case somebody needs a fallback version later.
+Version 5.41 contains a few tiny improvement over the MakeMaker that
+came with perl5.004_01. They expose minimal risk.
 
 To install this package, run
 

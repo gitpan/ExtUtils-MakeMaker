@@ -1,3 +1,21 @@
+=head June 28, 1997
+
+5.004_01 folded back. Released 5.41.
+
+=head2 May/June, 1997
+
+Implemented the fixin() method in ExtUtils::MM_Unix that fixes the
+shebang line for EXE_FILES. This may help to get rid of several *.PL
+files people usually wrote just for the sake of inserting the correct
+shebang line.
+
+=head2 May 19, 1997
+
+Applied Sarathy's patch <199705171712.NAA18381@aatma.engin.umich.edu>
+to "config thinks".
+
+Reenabled *VERSION instead of $VERSION.
+
 =head2 May 19, 1997
 
 After Nick and Sarathy have done their outstanding major cool work on

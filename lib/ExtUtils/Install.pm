@@ -1,7 +1,7 @@
 package ExtUtils::Install;
 
-$VERSION = substr q$Revision: 1.16 $, 10;
-# $Date: 1996/12/17 00:31:26 $
+$VERSION = substr q$Revision: 1.18 $, 10;
+# $Date: 1997/06/28 15:16:44 $
 
 use Exporter;
 use Carp ();
@@ -37,6 +37,8 @@ sub install {
 
     my(%hash) = %$hash;
     my(%pack, %write, $dir, $warn_permissions);
+    # -w doesn't work reliably on FAT dirs
+    $warn_permissions++ if $^O eq 'MSWin32';
     local(*DIR, *P);
     for (qw/read write/) {
 	$pack{$_}=$hash{$_};
