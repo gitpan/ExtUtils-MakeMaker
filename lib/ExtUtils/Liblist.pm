@@ -1,8 +1,8 @@
 package ExtUtils::Liblist;
-
+use vars qw($VERSION);
 # Broken out of MakeMaker from version 4.11
 
-$ExtUtils::Liblist::VERSION = substr q$Revision: 1.18 $, 10;
+$VERSION = substr q$Revision: 1.20 $, 10;
 
 use Config;
 use Cwd 'cwd';
@@ -12,7 +12,7 @@ my $Config_libext = $Config{lib_ext} || ".a";
 
 sub ext {
     my($self,$potential_libs, $Verbose) = @_;
-    if ($Config{osname} =~ m|^os/?2$|i and $Config{libs}) { 
+    if ($^O =~ 'os2' and $Config{libs}) { 
 	# Dynamic libraries are not transitive, so we may need including
 	# the libraries linked against perl.dll again.
 
@@ -106,7 +106,7 @@ sub ext {
 	    } elsif (-f ($fullname="$thispth/lib$thislib$Config_libext")){
 	    } elsif (-f ($fullname="$thispth/$thislib$Config_libext")){
 	    } elsif (-f ($fullname="$thispth/Slib$thislib$Config_libext")){
-	    } elsif ($Config{'osname'} eq 'dgux'
+	    } elsif ($^O eq 'dgux'
 		 && -l ($fullname="$thispth/lib$thislib$Config_libext")
 		 && readlink($fullname) =~ /^elink:/) {
 		 # Some of DG's libraries look like misconnected symbolic
@@ -135,15 +135,18 @@ sub ext {
 
 	    # Do not add it into the list if it is already linked in
 	    # with the main perl executable.
-	    # We have to special-case the NeXT, because all the math 
-	    # is also in libsys_s
+	    # We have to special-case the NeXT, because math and ndbm 
+	    # are both in libsys_s
 	    unless ($in_perl || 
-		    ($Config{'osname'} eq 'next' && $thislib eq 'm') ){
+		($Config{'osname'} eq 'next' &&
+		    ($thislib eq 'm' || $thislib eq 'ndbm')) ){
 		push(@extralibs, "-l$thislib");
 	    }
 
 	    # We might be able to load this archive file dynamically
-	    if ( $Config{'dlsrc'} =~ /dl_next|dl_dld/){
+	    if ( ($Config{'dlsrc'} =~ /dl_next/ && $Config{'osvers'} lt '4_0')
+	    ||   ($Config{'dlsrc'} =~ /dl_dld/) )
+	    {
 		# We push -l$thislib instead of $fullname because
 		# it avoids hardwiring a fixed path into the .bs file.
 		# Mkbootstrap will automatically add dl_findfile() to
@@ -157,7 +160,7 @@ sub ext {
                     # For SunOS4, do not add in this shared library if
                     # it is already linked in the main perl executable
 		    push(@ldloadlibs, "-l$thislib")
-			unless ($in_perl and $Config{'osname'} eq 'sunos');
+			unless ($in_perl and $^O eq 'sunos');
 		} else {
 		    push(@ldloadlibs, "-l$thislib");
 		}

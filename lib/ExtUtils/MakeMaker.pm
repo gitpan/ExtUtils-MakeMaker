@@ -2,10 +2,10 @@ BEGIN {require 5.002;} # MakeMaker 5.17 was the last MakeMaker that was compatib
 
 package ExtUtils::MakeMaker;
 
-$Version = $VERSION = "5.33";
+$Version = $VERSION = "5.38";
 $Version_OK = "5.17";	# Makefiles older than $Version_OK will die
 			# (Will be checked from MakeMaker version 4.13 onwards)
-($Revision = substr(q$Revision: 1.201 $, 10)) =~ s/\s+$//;
+($Revision = substr(q$Revision: 1.207 $, 10)) =~ s/\s+$//;
 
 
 
@@ -25,8 +25,9 @@ use vars qw(
 	   );
 # use strict;
 
-eval {require DynaLoader;};	# Get mod2fname, if defined. Will fail
-                                # with miniperl.
+# &DynaLoader::mod2fname should be available to miniperl, thus 
+# should be a pseudo-builtin (cmp. os2.c).
+#eval {require DynaLoader;};
 
 #
 # Set up the inheritance before we pull in the MM_* packages, because they
@@ -67,9 +68,9 @@ package ExtUtils::MakeMaker;
 #
 # Now we can can pull in the friends
 #
-$Is_VMS = $Config{osname} eq 'VMS';
-$Is_OS2 = $Config{osname} =~ m|^os/?2$|i;
-$Is_Mac = $Config{osname} eq 'MacOS';
+$Is_VMS = $^O eq 'VMS';
+$Is_OS2 = $^O =~ m|^os/?2$|i;
+$Is_Mac = $^O eq 'MacOS';
 
 require ExtUtils::MM_Unix;
 
@@ -93,7 +94,7 @@ sub AUTOLOAD {
     if (defined fileno(DATA)) {
 	my $fh = select DATA;
 	my $o = $/;			# For future reads from the file.
-	$/ = "\n__END__";
+	$/ = "\n__END__\n";
 	$code = <DATA>;
 	$/ = $o;
 	select $fh;
@@ -152,7 +153,9 @@ sub ExtUtils::MakeMaker::WriteMakefile ;
 sub ExtUtils::MakeMaker::prompt ;
 
 1;
+
 __DATA__
+
 package ExtUtils::MakeMaker;
 
 sub WriteMakefile {
@@ -411,14 +414,14 @@ sub ExtUtils::MakeMaker::new {
 	$self->{Correct_relativ_directories}=0;
     }
 
-    my $class = ++$PACKNAME;
+    my $newclass = ++$PACKNAME;
     {
 #	no strict;
-	print "Blessing Object into class [$class]\n" if $Verbose>=2;
-	mv_all_methods("MY",$class);
-	bless $self, $class;
+	print "Blessing Object into class [$newclass]\n" if $Verbose>=2;
+	mv_all_methods("MY",$newclass);
+	bless $self, $newclass;
 	push @Parent, $self;
-	@{"$class\:\:ISA"} = 'MM';
+	@{"$newclass\:\:ISA"} = 'MM';
     }
 
     if (defined $Parent[-2]){
@@ -430,7 +433,7 @@ sub ExtUtils::MakeMaker::new {
 	    $self->{$key} = $self->catdir("..",$self->{$key})
 		unless $self->file_name_is_absolute($self->{$key});
 	}
-	$self->{PARENT}->{CHILDREN}->{$class} = $self if $self->{PARENT};
+	$self->{PARENT}->{CHILDREN}->{$newclass} = $self if $self->{PARENT};
     } else {
 	parse_args($self,@ARGV);
     }
@@ -617,7 +620,7 @@ sub check_hints {
 
     # First we look for the best hintsfile we have
     my(@goodhints);
-    my($hint)="$Config{osname}_$Config{osvers}";
+    my($hint)="${^O}_$Config{osvers}";
     $hint =~ s/\./_/g;
     $hint =~ s/_$//;
     return unless $hint;
@@ -909,7 +912,7 @@ the macros INST_LIB, INST_ARCHLIB, INST_SCRIPT, INST_MAN1DIR, and
 INST_MAN3DIR. All these default to something below ./blib if you are
 I<not> building below the perl source directory. If you I<are>
 building below the perl source, INST_LIB and INST_ARCHLIB default to
-../../lib, and INST_SCRIPT is not defined.
+ ../../lib, and INST_SCRIPT is not defined.
 
 The I<install> target of the generated Makefile copies the files found
 below each of the INST_* directories to their INSTALL*
@@ -1515,14 +1518,14 @@ routine requires that the file named by VERSION_FROM contains one
 single line to compute the version number. The first line in the file
 that contains the regular expression
 
-    /(\$[\w:]*\bVERSION)\b.*=/
+    /\$(([\w\:\']*)\bVERSION)\b.*\=/
 
 will be evaluated with eval() and the value of the named variable
 B<after> the eval() will be assigned to the VERSION attribute of the
 MakeMaker object. The following lines will be parsed o.k.:
 
     $VERSION = '1.00';
-    ( $VERSION ) = '$Revision: 1.201 $ ' =~ /\$Revision:\s+([^\s]+)/;
+    ( $VERSION ) = '$Revision: 1.207 $ ' =~ /\$Revision:\s+([^\s]+)/;
     $FOO::VERSION = '1.10';
 
 but these will fail:

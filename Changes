@@ -1,4 +1,28 @@
-=head2 v5.33  June ???, 1996 by Andreas Koenig
+=head2 v5.38  September 3, 1996 by Andreas König
+
+Integrates a recent patch by Tim for parse_version that eliminates a
+bug that made it possible that MM_Unix::VERSION was returned in some
+cases.
+
+Fixes some problems with perllocal.pod.
+
+Install.pm warns now instead of dying when "You do not have
+permissions to install into..."
+
+=head2 v5.36  September 2, 1996 by Andy Dougherty
+
+This is the version that came with perl5.003_04.
+
+=head2 v5.35  August, 1996 by Nick Ing Simmons
+
+This is the version that came with perl5.003_03.
+
+=head2 v5.34  June, 1996 by Charles Bailey
+
+This the version Charles put together for perl5.003. Main changes: $^O
+everywhere, __Lots__ of MM_VMS changes.
+
+=head2 v5.33  June 19, 1996 by Andreas Koenig
 
 Replaced the self knitted SUPER in mv_all_methods with a real SUPER
 call.

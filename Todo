@@ -1,3 +1,19 @@
+- make sure "make" doesn't die when perllocal.pod doesn't exist
+  (report by Miles Fidelman)
+
+- makemakerrc
+
+- check for existence of binaries -- esp. gzip
+
+- installperl should probably use ExtUtils::Install's algorithm for
+  detecting "shadow" libraries.
+
+- change all os2 checks to $^O eq "os2"
+
+- martijn koster showed me, that if autosplit fails and make(1) dies,
+  a second make(1) call succeeds and buries the old error message. We
+  have to make sure, the mis-splitted *.pm file will be removed.
+
 - From Christopher J Madsen <madsen@computek.net>: 
  >> >   MAN3PODS => { 'Getopt/Mixed.pm' => '$(INST_MAN3DIR)/Getopt.Mixed.3' },
   > I did that because deleting that line caused MakeMaker to name the

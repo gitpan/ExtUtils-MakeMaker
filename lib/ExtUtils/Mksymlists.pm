@@ -3,16 +3,15 @@ use strict qw[ subs refs ];
 # no strict 'vars';  # until filehandles are exempted
 
 use Carp;
-use Config;
 use Exporter;
-# mention vars twice to prevent single-use warnings
-@ExtUtils::Mksymlists::ISA = @ExtUtils::Mksymlists::ISA = 'Exporter';
-@ExtUtils::Mksymlists::EXPORT = @ExtUtils::Mksymlists::EXPORT = '&Mksymlists';
-$ExtUtils::Mksymlists::VERSION = $ExtUtils::Mksymlists::VERSION = '1.00';
+use vars qw( @ISA @EXPORT $VERSION );
+@ISA = 'Exporter';
+@EXPORT = '&Mksymlists';
+$VERSION = substr q$Revision: 1.12 $, 10;
 
 sub Mksymlists {
     my(%spec) = @_;
-    my($osname) = $Config{'osname'};
+    my($osname) = $^O;
 
     croak("Insufficient information specified to Mksymlists")
         unless ( $spec{NAME} or
@@ -41,6 +40,7 @@ sub Mksymlists {
     }
 
 #    We'll need this if we ever add any OS which uses mod2fname
+#    not as pseudo-builtin.
 #    require DynaLoader;
     if (defined &DynaLoader::mod2fname and not $spec{DLBASE}) {
         $spec{DLBASE} = DynaLoader::mod2fname([ split(/::/,$spec{NAME}) ]);

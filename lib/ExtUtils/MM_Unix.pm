@@ -1,20 +1,22 @@
 package ExtUtils::MM_Unix;
 
-$VERSION = substr q$Revision: 1.100 $, 10;
-# $Id: MM_Unix.pm,v 1.100 1996/05/30 08:09:46 k Exp k $
-
-require Exporter;
+use Exporter ();
 use Config;
 use File::Basename qw(basename dirname fileparse);
 use DirHandle;
+use strict;
+use vars qw($VERSION $Is_Mac $Is_OS2 $Is_VMS);
+
+$VERSION = substr q$Revision: 1.107 $, 10;
+# $Id: MM_Unix.pm,v 1.107 1996/09/03 20:53:39 k Exp $
 
 Exporter::import('ExtUtils::MakeMaker',
 	qw( $Verbose &neatvalue));
 
-$Is_OS2 = $Config{osname} =~ m|^os/?2$|i;
-$Is_Mac = $Config{osname} eq "MacOS";
+$Is_OS2 = $^O =~ m|^os/?2$|i;
+$Is_Mac = $^O eq "MacOS";
 
-if ($Is_VMS = $Config::Config{osname} eq 'VMS') {
+if ($Is_VMS = $^O eq 'VMS') {
     require VMS::Filespec;
     import VMS::Filespec qw( &vmsify );
 }
@@ -97,12 +99,12 @@ sub catdir {
     my @args = @_;
     for (@args) {
 	# append a slash to each argument unless it has one there
-	$_ .= "/" unless substr($_,length($_)-1,1) eq "/";
+	$_ .= "/" if $_ eq '' or substr($_,-1) ne "/";
     }
     my $result = join('', @args);
     # remove a trailing slash unless we are root
-    substr($result,length($result)-1,1) = ""
-	if length($result) > 1 && substr($result,length($result)-1,1) eq "/";
+    substr($result,-1) = ""
+	if length($result) > 1 && substr($result,-1) eq "/";
     $result;
 }
 
@@ -230,6 +232,7 @@ package ExtUtils::MM_Unix;
 use SelfLoader;
 
 1;
+
 __DATA__
 
 =head2 SelfLoaded methods
@@ -250,10 +253,12 @@ sub c_o {
     push @m, '
 .c$(OBJ_EXT):
 	$(CCCMD) $(CCCDLFLAGS) -I$(PERL_INC) $(DEFINE) $*.c
-
+';
+    push @m, '
 .C$(OBJ_EXT):
 	$(CCCMD) $(CCCDLFLAGS) -I$(PERL_INC) $(DEFINE) $*.C
-
+' if $^O ne 'os2';			# Case-specific
+    push @m, '
 .cpp$(OBJ_EXT):
 	$(CCCMD) $(CCCDLFLAGS) -I$(PERL_INC) $(DEFINE) $*.cpp
 
@@ -689,7 +694,8 @@ sub dist {
 
     my(@m);
     # VERSION should be sanitised before use as a file name
-    my($name)     = $attribs{NAME}     || '$(DISTVNAME)';
+    my($version)  = $attribs{VERSION}  || '$(VERSION)';
+    my($name)     = $attribs{NAME}     || '$(DISTNAME)';
     my($tar)      = $attribs{TAR}      || 'tar';        # eg /usr/bin/gnutar
     my($tarflags) = $attribs{TARFLAGS} || 'cvf';
     my($zip)      = $attribs{ZIP}      || 'zip';        # eg pkzip Yuck!
@@ -712,7 +718,7 @@ sub dist {
     my($dist_default) = $attribs{DIST_DEFAULT} || 'tardist';
 
     push @m, "
-DISTVNAME = \$(DISTNAME)-\$(VERSION)
+DISTVNAME = ${name}-$version
 TAR  = $tar
 TARFLAGS = $tarflags
 ZIP  = $zip
@@ -878,7 +884,7 @@ files.
 sub dlsyms {
     my($self,%attribs) = @_;
 
-    return '' unless ($Config::Config{osname} eq 'aix' && $self->needs_linking() );
+    return '' unless ($^O eq 'aix' && $self->needs_linking() );
 
     my($funcs) = $attribs{DL_FUNCS} || $self->{DL_FUNCS} || {};
     my($vars)  = $attribs{DL_VARS} || $self->{DL_VARS} || [];
@@ -972,8 +978,7 @@ sub dynamic_lib {
     my($inst_dynamic_dep) = $attribs{INST_DYNAMIC_DEP} || "";
     my($armaybe) = $attribs{ARMAYBE} || $self->{ARMAYBE} || ":";
     my($ldfrom) = '$(LDFROM)';
-    my($osname) = $Config::Config{osname};
-    $armaybe = 'ar' if ($osname eq 'dec_osf' and $armaybe eq ':');
+    $armaybe = 'ar' if ($^O eq 'dec_osf' and $armaybe eq ':');
     my(@m);
     push(@m,'
 # This section creates the dynamically loadable $(INST_DYNAMIC)
@@ -989,7 +994,7 @@ $(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)/.exists 
 	push(@m,'	$(ARMAYBE) cr '.$ldfrom.' $(OBJECT)'."\n");
 	push(@m,'	$(RANLIB) '."$ldfrom\n");
     }
-    $ldfrom = "-all $ldfrom -none" if ($osname eq 'dec_osf');
+    $ldfrom = "-all $ldfrom -none" if ($^O eq 'dec_osf');
     push(@m,'	LD_RUN_PATH="$(LD_RUN_PATH)" $(LD) -o $@ $(LDDLFLAGS) '.$ldfrom.
 		' $(OTHERLDFLAGS) $(MYEXTLIB) $(PERL_ARCHIVE) $(LDLOADLIBS) $(EXPORT_LIST)');
     push @m, '
@@ -1149,8 +1154,8 @@ sub init_dirscan {	# --- File and Directory Lists (.xs .pm .pod etc)
     foreach $name ($self->lsdir($self->curdir)){
 	next if $name eq $self->curdir or $name eq $self->updir or $ignore{$name};
 	next unless $self->libscan($name);
-	next if -l $name; # We do not support symlinks at all
 	if (-d $name){
+	    next if -l $name; # We do not support symlinks at all
 	    $dir{$name} = $name if (-f $self->catfile($name,"Makefile.PL"));
 	} elsif ($name =~ /\.xs$/){
 	    my($c); ($c = $name) =~ s/\.xs$/.c/;
@@ -1224,7 +1229,7 @@ sub init_dirscan {	# --- File and Directory Lists (.xs .pm .pod etc)
 	    }
 	    my($path, $prefix) = ($File::Find::name, '$(INST_LIBDIR)');
 	    my($striplibpath,$striplibname);
-	    $prefix =  '$(INST_LIB)' if (($striplibpath = $path) =~ s:^(\W*)lib\W:$1:);
+	    $prefix =  '$(INST_LIB)' if (($striplibpath = $path) =~ s:^(\W*)lib\W:$1:i);
 	    ($striplibname,$striplibpath) = fileparse($striplibpath);
 	    my($inst) = $self->catfile($prefix,$striplibpath,$striplibname);
 	    local($_) = $inst; # for backwards compatibility
@@ -1321,7 +1326,7 @@ sub init_dirscan {	# --- File and Directory Lists (.xs .pm .pod etc)
 		next;
 	    }
 	    my($manpagename) = $name;
-	    unless ($manpagename =~ s!^(\W*)lib\W+!!) { # everything below lib is ok
+	    unless ($manpagename =~ s!^\W*lib\W+!!) { # everything below lib is ok
 		$manpagename = $self->catfile(split(/::/,$self->{PARENT_NAME}),$manpagename);
 	    }
 	    $manpagename =~ s/\.p(od|m|l)$//;
@@ -1367,14 +1372,11 @@ sub init_main {
     # It may also edit @modparts if required.
     if (defined &DynaLoader::mod2fname) {
         $modfname = &DynaLoader::mod2fname(\@modparts);
-    } elsif ($Is_OS2) {                # Need manual correction if run with miniperl:-(
-        $modfname = substr($modfname, 0, 7) . '_';
-    }
-
+    } 
 
     ($self->{PARENT_NAME}, $self->{BASEEXT}) = $self->{NAME} =~ m!([\w:]+::)?(\w+)$! ;
 
-    if (defined &DynaLoader::mod2fname or $Is_OS2) {
+    if (defined &DynaLoader::mod2fname) {
 	# As of 5.001m, dl_os2 appends '_'
 	$self->{DLBASE} = $modfname;
     } else {
@@ -1476,6 +1478,13 @@ EOM
     $self->{INST_ARCHLIB} ||= $self->catdir($self->curdir,"blib","arch");
     $self->{INST_BIN} ||= $self->catdir($self->curdir,'blib','bin');
 
+    # We need to set up INST_LIBDIR before init_libscan() for VMS
+    my @parentdir = split(/::/, $self->{PARENT_NAME});
+    $self->{INST_LIBDIR} = $self->catdir('$(INST_LIB)',@parentdir);
+    $self->{INST_ARCHLIBDIR} = $self->catdir('$(INST_ARCHLIB)',@parentdir);
+    $self->{INST_AUTODIR} = $self->catdir('$(INST_LIB)','auto','$(FULLEXT)');
+    $self->{INST_ARCHAUTODIR} = $self->catdir('$(INST_ARCHLIB)','auto','$(FULLEXT)');
+
     # INST_EXE is deprecated, should go away March '97
     $self->{INST_EXE} ||= $self->catdir($self->curdir,'blib','script');
     $self->{INST_SCRIPT} ||= $self->catdir($self->curdir,'blib','script');
@@ -1568,7 +1577,7 @@ EOM
     }
 
 # This is too dangerous:
-#    if ($Config{osname} eq "next") {
+#    if ($^O eq "next") {
 #	$self->{AR} = "libtool";
 #	$self->{AR_STATIC_ARGS} = "-o";
 #    }
@@ -1762,7 +1771,7 @@ pure_site_install ::
 
 doc_perl_install ::
 	}.$self->{NOECHO}.q{$(DOC_INSTALL) \
-		"$(NAME)" \
+		"Module" "$(NAME)" \
 		"installed into" "$(INSTALLPRIVLIB)" \
 		LINKTYPE "$(LINKTYPE)" \
 		VERSION "$(VERSION)" \
@@ -1771,7 +1780,7 @@ doc_perl_install ::
 
 doc_site_install ::
 	}.$self->{NOECHO}.q{$(DOC_INSTALL) \
-		"Module $(NAME)" \
+		"Module" "$(NAME)" \
 		"installed into" "$(INSTALLSITELIB)" \
 		LINKTYPE "$(LINKTYPE)" \
 		VERSION "$(VERSION)" \
@@ -1958,13 +1967,15 @@ $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE)
     $cccmd = $self->const_cccmd($libperl);
     $cccmd =~ s/^CCCMD\s*=\s*//;
     $cccmd =~ s/\$\(INC\)/ -I$self->{PERL_INC} /;
-    $cccmd .= " $Config::Config{cccdlflags}" if ($Config::Config{d_shrplib});
+    $cccmd .= " $Config::Config{cccdlflags}" 
+	if ($Config::Config{useshrplib} eq 'true');
     $cccmd =~ s/\(CC\)/\(PERLMAINCC\)/;
 
     # The front matter of the linkcommand...
     $linkcmd = join ' ', "\$(CC)",
 	    grep($_, @Config{qw(large split ldflags ccdlflags)});
     $linkcmd =~ s/\s+/ /g;
+    $linkcmd =~ s,(perl\.exp),\$(PERL_INC)/$1,;
 
     # Which *.a files could we make use of...
     local(%static);
@@ -2100,7 +2111,7 @@ $tmp/perlmain.c: $makefilename}, q{
 doc_inst_perl:
 	}.$self->{NOECHO}.q{echo Appending installation info to $(INSTALLARCHLIB)/perllocal.pod
 	}.$self->{NOECHO}.q{$(DOC_INSTALL) \
-		"Perl binary $(MAP_TARGET)" \
+		"Perl binary" "$(MAP_TARGET)" \
 		MAP_STATIC "$(MAP_STATIC)" \
 		MAP_EXTRA "`cat $(INST_ARCHAUTODIR)/extralibs.all`" \
 		MAP_LIBPERL "$(MAP_LIBPERL)" \
@@ -2169,7 +2180,7 @@ put them into the INST_* directories.
 
 sub manifypods {
     my($self, %attribs) = @_;
-    return "\nmanifypods :\n\t\$(NOOP)\n" unless %{$self->{MAN3PODS}} or %{$self->{MAN1PODS}};
+    return "\nmanifypods :\n\t$self->{NOECHO}\$(NOOP)\n" unless %{$self->{MAN3PODS}} or %{$self->{MAN1PODS}};
     my($dist);
     my($pod2man_exe);
     if (defined $self->{PERL_SRC}) {
@@ -2319,13 +2330,15 @@ sub parse_version {
 	next if $inpod;
 	chop;
 	next unless /\$(([\w\:\']*)\bVERSION)\b.*\=/;
-	local $ExtUtils::MakeMaker::module_version_variable = $1;
-	my($thispackage) = $2 || $current_package;
-	$thispackage =~ s/:+$//;
-	my($eval) = "$_;";
-	eval $eval;
+	my $eval = qq{
+	    package ExtUtils::MakeMaker::_version;
+	    \$$1=undef; do { 
+		$_ 
+	    }; \$$1
+	};
+	local($^W) = 0;
+	$result = eval($eval) || 0;
 	die "Could not eval '$eval' in $parsefile: $@" if $@;
-	$result = $ {$ExtUtils::MakeMaker::module_version_variable} || 0;
 	last;
     }
     close FH;
@@ -2366,6 +2379,8 @@ sub path {
     my $path = $ENV{PATH};
     $path =~ s:\\:/:g if $Is_OS2;
     my @path = split $path_sep, $path;
+    foreach(@path) { $_ = '.' if $_ eq '' }
+    @path;
 }
 
 =item perl_script
@@ -2601,14 +2616,14 @@ sub static_lib {
     my(@m);
     push(@m, <<'END');
 $(INST_STATIC): $(OBJECT) $(MYEXTLIB) $(INST_ARCHAUTODIR)/.exists
+	$(RM_RF) $@
 END
     # If this extension has it's own library (eg SDBM_File)
     # then copy that to $(INST_STATIC) and add $(OBJECT) into it.
     push(@m, "\t$self->{CP} \$(MYEXTLIB) \$\@\n") if $self->{MYEXTLIB};
 
     push @m,
-q{	$(RM_RF) $@
-	$(AR) $(AR_STATIC_ARGS) $@ $(OBJECT) && $(RANLIB) $@
+q{	$(AR) $(AR_STATIC_ARGS) $@ $(OBJECT) && $(RANLIB) $@
 	}.$self->{NOECHO}.q{echo "$(EXTRALIBS)" > $(INST_ARCHAUTODIR)/extralibs.ld
 	$(CHMOD) 755 $@
 };
@@ -2860,7 +2875,8 @@ VERBINST=1
 MOD_INSTALL = $(PERL) -I$(INST_LIB) -I$(PERL_LIB) -MExtUtils::Install \
 -e 'install({@ARGV},"$(VERBINST)",0,"$(UNINST)");'
 
-DOC_INSTALL = $(PERL) -e '$$\="\n\n";print "=head3 ", scalar(localtime), ": C<", shift, ">";' \
+DOC_INSTALL = $(PERL) -e '$$\="\n\n";' \
+-e 'print "=head2 ", scalar(localtime), ": C<", shift, ">", " L<", shift, ">";' \
 -e 'print "=over 4";' \
 -e 'while (defined($$key = shift) and defined($$val = shift)){print "=item *";print "C<$$key: $$val>";}' \
 -e 'print "=back";'

@@ -1,7 +1,7 @@
 package ExtUtils::Install;
 
-$VERSION = substr q$Revision: 1.11 $, 10;
-# $Id: Install.pm,v 1.11 1996/05/31 07:54:00 k Exp $
+$VERSION = substr q$Revision: 1.15 $, 10;
+# $Date: 1996/09/03 21:58:58 $
 
 use Exporter;
 use Carp ();
@@ -11,7 +11,8 @@ use vars qw(@ISA @EXPORT $VERSION);
 @EXPORT = ('install','uninstall','pm_to_blib');
 $Is_VMS = $^O eq 'VMS';
 
-my @PERL_ENV_LIB = split ":", defined $ENV{'PERL5LIB'} ? $ENV{'PERL5LIB'} : $ENV{'PERLLIB'};
+my $splitchar = $^O eq 'VMS' ? '|' : $^O eq 'os2' ? ';' : ':';
+my @PERL_ENV_LIB = split $splitchar, defined $ENV{'PERL5LIB'} ? $ENV{'PERL5LIB'} : $ENV{'PERLLIB'};
 my $Inc_uninstall_warn_handler;
 
 #use vars qw( @EXPORT @ISA $Is_VMS );
@@ -33,16 +34,9 @@ sub install {
     use File::Copy qw(copy);
     use File::Find qw(find);
     use File::Path qw(mkpath);
-    # The following lines were needed with AutoLoader (left for the record)
-    # my $my_req = $self->catfile(qw(auto ExtUtils Install my_cmp.al));
-    # require $my_req;
-    # $my_req = $self->catfile(qw(auto ExtUtils Install forceunlink.al));
-    # require $my_req; # Hairy, but for the first
-    # time use we are in a different directory when autoload happens, so
-    # the relativ path to ./blib is ill.
 
     my(%hash) = %$hash;
-    my(%pack, %write, $dir);
+    my(%pack, %write, $dir, $warn_permissions);
     local(*DIR, *P);
     for (qw/read write/) {
 	$pack{$_}=$hash{$_};
@@ -58,7 +52,8 @@ sub install {
 	    if (-w $hash{$source_dir_or_file} || mkpath($hash{$source_dir_or_file})) {
 		last;
 	    } else {
-		Carp::croak("You do not have permissions to install into $hash{$source_dir_or_file}");
+		warn "Warning: You do not have permissions to install into $hash{$source_dir_or_file}"
+		    unless $warn_permissions++;
 	    }
 	}
 	closedir DIR;
@@ -333,4 +328,3 @@ the extension pm are autosplit. Second argument is the autosplit
 directory.
 
 =cut
-
