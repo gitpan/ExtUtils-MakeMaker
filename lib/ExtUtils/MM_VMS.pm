@@ -15,8 +15,8 @@ BEGIN {
 
 use File::Basename;
 use vars qw($Revision @ISA $VERSION);
-($VERSION) = '5.71_08';
-($Revision) = q$Revision: 4202 $ =~ /Revision:\s+(\S+)/;
+($VERSION) = '5.71_09';
+($Revision) = q$Revision: 3928 $ =~ /Revision:\s+(\S+)/;
 
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
@@ -275,6 +275,21 @@ sub maybe_command {
     }
     return 0;
 }
+
+
+=item pasthru (override)
+
+VMS has $(MMSQUALIFIERS) which is a listing of all the original command line
+options.  This is used in every invokation of make in the VMS Makefile so
+PASTHRU should not be necessary.  Using PASTHRU tends to blow commands past
+the 256 character limit.
+
+=cut
+
+sub pasthru {
+    return "PASTHRU=\n";
+}
+
 
 =item perl_script (override)
 
@@ -980,7 +995,10 @@ $(INST_STATIC) :
 
     my(@m,$lib);
     push @m,'
-$(INST_STATIC) : $(OBJECT) $(MYEXTLIB) $(INST_ARCHAUTODIR)$(DFSEP).exists
+# Rely on suffix rule for update action
+$(OBJECT) : $(INST_ARCHAUTODIR)$(DFSEP).exists
+
+$(INST_STATIC) : $(OBJECT) $(MYEXTLIB)
 ';
     # If this extension has its own library (eg SDBM_File)
     # then copy that to $(INST_STATIC) and add $(OBJECT) into it.
@@ -991,7 +1009,11 @@ $(INST_STATIC) : $(OBJECT) $(MYEXTLIB) $(INST_ARCHAUTODIR)$(DFSEP).exists
     # if there was a library to copy, then we can't use MMS$SOURCE_LIST,
     # 'cause it's a library and you can't stick them in other libraries.
     # In that case, we use $OBJECT instead and hope for the best
-    push(@m,"\t",'Library/Object/Replace $(MMS$TARGET) $(OBJECT)',"\n"); 
+    if ($self->{MYEXTLIB}) {
+      push(@m,"\t",'Library/Object/Replace $(MMS$TARGET) $(OBJECT)',"\n");
+    } else {
+      push(@m,"\t",'Library/Object/Replace $(MMS$TARGET) $(MMS$SOURCE_LIST)',"\n");
+    }
     
     push @m, "\t\$(NOECHO) \$(PERL) -e 1 >\$(INST_ARCHAUTODIR)extralibs.ld\n";
     foreach $lib (split ' ', $self->{EXTRALIBS}) {
