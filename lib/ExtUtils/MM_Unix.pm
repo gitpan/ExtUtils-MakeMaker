@@ -1566,8 +1566,19 @@ sub init_main {
 
     if ($self->{PERL_SRC}){
 	$self->{PERL_LIB}     ||= File::Spec->catdir("$self->{PERL_SRC}","lib");
-	$self->{PERL_ARCHLIB} = $self->{PERL_LIB};
-	$self->{PERL_INC}     = ($Is_Win32) ? File::Spec->catdir($self->{PERL_LIB},"CORE") : $self->{PERL_SRC};
+
+        if (defined $Cross::platform) {
+            $self->{PERL_ARCHLIB} = 
+              File::Spec->catdir("$self->{PERL_SRC}","xlib",$Cross::platform);
+            $self->{PERL_INC}     = 
+              File::Spec->catdir("$self->{PERL_SRC}","xlib",$Cross::platform, 
+                                 $Is_Win32?("CORE"):());
+        }
+        else {
+            $self->{PERL_ARCHLIB} = $self->{PERL_LIB};
+            $self->{PERL_INC}     = ($Is_Win32) ? 
+              File::Spec->catdir($self->{PERL_LIB},"CORE") : $self->{PERL_SRC};
+        }
 
 	# catch a situation that has occurred a few times in the past:
 	unless (
@@ -1817,7 +1828,14 @@ sub init_INST {
     # you to build directly into, say $Config{privlibexp}.
     unless ($self->{INST_LIB}){
 	if ($self->{PERL_CORE}) {
-	    $self->{INST_LIB} = $self->{INST_ARCHLIB} = $self->{PERL_LIB};
+            if (defined $Cross::platform) {
+                $self->{INST_LIB} = $self->{INST_ARCHLIB} = 
+                  File::Spec->catdir($self->{PERL_LIB},"..","xlib",
+                                     $Cross::platform);
+            }
+            else {
+                $self->{INST_LIB} = $self->{INST_ARCHLIB} = $self->{PERL_LIB};
+            }
 	} else {
 	    $self->{INST_LIB} = File::Spec->catdir($Curdir,"blib","lib");
 	}
@@ -1870,11 +1888,25 @@ sub init_INSTALL {
     my $vprefix = $Config{usevendorprefix}  ? $Config{vendorprefixexp} : '';
     my $sprefix = $Config{siteprefixexp}    || '';
 
-    # There are no Config.pm defaults for these.
-    $Config_Override{installsiteman1dir} = 
-        File::Spec->catdir($sprefix, 'man', 'man$(MAN1EXT)');
-    $Config_Override{installsiteman3dir} = 
-        File::Spec->catdir($sprefix, 'man', 'man$(MAN3EXT)');
+    # 5.005_03 doesn't have a siteprefix.
+    $sprefix = $iprefix unless $sprefix;
+
+    # There are often no Config.pm defaults for these, but we can make
+    # it up.
+    unless( $Config{installsiteman1dir} ) {
+        $Config_Override{installsiteman1dir} = 
+          File::Spec->catdir($sprefix, 'man', 'man$(MAN1EXT)');
+    }
+
+    unless( $Config{installsiteman3dir} ) {
+        $Config_Override{installsiteman3dir} = 
+          File::Spec->catdir($sprefix, 'man', 'man$(MAN3EXT)');
+    }
+
+    unless( $Config{installsitebin} ) {
+        $Config_Override{installsitebin} =
+          File::Spec->catdir($sprefix, 'bin');
+    }
 
     my $u_prefix  = $self->{PREFIX}       || '';
     my $u_sprefix = $self->{SITEPREFIX}   || $u_prefix;
