@@ -1,10 +1,21 @@
-MakeMaker 5.16 comes with small enhancements and small bug fixes.
+MakeMaker 5.17 
 
-Delightful the new VERSION_FROM macro. Parses a named file and
-computes the VERSION number from there. Much nicer than the old
-approach that left VERSION as an exercise for the developer.
+mainly brings VMS in sync and adds a few minor enhancements like
+
+    adding PREFIX to PASTHRU
+
+    adding depend method to add arbitrary dependencies
+
+    A replacement for 'touch' in perl that is able to set the
+    timestamp of a file equal to another file
+
+    A Liblist paragraph for DGUX
+
+Most important for the perl distribution is the new file Mksymlists
+that writes is dedicated to the symlist files needed by VMS, AIX and
+OS/2. This should be added to perl's MANIFEST file.
 
 For details see the Changes file.
 
-January 5, 1996
+January 21, 1996
 andreas

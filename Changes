@@ -1,3 +1,19 @@
+=head2 v5.17 January 21, 1996 by Andreas Koenig and Charles Bailey
+
+Included a big patch by Charles Bailey for mksymlists(). This patch
+intruduces a Mksymlists.pm file.
+
+Included a patch by Roderick Schertler for Liblist.pm for DGUX.
+
+Added PREFIX to PASTHRU (requested by Ilya).
+
+Added a C<-E<gt>>depend method in the MM_Unix package that acts just
+like the macro method and lets the user add any dependency
+needed. (Suggestion by Dean Roehrich and Tim Bunce).
+
+Renamed the MM_Unix package to ExtUtils::MM_Unix to keep the namespace
+clean. Changed MM_VMS accordingly. (Suggestion by Charles)
+
 =head2 v5.16 January 5, 1996 by Andreas Koenig
 
 VERSION_FROM can be a filename that is parsed to determine VERSION.

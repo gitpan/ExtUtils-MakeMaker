@@ -8,4 +8,5 @@ lib/ExtUtils/Liblist.pm		determines which libraries to link
 lib/ExtUtils/MakeMaker.pm	writes a Makefile for a perl extension
 lib/ExtUtils/Manifest.pm	aid for writing MANIFEST files
 lib/ExtUtils/Mkbootstrap.pm	writes a bootstrap file
+lib/ExtUtils/Mksymlists.pm	writes a symbol table file (VMS, AIX, OS/2)
 lib/ExtUtils/MM_VMS.pm		MakeMaker additions for VMS

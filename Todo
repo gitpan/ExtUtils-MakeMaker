@@ -1,4 +1,24 @@
-The order of Todo's is significant. Most urgent ones first:
+Since 5.16:
+
+Patches by Charles 2 or 3
+
+Patch for dgux
+
+add PREFIX to PASTHRU
+
+
+- From Tim:
+
+  >> Now let's wait which name Tim suggests: OTHERLDFILES or INST_DYNAMIC_DEP.
+  >
+  >Both. They both say different but valid things:
+  >
+  >INST_DYNAMIC_DEP can contain assorted makemaker _targets_ as well as files
+  >and would appear in the $(INST_DYNAMIC): line but _not_ in the $(LD) line.
+  >
+! >OTHERLDFILES says 'other _files_ to be added to the $(LD) line' and
+! >would appear in both places.
+  >
 
 - Actually use the PREREQ attribute. Currently it's only a dummy.
 
