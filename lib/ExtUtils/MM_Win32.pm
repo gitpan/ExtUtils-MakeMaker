@@ -29,7 +29,7 @@ use vars qw(@ISA $VERSION $BORLAND $GCC $DMAKE $NMAKE);
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
 @ISA = qw( ExtUtils::MM_Any ExtUtils::MM_Unix );
-$VERSION = '1.11';
+$VERSION = '1.12';
 
 $ENV{EMXSHELL} = 'sh'; # to run `commands`
 
@@ -168,7 +168,7 @@ sub init_others {
     $self->{DEV_NULL} ||= '> NUL';
 
     $self->{FIXIN}    ||= $self->{PERL_CORE} ? 
-      '$(PERLRUN) ../../win32/bin/pl2bat.pl' : 
+      "\$(PERLRUN) $self->{PERL_SRC}/win32/bin/pl2bat.pl" : 
       'pl2bat.bat';
 
     $self->{LD}     ||= $Config{ld} || 'link';
