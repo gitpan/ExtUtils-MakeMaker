@@ -1,9 +1,14 @@
 bin/instmodsh
 Changes
-lib/ExtUtils/Command.pm
+inc/ExtUtils/Command.pm
+inc/ExtUtils/Install.pm
+inc/ExtUtils/Installed.pm
+inc/ExtUtils/Manifest.pm
+inc/ExtUtils/MANIFEST.SKIP
+inc/ExtUtils/Mkbootstrap.pm
+inc/ExtUtils/Mksymlists.pm
+inc/ExtUtils/Packlist.pm
 lib/ExtUtils/Command/MM.pm
-lib/ExtUtils/Install.pm
-lib/ExtUtils/Installed.pm
 lib/ExtUtils/Liblist.pm
 lib/ExtUtils/Liblist/Kid.pm
 lib/ExtUtils/MakeMaker.pm
@@ -12,10 +17,6 @@ lib/ExtUtils/MakeMaker/Config.pm
 lib/ExtUtils/MakeMaker/FAQ.pod
 lib/ExtUtils/MakeMaker/Tutorial.pod
 lib/ExtUtils/MakeMaker/vmsish.pm
-lib/ExtUtils/Manifest.pm
-lib/ExtUtils/MANIFEST.SKIP
-lib/ExtUtils/Mkbootstrap.pm
-lib/ExtUtils/Mksymlists.pm
 lib/ExtUtils/MM.pm
 lib/ExtUtils/MM_AIX.pm
 lib/ExtUtils/MM_Any.pm
@@ -33,7 +34,6 @@ lib/ExtUtils/MM_VOS.pm
 lib/ExtUtils/MM_Win32.pm
 lib/ExtUtils/MM_Win95.pm
 lib/ExtUtils/MY.pm
-lib/ExtUtils/Packlist.pm
 lib/ExtUtils/testlib.pm
 Makefile.PL
 MANIFEST			This list of files
@@ -53,7 +53,7 @@ t/hints.t
 t/INST.t
 t/INST_PREFIX.t
 t/Install.t
-t/installbase.t
+t/INSTALL_BASE.t
 t/Installed.t
 t/lib/MakeMaker/Test/Setup/BFD.pm
 t/lib/MakeMaker/Test/Setup/PL_FILES.pm
@@ -66,6 +66,7 @@ t/lib/Test/Simple.pm
 t/lib/TieIn.pm
 t/lib/TieOut.pm
 t/Liblist.t
+t/make.t
 t/Manifest.t
 t/Mkbootstrap.t
 t/MM_Any.t
@@ -86,6 +87,7 @@ t/prereq_print.t
 t/problems.t
 t/prompt.t
 t/recurs.t
+t/revision.t
 t/split_command.t
 t/testlib.t
 t/VERSION_FROM.t

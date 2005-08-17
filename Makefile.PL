@@ -10,8 +10,9 @@
 use 5.00503;
 
 use lib qw(lib);    # build ourself with ourself
-use ExtUtils::MakeMaker;
+use lib qw(inc);    # build ourself with ourself
 use File::Spec;
+use ExtUtils::MakeMaker;
 
 BEGIN {
     die "You have File::Spec version $File::Spec::VERSION\n".
@@ -61,8 +62,19 @@ my $MM = WriteMakefile(
                          File::Basename     => 0,
                          DirHandle          => 0,
                        },
-    INSTALLDIRS     => 'perl',
+    PMLIBDIRS       => [qw(lib inc)],
+    PMLIBPARENTDIRS => [qw(lib inc)],
     EXE_FILES       => [qw(bin/instmodsh)],
+
+    EXTRA_META      => <<'META',
+no_index:
+    dir:
+        - inc
+META
+
+    INSTALLDIRS     => 'perl',
+
+    LICENSE         => 'perl',
 
     ABSTRACT_FROM   => "lib/$PACKAGE_FILE.pm",
     AUTHOR          => 'Michael G Schwern <schwern@pobox.com>',
@@ -85,6 +97,7 @@ SPACE_WARN
 
 }
 
+
 {
     package MY;
 
@@ -103,6 +116,43 @@ SPACE_WARN
         $self->{FULLPERLRUN} .= qq{ "-I$lib"};
     }
 
+    sub init_PM {
+        my $self = shift;
+
+        $self->SUPER::init_PM;
+
+        # Don't overwrite newer versions of modules with ours in inc/
+        for my $inc (grep /^inc/, keys %{$self->{PM}}) {
+            next unless $inc =~ /\.pm$/;
+
+            my $installed = _find_installed($inc);
+
+            # Shut up "isn't numeric" warning on X.Y_Z versions.
+            local $^W = 0;
+            delete $self->{PM}{$inc} if
+              defined $installed and
+              $self->parse_version($installed) > $self->parse_version($inc);
+        }
+
+        # If ExtUtils::Manifest isn't included don't include MANIFEST.SKIP
+        # either.
+        my $maniskip_key    = grep /MANIFEST.SKIP$/i, keys %{$self->{PM}};
+        my $manifest_pm_key = grep /Manifest.pm$/i,   keys %{$self->{PM}};
+        delete $self->{PM}{$maniskip_key} unless 
+          exists $self->{PM}{$manifest_pm_key};
+    }
+
+    sub _find_installed {
+        my $file = shift;
+
+        $file =~ s{^(\W*)inc\W}{$1}i;
+
+        foreach my $inc (grep { $_ ne 'inc' } @INC) {
+            my $path = File::Spec->catfile($inc, $file);
+            return $path if -r $path;
+        }
+    }
+
     use Config;
     sub test_via_harness {
         my($self, $orig_perl, $tests) = @_;
@@ -114,11 +164,11 @@ SPACE_WARN
                 'perl5.5.3';
 
             push @perls, map "PERL5LIB=$lib /usr/local/bin/$_", 
-              qw(perl5.6.0
-                 perl5.6.1
+              qw(perl5.5.4
+		 perl5.6.2
+		 perl5.8.0
+		 perl5.8.1
                  perl
-                 perl5.8.0
-                 perl5.8.0-ithreads
                  bleadperl
                 );
         }
