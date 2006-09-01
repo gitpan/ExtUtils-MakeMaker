@@ -18,7 +18,7 @@ use vars qw($VERSION @ISA
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
-$VERSION = '1.50_01';
+$VERSION = '1.50_02';
 
 require ExtUtils::MM_Any;
 @ISA = qw(ExtUtils::MM_Any);
@@ -1304,17 +1304,16 @@ sub init_MANPODS {
 
     # Set up names of manual pages to generate from pods
     foreach my $man (qw(MAN1 MAN3)) {
-	$self->{"BUILD${man}PODS"} = 1;
-
-	unless ($self->{"${man}PODS"}) {
-	    $self->{"${man}PODS"} = {};
-	    $self->{"BUILD${man}PODS"} = 0 if
-              $self->{"INSTALL${man}DIR"} =~ /^(none|\s*)$/;
+	if ( $self->{"${man}PODS"}
+             or $self->{"INSTALL${man}DIR"} =~ /^(none|\s*)$/
+        ) {
+            $self->{"${man}PODS"} ||= {};
+        }
+        else {
+            my $init_method = "init_${man}PODS";
+            $self->$init_method();
 	}
     }
-
-    $self->init_MAN1PODS() if $self->{BUILDMAN1PODS};
-    $self->init_MAN3PODS() if $self->{BUILDMAN3PODS};
 }
 
 
@@ -2123,7 +2122,7 @@ pure_site_install ::
 		$(INST_LIB) $(DESTINSTALLSITELIB) \
 		$(INST_ARCHLIB) $(DESTINSTALLSITEARCH) \
 		$(INST_BIN) $(DESTINSTALLSITEBIN) \
-		$(INST_SCRIPT) $(DESTINSTALLSCRIPT) \
+		$(INST_SCRIPT) $(DESTINSTALLSITESCRIPT) \
 		$(INST_MAN1DIR) $(DESTINSTALLSITEMAN1DIR) \
 		$(INST_MAN3DIR) $(DESTINSTALLSITEMAN3DIR)
 	$(NOECHO) $(WARN_IF_OLD_PACKLIST) \
@@ -2136,7 +2135,7 @@ pure_vendor_install ::
 		$(INST_LIB) $(DESTINSTALLVENDORLIB) \
 		$(INST_ARCHLIB) $(DESTINSTALLVENDORARCH) \
 		$(INST_BIN) $(DESTINSTALLVENDORBIN) \
-		$(INST_SCRIPT) $(DESTINSTALLSCRIPT) \
+		$(INST_SCRIPT) $(DESTINSTALLVENDORSCRIPT) \
 		$(INST_MAN1DIR) $(DESTINSTALLVENDORMAN1DIR) \
 		$(INST_MAN3DIR) $(DESTINSTALLVENDORMAN3DIR)
 
@@ -3085,8 +3084,8 @@ sub processPL {
 
 	foreach my $target (@$list) {
             if( $Is_VMS ) {
-                $plfile = vmsify($plfile);
-                $target = vmsify($target);
+                $plfile = vmsify($self->eliminate_macros($plfile));
+                $target = vmsify($self->eliminate_macros($target));
             }
 
 	    # Normally a .PL file runs AFTER pm_to_blib so it can have

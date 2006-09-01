@@ -1,9 +1,9 @@
 --- #YAML:1.0
 name:                ExtUtils-MakeMaker
-version:             6.30_01
+version:             6.30_02
 abstract:            Create a module Makefile
 license:             perl
-generated_by:        ExtUtils::MakeMaker version 6.30_01
+generated_by:        ExtUtils::MakeMaker version 6.30_02
 author:              Michael G Schwern <schwern@pobox.com>
 distribution_type:   module
 requires:     
@@ -12,7 +12,7 @@ requires:
     File::Spec:                    0.8
     Pod::Man:                      0
 meta-spec:
-    url: <http://module-build.sourceforge.net/META-spec-new.html>;
+    url: http://module-build.sourceforge.net/META-spec-new.html
     version: 1.1
 no_index:
     dir:

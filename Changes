@@ -1,3 +1,17 @@
+6.30_02  Fri Sep  1 15:03:55 EDT 2006
+    - Updated to ExtUtils::Install 1.41
+    * Won't scan for and build man pages when MAN3PODS is deliberately set
+      empty.
+    - Minor VMS fixes. [bleadperl@26813]
+    - VMS->one_liner must quote "--" argument. [bleadperl@27613]
+    * Split INSTALLSCRIPT into INSTALLSCRIPT, INSTALLSITESCRIPT and
+      INSTALLVENDORSCRIPT so it now honors INSTALLDIRS. [bleadperl@26536]
+    - Minor fix to work with Pod::man 2.04. [bleadperl@26457]
+    - $Revision was broken.
+    - Updated our internal version of Test::More to catch a few warnings.
+    - ExtUtils::Command::test_f() test was broken.
+    - Clarified that test_f() exits.
+
 6.30_01  Tue Aug 16 23:53:27 PDT 2005
     * Fixed compiling modules using an uninstalled Perl on Win32 by using
       the proper perl header location for Windows (which is different from
