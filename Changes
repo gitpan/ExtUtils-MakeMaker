@@ -1,3 +1,51 @@
+6.33  Fri Jun 29 17:15:34 CDT 2007
+    New Features
+    * VERSION now accepts version objects without warning.
+      [rt.cpan.org 26075]
+
+    Bug Fixes
+    - Properly not installing MANIFEST.SKIP when ExtUtils::Manifest is not
+      being installed. [rt.cpan.org 21318]
+    - fixin() no longer clobbers $/ [rt.cpan.org 26234]
+    - Fixed bug finding cross-compiled perls [bleadperl 31404]
+    - Looking up to 8 levels up to find uninstalled perls
+      [bleadperl 30932]
+    * A test failure in a sub-project would not cause "make test" to
+      fail. [rt.cpan.org 27804]
+
+    Windows
+    - Embed manifest files in EXEs and DLLs when building with VC++ 8.x
+      [bleadperl #29266] [rt.cpan.org 26208]
+    - Improved the subdir command code so DIR can do more than one level
+      down. [rt.cpan.org 25180]
+    - Fix static builds on Win32 by using -DPERLDLL [bleadperl 31229]
+
+    VMS
+    - Use linker flags rather than compiler flags to determine if the
+      perl sharable image was linked debug.  This keeps OPTIMIZE from
+      confusing things. [rt.cpan.org 25268]
+    - Accidental use of $\ in a regex. [bleadperl 30521]
+
+    BSD
+    - If calling perl causes MakeMaker to emit warnings, then it
+      cannot find the location of its binary. [rt.cpan.org 23178]
+
+    Doc Improvements
+    - Typo fixes.  $(TOUNIX) -> $(TO_UNIX).  [rt.cpan.org 23495]
+    - The example for setting $VERSION from $Revision$ in SVN was
+      incorrect. (Thanks to ROBERTMAY@cpan.org) [rt.cpan.org 26995]
+    - Document what's wrong with PREFIX and what to use instead.
+      [rt.cpan.org 12919]
+    - Improve the PREREQ_FATAL docs to make it really clear that you
+      do NOT want to use this!
+
+    Misc
+    - Provide information during the install about whether we're using the
+      installed or provided dependency (ie. ExtUtils::Command).
+    - Updated included versions of ExtUtils::Manifest and Command.
+    - Add .bak and .old to veryclean [rt.cpan.org 21284]
+    - Improved the PREREQ_FATAL message.
+
 6.32  Wed Feb 21 07:59:57 PST 2007
     New Features
     - WriteEmptyMakefile() is now exportable upon request.

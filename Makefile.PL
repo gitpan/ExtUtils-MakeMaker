@@ -8,10 +8,12 @@
 # Alternatively, you can say the hell with this and use h2xs.
 
 use 5.00503;
+use strict;
 
 use lib qw(lib inc);    # build ourself with ourself
 use File::Spec;
 use ExtUtils::MakeMaker;
+
 
 BEGIN {
     die "You have File::Spec version $File::Spec::VERSION\n".
@@ -19,11 +21,11 @@ BEGIN {
         if $File::Spec::VERSION < 0.8;
 }
 
-$PACKAGE = 'ExtUtils::MakeMaker';
-my $version = ${$PACKAGE.'::VERSION'};
+my $PACKAGE = 'ExtUtils::MakeMaker';
+my $version = do { no strict 'refs'; ${$PACKAGE.'::VERSION'}; };
 $version =~ s/_//;  # for X.Y_Z alpha releases
-($PACKAGE_FILE = $PACKAGE) =~ s|::|/|g;
-$LAST_API_CHANGE = 5.50;
+(my $PACKAGE_FILE = $PACKAGE) =~ s|::|/|g;
+my $LAST_API_CHANGE = 5.50;
 
 my $Is_VMS = $^O eq 'VMS';
 
@@ -53,12 +55,12 @@ my $MM = WriteMakefile(
     PREREQ_PM       => { %prereq,
 
                          # splitpath(), rel2abs()
-                         File::Spec         => 0.8,
+                         'File::Spec'       => 0.8,
 
                          # manifypods needs Pod::Man
-                         Pod::Man   => 0,
+                         'Pod::Man'         => 0,
 
-                         File::Basename     => 0,
+                         'File::Basename'   => 0,
                          DirHandle          => 0,
                        },
     PMLIBDIRS       => [qw(lib inc)],
@@ -129,20 +131,33 @@ SPACE_WARN
             next unless $inc =~ /\.pm$/;
 
             my $installed = _find_installed($inc);
+            next unless defined $installed;
 
             # Shut up "isn't numeric" warning on X.Y_Z versions.
             local $^W = 0;
-            delete $self->{PM}{$inc} if
-              defined $installed and
-              $self->parse_version($installed) >= $self->parse_version($inc);
+            my $installed_version = $self->parse_version($installed);
+            my $inc_version       = $self->parse_version($inc);
+            if( $installed_version >= $inc_version ) {
+                delete $self->{PM}{$inc};
+            }
+            else {
+                my $module = _module_name($inc);
+                print qq{Using included version of $module ($inc_version) as it is newer than the installed version ($installed_version).\n};
+            }
         }
 
-        # If ExtUtils::Manifest isn't included don't include MANIFEST.SKIP
-        # either.
-        my $maniskip_key    = grep /MANIFEST.SKIP$/i, keys %{$self->{PM}};
-        my $manifest_pm_key = grep /Manifest.pm$/i,   keys %{$self->{PM}};
-        delete $self->{PM}{$maniskip_key} unless
-          exists $self->{PM}{$manifest_pm_key};
+        _remove_MANIFEST_SKIP($self);
+    }
+
+    # If ExtUtils::Manifest isn't included don't include MANIFEST.SKIP either.
+    sub _remove_MANIFEST_SKIP {
+        my $self = shift;
+        
+        return if grep /Manifest\.pm$/i, keys %{$self->{PM}};
+        my($maniskip_key)    = grep /MANIFEST\.SKIP$/i, keys %{$self->{PM}};
+        return unless $maniskip_key;
+        
+        return delete $self->{PM}{$maniskip_key};
     }
 
     sub _find_installed {
@@ -156,6 +171,17 @@ SPACE_WARN
         }
 
         return;
+    }
+
+    sub _module_name {
+        my $path = shift;
+        
+        my($vol, $dirs, $file) = File::Spec->splitpath($path);
+        my @dirs = File::Spec->splitdir($dirs);
+        shift @dirs;  # remove inc/
+        $file =~ s{\.pm$}{};
+        
+        return join '::', @dirs, $file;
     }
 
     use Config;
