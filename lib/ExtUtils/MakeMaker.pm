@@ -1,4 +1,4 @@
-# $Id: /mirror/svn.schwern.org/CPAN/ExtUtils-MakeMaker/trunk/lib/ExtUtils/MakeMaker.pm 32183 2007-06-29T22:08:52.779004Z schwern  $
+# $Id: /mirror/svn.schwern.org/CPAN/ExtUtils-MakeMaker/trunk/lib/ExtUtils/MakeMaker.pm 32208 2007-06-30T16:08:12.145971Z schwern  $
 package ExtUtils::MakeMaker;
 
 BEGIN {require 5.005_03;}
@@ -21,8 +21,8 @@ use vars qw(
 use vars qw($Revision);
 use strict;
 
-$VERSION = '6.33';
-($Revision) = q$Revision: 32183 $ =~ /Revision:\s+(\S+)/;
+$VERSION = '6.34';
+($Revision) = q$Revision: 32208 $ =~ /Revision:\s+(\S+)/;
 
 @ISA = qw(Exporter);
 @EXPORT = qw(&WriteMakefile &writeMakefile $Verbose &prompt);
@@ -2188,7 +2188,7 @@ MakeMaker object. The following lines will be parsed o.k.:
 
     $VERSION = '1.00';
     *VERSION = \'1.01';
-    $VERSION = (q$Revision: 32183 $) =~ /(\d+)/g;
+    $VERSION = (q$Revision: 32208 $) =~ /(\d+)/g;
     $FOO::VERSION = '1.10';
     *FOO::VERSION = \'1.11';
     our $VERSION = 1.2.3;       # new for perl5.6.0 
