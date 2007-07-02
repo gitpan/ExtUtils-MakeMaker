@@ -1,9 +1,9 @@
 --- #YAML:1.0
 name:                ExtUtils-MakeMaker
-version:             6.34
+version:             6.35
 abstract:            Create a module Makefile
 license:             perl
-generated_by:        ExtUtils::MakeMaker version 6.34
+generated_by:        ExtUtils::MakeMaker version 6.35
 distribution_type:   module
 requires:     
     DirHandle:                     0
