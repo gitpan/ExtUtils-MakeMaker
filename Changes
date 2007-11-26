@@ -1,3 +1,31 @@
+6.37_01  Sun Nov 25 17:05:53 PST 2007
+    Improvements
+    - Upgraded the META.yml to version 1.3 of the spec (which really
+      doesn't change anything).  Thanks bdfoy.
+    - MakeMaker now always includes the required 'author' field in 
+      the META.yml even if it's undef to comply with the META.yml spec.
+    - Updated ExtUtils-Install to latest version (1.44)
+    - Unified the version numbers of all modules.
+
+    Test Fixes
+    - cd() test on VMS used non-native paths. [bleadperl 31534]
+    - Removed uses of "no_plan" in tests to remain compatible with
+      old versions of Test::Harness.
+    - writemakefile_args.t had the wrong test count if version.pm isn't
+      installed.
+
+    Bug Fixes
+    - $VERSION detection code would be confused by "sub version"
+      [rt.cpan.org 30747]
+    - LINKTYPE=static will now be propagated to child builds.
+      [bleadperl 31761]
+
+    Portability Fixes
+    - Add "dragonfly" to the list of BSDish operating systems
+    - BSD detection code would not pick up bsdos or internix
+    - Fix detection of shared libperl on NetBSD [bleadperl 31526]
+
+
 6.36  Tue Jul  3 01:06:40 PDT 2007
     Test Fixes
     - version.pm prior to 0.7203 caused Foo->VERSION to reformat

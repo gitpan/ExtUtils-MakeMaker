@@ -18,7 +18,7 @@ use vars qw($VERSION @ISA
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
-$VERSION = '1.54';
+$VERSION = '6.37_01';
 
 require ExtUtils::MM_Any;
 @ISA = qw(ExtUtils::MM_Any);
@@ -35,8 +35,9 @@ BEGIN {
     $Is_SunOS4  = $^O eq 'sunos';
     $Is_Solaris = $^O eq 'solaris';
     $Is_SunOS   = $Is_SunOS4 || $Is_Solaris;
-    $Is_BSD     = $^O =~ /^(?:free|net|open)bsd$/ or
-                  $^O eq 'bsdos' or $^O eq 'interix';
+    $Is_BSD     = ($^O =~ /^(?:free|net|open)bsd$/ or
+                   grep( $^O eq $_, qw(bsdos interix dragonfly) )
+                  );
 }
 
 BEGIN {
@@ -129,37 +130,42 @@ sub c_o {
     my($self) = shift;
     return '' unless $self->needs_linking();
     my(@m);
+    
+    my $command = '$(CCCMD)';
+    my $flags   = '$(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE)';
+    
     if (my $cpp = $Config{cpprun}) {
         my $cpp_cmd = $self->const_cccmd;
         $cpp_cmd =~ s/^CCCMD\s*=\s*\$\(CC\)/$cpp/;
-        push @m, '
+        push @m, qq{
 .c.i:
-	'. $cpp_cmd . ' $(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE) $*.c > $*.i
-';
+	$cpp_cmd $flags \$*.c > \$*.i
+};
     }
-    push @m, '
+
+    push @m, qq{
 .c.s:
-	$(CCCMD) -S $(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE) $*.c
-';
-    push @m, '
+	$command -S $flags \$*.c
+
 .c$(OBJ_EXT):
-	$(CCCMD) $(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE) $*.c
-';
-    push @m, '
-.C$(OBJ_EXT):
-	$(CCCMD) $(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE) $*.C
-' if !$Is_OS2 and !$Is_Win32 and !$Is_Dos; #Case-specific
-    push @m, '
+	$command $flags \$*.c
+
 .cpp$(OBJ_EXT):
-	$(CCCMD) $(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE) $*.cpp
+	$command $flags \$*.cpp
 
 .cxx$(OBJ_EXT):
-	$(CCCMD) $(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE) $*.cxx
+	$command $flags \$*.cxx
 
 .cc$(OBJ_EXT):
-	$(CCCMD) $(CCCDLFLAGS) "-I$(PERL_INC)" $(PASTHRU_DEFINE) $(DEFINE) $*.cc
-';
-    join "", @m;
+	$command $flags \$*.cc
+};
+
+    push @m, qq{
+.C$(OBJ_EXT):
+	$command \$*.C
+} if !$Is_OS2 and !$Is_Win32 and !$Is_Dos; #Case-specific
+
+    return join "", @m;
 }
 
 =item cflags (o)
@@ -926,7 +932,7 @@ $(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)$(DFSEP).
 
     my $libs = '$(LDLOADLIBS)';
 
-    if (($Is_NetBSD || $Is_Interix) && $Config{'useshrplib'}) {
+    if (($Is_NetBSD || $Is_Interix) && $Config{'useshrplib'} eq 'true') {
 	# Use nothing on static perl platforms, and to the flags needed
 	# to link against the shared libperl library on shared perl
 	# platforms.  We peek at lddlflags to see if we need -Wl,-R
@@ -2708,27 +2714,32 @@ sub parse_version {
     open(FH,$parsefile) or die "Could not open '$parsefile': $!";
     my $inpod = 0;
     while (<FH>) {
-	$inpod = /^=(?!cut)/ ? 1 : /^=cut/ ? 0 : $inpod;
-	next if $inpod || /^\s*#/;
-	chop;
-	next unless /(?<!\\)([\$*])(([\w\:\']*)\bVERSION)\b.*\=/;
-	my $eval = qq{
-	    package ExtUtils::MakeMaker::_version;
-	    no strict;
-	    BEGIN { eval {
-	        require version;
-	        "version"->import;
-	    } }
+        $inpod = /^=(?!cut)/ ? 1 : /^=cut/ ? 0 : $inpod;
+        next if $inpod || /^\s*#/;
+        chop;
+        next unless /(?<!\\)([\$*])(([\w\:\']*)\bVERSION)\b.*\=/;
+        my $eval = qq{
+            package ExtUtils::MakeMaker::_version;
+            no strict;
+            BEGIN { eval {
+                # Ensure any version() routine which might have leaked
+                # into this package has been deleted.  Interferes with
+                # version->import()
+                undef *version;
+                require version;
+                "version"->import;
+            } }
 
-	    local $1$2;
-	    \$$2=undef; do {
-		$_
-	    }; \$$2
-	};
+            local $1$2;
+            \$$2=undef;
+            do {
+                $_
+            }; \$$2
+        };
         local $^W = 0;
-	$result = eval($eval);
-	warn "Could not eval '$eval' in $parsefile: $@" if $@;
-	last;
+        $result = eval($eval);
+        warn "Could not eval '$eval' in $parsefile: $@" if $@;
+        last;
     }
     close FH;
 
