@@ -14,10 +14,10 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 97a297a501b5e179f7a10a591e8cff9f9314eb55 Changes
+SHA1 8ea1a339b62fd2da21adf67322395ff3eb61ae88 Changes
 SHA1 eceab6d5ba15322ec4a1e500416d65f133416713 MANIFEST
 SHA1 baf569d12194dfa6fbf72eaacf976a9611b3cad0 MANIFEST.SKIP
-SHA1 4a134d54894d9528d87b86968c051ec94db360bd META.yml
+SHA1 21d60174cbbc8e71e917682202ab2ca716240400 META.yml
 SHA1 bd8625be2fc458bdc0e60c6e1fada593cdec5ea8 Makefile.PL
 SHA1 2f8f45d02988e3454b6a79508e96fe8224101e0a NOTES
 SHA1 f41b4dcfb5755c1bf2149ec31ac5c1eedabfd4e2 PATCHING
@@ -30,35 +30,35 @@ SHA1 5408cf2f6172166bcf7f634ae541536b6ef2f9c6 inc/ExtUtils/Installed.pm
 SHA1 16542b7f6b962fd97c281e45c12edb31638dbaf5 inc/ExtUtils/MANIFEST.SKIP
 SHA1 4d80bcbeeba9d5e8053263a4be36c80f4c94c479 inc/ExtUtils/Manifest.pm
 SHA1 fca901a5a3fe7297d2230b3ef32dd2f8b65b5d8c inc/ExtUtils/Packlist.pm
-SHA1 9aa694239986e4fdf67fb72bf5bd39e714dba639 lib/ExtUtils/Command/MM.pm
-SHA1 d7d6d768d864601aaf5544c567a3f4d84316c833 lib/ExtUtils/Liblist.pm
-SHA1 f5f7072ec62d8edc8d18263396b77ed0a69e7031 lib/ExtUtils/Liblist/Kid.pm
-SHA1 7fb5b6db574fb264ed72a46535b13b71519af88f lib/ExtUtils/MM.pm
-SHA1 92532017c80ee5d00a6249f764613e6e18eea996 lib/ExtUtils/MM_AIX.pm
-SHA1 30ab3c4191e948a71ec6237a25f3aeb2552aa183 lib/ExtUtils/MM_Any.pm
-SHA1 24d5233869a436c9d1163588ee9223a278cda706 lib/ExtUtils/MM_BeOS.pm
-SHA1 95fa609a49c6d05080bb694c23382050d64758c4 lib/ExtUtils/MM_Cygwin.pm
-SHA1 fc1d8c5d71c4389eacbe92b95bab4fd828a49804 lib/ExtUtils/MM_DOS.pm
-SHA1 6043446aa3bd47b672c3e51b315cf1ab0dc6e42d lib/ExtUtils/MM_MacOS.pm
-SHA1 3bedff7c4852b59f576f9e3d0892ec1af26b92a7 lib/ExtUtils/MM_NW5.pm
-SHA1 0a7c543cd68b84d3f1aafeacf09bc59e8b24d105 lib/ExtUtils/MM_OS2.pm
-SHA1 3713f0f4924a8bf786254851bf11325b1370d15f lib/ExtUtils/MM_QNX.pm
-SHA1 f8b7efcb0ad12c4c2cd669340d8f5cea7fe016bc lib/ExtUtils/MM_UWIN.pm
-SHA1 8ca490d5986190dd56f8864e1b540641c40a8e34 lib/ExtUtils/MM_Unix.pm
-SHA1 32cdf1ef2cabea4a016984a654211e84e72ccfeb lib/ExtUtils/MM_VMS.pm
-SHA1 ed0795272e083351d77d2f3e1be460109e528d39 lib/ExtUtils/MM_VOS.pm
-SHA1 7fc6b34d50c5ef1bf937334e190d9a2172a86f1a lib/ExtUtils/MM_Win32.pm
-SHA1 b76ebe53cacd3ca26247830b36282dbf9052e4c0 lib/ExtUtils/MM_Win95.pm
-SHA1 604921e1977886e8b7e19741406ec1aed3eb3681 lib/ExtUtils/MY.pm
-SHA1 0277eb39052214f596f067a1a8d583a30fba706e lib/ExtUtils/MakeMaker.pm
-SHA1 0109a2c406c1e0777c485015b6fd4f31926d9c80 lib/ExtUtils/MakeMaker/Config.pm
+SHA1 22a203ec08b80aa9390480f7399a25b8a516f0d3 lib/ExtUtils/Command/MM.pm
+SHA1 7bc1feab585b36fa2bf8a06893b4f7758e2335d1 lib/ExtUtils/Liblist.pm
+SHA1 e1af99ccd0c444da28861053eb68830407282c57 lib/ExtUtils/Liblist/Kid.pm
+SHA1 7a1efaf0eb3c7bf7fbd2222d649c1ec6b0405256 lib/ExtUtils/MM.pm
+SHA1 18f83367758f59801c7c83ac236081f9a81f420c lib/ExtUtils/MM_AIX.pm
+SHA1 c1b2fa79c25b8ac5fe0cfdafab7a5a056991f37c lib/ExtUtils/MM_Any.pm
+SHA1 f7b1d6b7f1cc83bd88063abcc4b8c1461a0ced9c lib/ExtUtils/MM_BeOS.pm
+SHA1 29150b5006f3dc4aa9d3354deb7a529dbd75d82f lib/ExtUtils/MM_Cygwin.pm
+SHA1 9fbf829f9d2c8bfd4f031fb46f81b0a57bfff6a0 lib/ExtUtils/MM_DOS.pm
+SHA1 fc14979d597d8b36230c7fb949e0fb4d5c5d8bb1 lib/ExtUtils/MM_MacOS.pm
+SHA1 d8a54bb373faca46ea395fbfb3d23bb542ab65c7 lib/ExtUtils/MM_NW5.pm
+SHA1 d0f33d514fd01c4cfcd88017dc132b6ab6b09515 lib/ExtUtils/MM_OS2.pm
+SHA1 3f1b81adbde543af6bdc2d1f6ca98a827c4e0903 lib/ExtUtils/MM_QNX.pm
+SHA1 00397abe10ddb9698a97b74a1d7c9154a715866d lib/ExtUtils/MM_UWIN.pm
+SHA1 53941306b6ec71120c6c6460d7f534cac6b01f12 lib/ExtUtils/MM_Unix.pm
+SHA1 dc24a3ae29082cbb3f5a41d0a5d8fedf35004b4f lib/ExtUtils/MM_VMS.pm
+SHA1 010533ab4687e0ee42c7abfbc76f01670b9310d4 lib/ExtUtils/MM_VOS.pm
+SHA1 ef7d9aa235b16e4332f2ca0ffb2dfcca4848112f lib/ExtUtils/MM_Win32.pm
+SHA1 a291a1979fdf87883ab364768e82f297f1d4363d lib/ExtUtils/MM_Win95.pm
+SHA1 f0929d47de15fba4ec0b3122f637e05dd8b36132 lib/ExtUtils/MY.pm
+SHA1 0fcfc564149c95ca540cab86d50eef0f516fb867 lib/ExtUtils/MakeMaker.pm
+SHA1 27353d03e0ab8b23b92fc407100f7e71c4d83308 lib/ExtUtils/MakeMaker/Config.pm
 SHA1 b81688809e58953a62deedb777547a3e178eb059 lib/ExtUtils/MakeMaker/FAQ.pod
 SHA1 4ad61c880011c3c39834b75c78abe964567aaa5f lib/ExtUtils/MakeMaker/Tutorial.pod
-SHA1 cfca3b909b47452d31650e67630b23866185372b lib/ExtUtils/MakeMaker/bytes.pm
-SHA1 ac7e218fbfda86f1ec922b4a7b9ea48e78236951 lib/ExtUtils/MakeMaker/vmsish.pm
-SHA1 d0e20474eea0ec90d2c6a5e09c2e8a2db0200c00 lib/ExtUtils/Mkbootstrap.pm
-SHA1 3190583fc371c69523a5eeb762dc61c99d7cd979 lib/ExtUtils/Mksymlists.pm
-SHA1 fbee6b327cc21670611711b0faa3b7c057acb4ad lib/ExtUtils/testlib.pm
+SHA1 be2a2aea4ea8198ab2dddc93a13752a8ad48ddaa lib/ExtUtils/MakeMaker/bytes.pm
+SHA1 ad29e5fb96b24033bf013393aef0faa230074299 lib/ExtUtils/MakeMaker/vmsish.pm
+SHA1 506befb4bd7eafdabf3c00267c03d84b8f030dc1 lib/ExtUtils/Mkbootstrap.pm
+SHA1 67e3190bef2cc932e6d75a457f8ae90431d68105 lib/ExtUtils/Mksymlists.pm
+SHA1 f9b0528e717c4cad6b7b94b15f5416c4966df526 lib/ExtUtils/testlib.pm
 SHA1 f5eb0a0e4b8de2ff76ea99e784fdc130f414eb84 t/00compile.t
 SHA1 228755cfb5af869ab12e037731d93d2dab18a5fd t/FIRST_MAKEFILE.t
 SHA1 1083ee5036f1afe80e62459729511f184d5eea58 t/INST.t
@@ -70,8 +70,8 @@ SHA1 16486d221293fb002f0e54fea9a2ed0f7e6a32da t/MM_BeOS.t
 SHA1 22eadbdfeefa96e92c9a789d6b80afbe3170b285 t/MM_Cygwin.t
 SHA1 8864612845be36e17ca0d38f1ecdccb20e07c279 t/MM_NW5.t
 SHA1 22724675c8d81e966f859a823b1bca8583976c0b t/MM_OS2.t
-SHA1 2c7773d5a8a121499fd2ef6653c540416edcf1ad t/MM_Unix.t
-SHA1 05d7752742a8779152e8356cf96c11d66f5ba930 t/MM_VMS.t
+SHA1 3cd2d3d59882dfd7bdb1406cffe079538974754a t/MM_Unix.t
+SHA1 86a007add2ec0b64a84e4f797b04f6b1a4c193e8 t/MM_VMS.t
 SHA1 9bace456aa89ead891af196aada86b16127f394e t/MM_Win32.t
 SHA1 f384c878aa09e4c5745df052b083cf47f5c15e50 t/Mkbootstrap.t
 SHA1 a79d8253be7bb1dc808fc09f4b3d882b528329a3 t/PL_FILES.t
@@ -118,7 +118,7 @@ SHA1 8f4ea0087b8453eb2a5b34d97ab487eace23f31e t/xs.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.7 (Darwin)
 
-iD8DBQFHTgG3WMohlhD1QycRAoTyAJ9lG7h6Q4QrO3LLlQ9nHrfkzfoeGQCg1Sbl
-E13896SuknhhlsRbSKTWQos=
-=XuhA
+iD8DBQFHV9fdWMohlhD1QycRAi+IAJ4scXewtKQbsKGqxT0vqjsnEs76xQCeM7oo
+QCBiY71pRJihh4+kk9sSHow=
+=EPfQ
 -----END PGP SIGNATURE-----
