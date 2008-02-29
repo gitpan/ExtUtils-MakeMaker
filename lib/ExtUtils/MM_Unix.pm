@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.43_01';
+$VERSION = '6.44';
 
 require ExtUtils::MM_Any;
 our @ISA = qw(ExtUtils::MM_Any);
@@ -2448,7 +2448,7 @@ $(MAKE_APERL_FILE) : $(FIRST_MAKEFILE) pm_to_blib
 	push @$extra, $_;
     }
 
-    grep(s/^(.*)/"-I$1"/, @{$perlinc || []});
+    s/^(.*)/"-I$1"/ for @{$perlinc || []};
 
     $target ||= "perl";
     $tmp    ||= ".";
