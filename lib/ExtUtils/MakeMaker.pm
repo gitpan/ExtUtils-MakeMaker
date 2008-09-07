@@ -1,4 +1,4 @@
-# $Id: /local/ExtUtils-MakeMaker/lib/ExtUtils/MakeMaker.pm 60262 2008-09-06T10:17:40.135942Z schwern  $
+# $Id: /local/ExtUtils-MakeMaker/lib/ExtUtils/MakeMaker.pm 60290 2008-09-07T21:00:25.100947Z schwern  $
 package ExtUtils::MakeMaker;
 
 use strict;
@@ -18,8 +18,8 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.45_01';
-our ($Revision) = q$Revision: 60262 $ =~ /Revision:\s+(\S+)/;
+our $VERSION = '6.45_02';
+our ($Revision) = q$Revision: 60290 $ =~ /Revision:\s+(\S+)/;
 our $Filename = __FILE__;   # referenced outside MakeMaker
 
 our @ISA = qw(Exporter);
@@ -1820,6 +1820,9 @@ They differ in how they behave if they have the same key as the
 default metadata.  META_ADD will override the default value with it's
 own.  META_MERGE will merge its value with the default.
 
+Unless you want to override the defaults, prefer META_MERGE so as to
+get the advantage of any future defaults.
+
 =item MYEXTLIB
 
 If the extension links to a library that it builds set this to the
@@ -2199,7 +2202,7 @@ MakeMaker object. The following lines will be parsed o.k.:
 
     $VERSION   = '1.00';
     *VERSION   = \'1.01';
-    ($VERSION) = q$Revision: 60262 $ =~ /(\d+)/g;
+    ($VERSION) = q$Revision: 60290 $ =~ /(\d+)/g;
     $FOO::VERSION = '1.10';
     *FOO::VERSION = \'1.11';
 

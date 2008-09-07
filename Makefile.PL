@@ -78,8 +78,13 @@ my $MM = WriteMakefile(
             homepage    =>      'http://makemaker.org',
             bugtracker  =>      'http://rt.cpan.org/NoAuth/Bugs.html?Dist=ExtUtils-MakeMaker',
             repository  =>      'http://svn.schwern.org/svn/CPAN/ExtUtils-MakeMaker',
-            'MailingList' =>    'makemaker@perl.org',
+            MailingList =>    'makemaker@perl.org',
         },
+    },
+
+    META_ADD        => {
+        # We don't need ourselves to install ourselves.
+        configure_requires => {}
     },
 
     INSTALLDIRS     => 'perl',
@@ -179,9 +184,10 @@ SPACE_WARN
         
         my($vol, $dirs, $file) = File::Spec->splitpath($path);
         my @dirs = File::Spec->splitdir($dirs);
-        shift @dirs;  # remove inc/
+        shift @dirs;  # remove inc
+
         $file =~ s{\.pm$}{};
         
-        return join '::', @dirs, $file;
+        return join '::', grep { length } @dirs, $file;
     }
 }
