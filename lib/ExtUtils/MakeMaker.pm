@@ -1,4 +1,4 @@
-# $Id: /local/ExtUtils-MakeMaker/lib/ExtUtils/MakeMaker.pm 60290 2008-09-07T21:00:25.100947Z schwern  $
+# $Id: /local/ExtUtils-MakeMaker/lib/ExtUtils/MakeMaker.pm 66493 2008-09-27T21:35:25.560547Z schwern  $
 package ExtUtils::MakeMaker;
 
 use strict;
@@ -18,8 +18,8 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.45_02';
-our ($Revision) = q$Revision: 60290 $ =~ /Revision:\s+(\S+)/;
+our $VERSION = '6.46';
+our ($Revision) = q$Revision: 66493 $ =~ /Revision:\s+(\S+)/;
 our $Filename = __FILE__;   # referenced outside MakeMaker
 
 our @ISA = qw(Exporter);
@@ -2202,7 +2202,7 @@ MakeMaker object. The following lines will be parsed o.k.:
 
     $VERSION   = '1.00';
     *VERSION   = \'1.01';
-    ($VERSION) = q$Revision: 60290 $ =~ /(\d+)/g;
+    ($VERSION) = q$Revision: 66493 $ =~ /(\d+)/g;
     $FOO::VERSION = '1.10';
     *FOO::VERSION = \'1.11';
 

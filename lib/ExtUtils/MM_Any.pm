@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.45_02';
+our $VERSION = '6.46';
 
 use Carp;
 use File::Spec;
@@ -777,7 +777,7 @@ sub _hash_merge {
     if (ref $h->{$k} eq 'ARRAY') {
         push @{$h->{$k}}, ref $v ? @$v : $v;
     } elsif (ref $h->{$k} eq 'HASH') {
-        $h->{$k}{$_} = $v->{$_} foreach keys %$v;
+        $self->_hash_merge($h->{$k}, $_, $v->{$_}) foreach keys %$v;
     } else {
         $h->{$k} = $v;
     }
