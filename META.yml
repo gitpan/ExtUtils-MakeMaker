@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               ExtUtils-MakeMaker
-version:            6.47_01
+version:            6.47_02
 abstract:           Create a module Makefile
 author:
     - Michael G Schwern <schwern@pobox.com>
@@ -25,7 +25,7 @@ no_index:
         - inc
     package:
         - DynaLoader
-generated_by:       ExtUtils::MakeMaker version 6.47_01
+generated_by:       ExtUtils::MakeMaker version 6.47_02
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html
     version:  1.4
