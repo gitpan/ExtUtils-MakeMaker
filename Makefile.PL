@@ -73,20 +73,22 @@ my $MM = WriteMakefile(
 
     META_MERGE      => {
         no_index => {
-            package => ['DynaLoader'],
+            # "in" is a PAUSE misparse.
+            package => ['DynaLoader', 'in'],
         },
         resources => {
             license     =>      'http://dev.perl.org/licenses/',
             homepage    =>      'http://makemaker.org',
             bugtracker  =>      'http://rt.cpan.org/NoAuth/Bugs.html?Dist=ExtUtils-MakeMaker',
-            repository  =>      'http://svn.schwern.org/svn/CPAN/ExtUtils-MakeMaker',
-            MailingList =>    'makemaker@perl.org',
+            repository  =>      'http://svn.schwern.org/repos/CPAN/ExtUtils-MakeMaker',
+            MailingList =>      'makemaker@perl.org',
         },
     },
 
     META_ADD        => {
-        # We don't need ourselves to install ourselves.
-        configure_requires => {}
+        # We don't need ourself to install ourself.
+        configure_requires => {},
+        build_requires     => {},
     },
 
     INSTALLDIRS     => 'perl',

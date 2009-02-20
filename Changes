@@ -1,3 +1,24 @@
+6.49_01  Thu Feb 19 17:06:36 PST 2009
+    New OS Support
+    * Recognize "Haiku", a resurrection of BeOS.
+
+    New Features
+    - META.yml now includes ExtUtils::MakeMaker in build_requires by
+      default.
+
+    Test Fixes
+    - ExtUtils::Install 1.51 changed its output breaking some tests that
+      were looking for /^Writing/ [rt.cpan.org 42927]
+
+    Bug Fixes
+    - Upgrade bundled modules:  ExtUtils::Install 1.52, ExtUtils::Command
+      1.16, ExtUtils::Manifest 1.56.
+
+    Other
+    - The MakeMaker repository moved slightly.  Changed the metadata to
+      reflect this.  [rt.cpan.org 41571]
+
+
 6.48  Mon Oct 20 11:18:13 PDT 2008
     Test Fixes
     * Protect against stray environment variables effecting the tests.

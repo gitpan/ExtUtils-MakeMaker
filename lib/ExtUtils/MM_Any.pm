@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.48';
+our $VERSION = '6.49_01';
 
 use Carp;
 use File::Spec;
@@ -829,6 +829,10 @@ sub metafile_data {
         distribution_type => $self->{PM} ? 'module' : 'script',
 
         configure_requires => {
+            'ExtUtils::MakeMaker'       => 0
+        },
+
+        build_requires => {
             'ExtUtils::MakeMaker'       => 0
         },
 
