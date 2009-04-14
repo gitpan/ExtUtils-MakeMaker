@@ -27,7 +27,7 @@ use ExtUtils::MakeMaker qw( neatvalue );
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
 our @ISA = qw( ExtUtils::MM_Any ExtUtils::MM_Unix );
-our $VERSION = '6.51_01';
+our $VERSION = '6.51_02';
 
 $ENV{EMXSHELL} = 'sh'; # to run `commands`
 
@@ -414,7 +414,8 @@ Normalize all arguments for consistency of comparison.
 sub arch_check {
     my $self = shift;
 
-    return $self->SUPER::arch_check( map { lc(Win32::GetShortPath($_)) } @_ );
+    require Win32;
+    return $self->SUPER::arch_check( map { lc Win32::GetShortPathName($_) } @_);
 }
 
 
