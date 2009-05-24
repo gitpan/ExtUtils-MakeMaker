@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.51_02';
+our $VERSION = '6.51_03';
 
 use Carp;
 use File::Spec;
@@ -1483,7 +1483,7 @@ sub init_INSTALL_from_PREFIX {
     # read man pages.
     for my $type ("man", "html") {
         for my $num (1, 3) {
-            $self->{'INSTALL'.uc($type).$num.'DIR'} ||= 'none'
+            $self->{'INSTALL'.uc($type).$num.'DIR'} ||= ''
                 unless $Config{'install'.$type.$num.'dir'};
         }
     }
@@ -1823,7 +1823,7 @@ sub init_others {
 
     $self->{MOD_INSTALL} ||= 
       $self->oneliner(<<'CODE', ['-MExtUtils::Install']);
-install([ from_to => {@ARGV}, verbose => '$(VERBINST)', dry_run => 0, uninstall_shadows => '$(UNINST)', dir_mode => '$(PERM_DIR)' ]);
+install([ from_to => {@ARGV}, verbose => '$(VERBINST)', uninstall_shadows => '$(UNINST)', dir_mode => '$(PERM_DIR)' ]);
 CODE
     $self->{DOC_INSTALL} ||= $self->oneliner('perllocal_install', ["-MExtUtils::Command::MM"]);
     $self->{UNINSTALL}   ||= $self->oneliner('uninstall', ["-MExtUtils::Command::MM"]);

@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.51_02';
+$VERSION = '6.51_03';
 
 require ExtUtils::MM_Any;
 our @ISA = qw(ExtUtils::MM_Any);
@@ -160,7 +160,7 @@ sub c_o {
 
     push @m, qq{
 .C\$(OBJ_EXT):
-	$command \$*.C
+	$command $flags \$*.C
 } if !$Is{OS2} and !$Is{Win32} and !$Is{Dos}; #Case-specific
 
     return join "", @m;
