@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.51_04';
+our $VERSION = '6.52';
 
 # Emulate something resembling CVS $Revision$
 (our $Revision = $VERSION) =~ s{_}{};
@@ -88,6 +88,7 @@ my %Special_Sigs = (
  PMLIBDIRS          => 'ARRAY',
  PMLIBPARENTDIRS    => 'ARRAY',
  PREREQ_PM          => 'HASH',
+ CONFIGURE_REQUIRES => 'HASH',
  SKIP               => 'ARRAY',
  TYPEMAPS           => 'ARRAY',
  XS                 => 'HASH',
@@ -241,7 +242,7 @@ sub full_setup {
 
     INC INCLUDE_EXT LDFROM LIB LIBPERL_A LIBS LICENSE
     LINKTYPE MAKE MAKEAPERL MAKEFILE MAKEFILE_OLD MAN1PODS MAN3PODS MAP_TARGET
-    META_ADD META_MERGE MIN_PERL_VERSION
+    META_ADD META_MERGE MIN_PERL_VERSION CONFIGURE_REQUIRES
     MYEXTLIB NAME NEEDS_LINKING NOECHO NO_META NORECURS NO_VC OBJECT OPTIMIZE 
     PERL_MALLOC_OK PERL PERLMAINCC PERLRUN PERLRUNINST PERL_CORE
     PERL_SRC PERM_DIR PERM_RW PERM_RWX
@@ -1454,6 +1455,17 @@ CODE reference. The subroutine should return a hash reference. The
 hash may contain further attributes, e.g. {LIBS =E<gt> ...}, that have to
 be determined by some evaluation method.
 
+=item CONFIGURE_REQUIRES
+
+A hash of modules that are required to run Makefile.PL itself, but not
+to run your distribution.
+
+This will go into the C<configure_requires> field of your F<META.yml>.
+
+Defaults to C<{ "ExtUtils::MakeMaker" => 0 }>
+
+The format is the same as PREREQ_PM.
+
 =item DEFINE
 
 Something like C<"-DHAVE_UNISTD_H">
@@ -1472,8 +1484,8 @@ slash on your DESTDIR.  F<~/tmp/> not F<~/tmp>.
 
 =item DIR
 
-Ref to array of subdirectories containing Makefile.PLs e.g. [ 'sdbm'
-] in ext/SDBM_File
+Ref to array of subdirectories containing Makefile.PLs e.g. ['sdbm']
+in ext/SDBM_File
 
 =item DISTNAME
 
@@ -2158,10 +2170,19 @@ use your module with an incomplete environment.
 
 =item PREREQ_PM
 
-Hashref: Names of modules that need to be available to run this
-extension (e.g. Fcntl for SDBM_File) are the keys of the hash and the
-desired version is the value. If the required version number is 0, we
-only check if any version is installed already.
+A hash of modules that are needed to run your module.  The keys are
+the module names ie. Test::More, and the minimum version is the
+value. If the required version number is 0 any version will do.
+
+This will go into the C<requires> field of your F<META.yml>.
+
+    PREREQ_PM => {
+        # Require Test::More at least 0.47
+        "Test::More" => "0.47",
+
+        # Require any version of Acme::Buffy
+        "Acme::Buffy" => 0,
+    }
 
 =item PREREQ_PRINT
 

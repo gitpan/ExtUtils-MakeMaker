@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.51_04';
+our $VERSION = '6.52';
 
 use Carp;
 use File::Spec;
@@ -822,6 +822,15 @@ sub metafile_data {
         meta-spec
     );
 
+    my $configure_requires;
+    if( $self->{CONFIGURE_REQUIRES} and ref($self->{CONFIGURE_REQUIRES}) eq 'HASH' ) {
+        $configure_requires = $self->{CONFIGURE_REQUIRES};
+    } else {
+        $configure_requires = {
+            'ExtUtils::MakeMaker'       => 0,
+        };
+    }
+
     my %meta = (
         name         => $self->{DISTNAME},
         version      => $self->{VERSION},
@@ -829,9 +838,7 @@ sub metafile_data {
         license      => $self->{LICENSE} || 'unknown',
         distribution_type => $self->{PM} ? 'module' : 'script',
 
-        configure_requires => {
-            'ExtUtils::MakeMaker'       => 0
-        },
+        configure_requires => $configure_requires,
 
         build_requires => {
             'ExtUtils::MakeMaker'       => 0
@@ -2067,6 +2074,9 @@ sub arch_check {
 
     my($pvol, $pthinks) = $self->splitpath($pconfig);
     my($cvol, $cthinks) = $self->splitpath($cconfig);
+
+    $pthinks = $self->canonpath($pthinks);
+    $cthinks = $self->canonpath($cthinks);
 
     my $ret = 1;
     if ($pthinks ne $cthinks) {
