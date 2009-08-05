@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.55_01';
+our $VERSION = '6.55_02';
 
 # Emulate something resembling CVS $Revision$
 (our $Revision = $VERSION) =~ s{_}{};
@@ -744,7 +744,7 @@ sub _MakeMaker_Parameters_section {
     my $att  = shift;
 
     my @result = <<'END';
-    #   MakeMaker Parameters:
+#   MakeMaker Parameters:
 END
 
     # CPAN.pm takes prereqs from this field in 'Makefile'
@@ -1774,7 +1774,7 @@ If set to 'none', no man pages will be installed.
 =item INSTALLVENDORSCRIPT
 
 Used by 'make install' which copies files from INST_SCRIPT to this
-directory if INSTALLDIRS is set to is set to vendor.
+directory if INSTALLDIRS is set to vendor.
 
 =item INST_ARCHLIB
 
