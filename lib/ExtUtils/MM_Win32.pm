@@ -27,12 +27,13 @@ use ExtUtils::MakeMaker qw( neatvalue );
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
 our @ISA = qw( ExtUtils::MM_Any ExtUtils::MM_Unix );
-our $VERSION = '6.55_02';
+our $VERSION = '6.55_03';
 
 $ENV{EMXSHELL} = 'sh'; # to run `commands`
 
 my $BORLAND = $Config{'cc'} =~ /^bcc/i ? 1 : 0;
-my $GCC     = $Config{'cc'} =~ /^gcc/i ? 1 : 0;
+my $GCC     = $Config{'cc'} =~ /\bgcc$/i ? 1 : 0;
+my $DLLTOOL = $Config{'dlltool'} || 'dlltool';
 
 
 =head2 Overridden methods
@@ -309,9 +310,9 @@ $(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)$(DFSEP).
 ');
     if ($GCC) {
       push(@m,  
-       q{	dlltool --def $(EXPORT_LIST) --output-exp dll.exp
+       q{	}.$DLLTOOL.q{ --def $(EXPORT_LIST) --output-exp dll.exp
 	$(LD) -o $@ -Wl,--base-file -Wl,dll.base $(LDDLFLAGS) }.$ldfrom.q{ $(OTHERLDFLAGS) $(MYEXTLIB) $(PERL_ARCHIVE) $(LDLOADLIBS) dll.exp
-	dlltool --def $(EXPORT_LIST) --base-file dll.base --output-exp dll.exp
+	}.$DLLTOOL.q{ --def $(EXPORT_LIST) --base-file dll.base --output-exp dll.exp
 	$(LD) -o $@ $(LDDLFLAGS) }.$ldfrom.q{ $(OTHERLDFLAGS) $(MYEXTLIB) $(PERL_ARCHIVE) $(LDLOADLIBS) dll.exp });
     } elsif ($BORLAND) {
       push(@m,
@@ -329,8 +330,8 @@ $(INST_DYNAMIC): $(OBJECT) $(MYEXTLIB) $(BOOTSTRAP) $(INST_ARCHAUTODIR)$(DFSEP).
 
       # Embed the manifest file if it exists
       push(@m, q{
-       if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
-       if exist $@.manifest del $@.manifest});
+	if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
+	if exist $@.manifest del $@.manifest});
     }
     push @m, '
 	$(CHMOD) $(PERM_RWX) $@

@@ -90,7 +90,7 @@ my $MM = WriteMakefile(
 
     # We don't need ourself to install ourself.
     CONFIGURE_REQUIRES => {},
-#    BUILD_REQUIRES => {},
+    BUILD_REQUIRES => {},
 
     INSTALLDIRS     => 'perl',
 
@@ -224,9 +224,6 @@ BIN_WARN
 
         my @perls = qw(
             perl5.8.9
-            perl5.8.8
-            perl5.6.2
-            perl5.6.1
         );
 
         for my $perl (@perls) {

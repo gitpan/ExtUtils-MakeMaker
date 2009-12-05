@@ -4,20 +4,14 @@
 # build, test and installation of the Big::Fat::Dummy module.
 
 BEGIN {
-    if( $ENV{PERL_CORE} ) {
-        chdir 't' if -d 't';
-        @INC = ('../lib', 'lib');
-    }
-    else {
-        unshift @INC, 't/lib';
-    }
+    unshift @INC, 't/lib';
 }
 
 use strict;
 use Config;
 use ExtUtils::MakeMaker;
 
-use Test::More tests => 79;
+use Test::More tests => 80;
 use MakeMaker::Test::Utils;
 use MakeMaker::Test::Setup::BFD;
 use File::Find;
@@ -95,6 +89,7 @@ like( $ppd_html,
                                                            '  <AUTHOR>'  );
 like( $ppd_html, qr{^\s*<IMPLEMENTATION>}m,          '  <IMPLEMENTATION>');
 like( $ppd_html, qr{^\s*<REQUIRE NAME="strict::" />}m,  '  <REQUIRE>' );
+unlike( $ppd_html, qr{^\s*<REQUIRE NAME="warnings::" />}m,  'no <REQUIRE> for build_require' );
 
 my $archname = $Config{archname};
 if( $] >= 5.008 ) {
@@ -264,7 +259,7 @@ distribution_type:  module
 configure_requires:
     ExtUtils::MakeMaker:  0
 build_requires:
-    ExtUtils::MakeMaker:  0
+    warnings:  0
 requires:
     strict:  0
 no_index:
