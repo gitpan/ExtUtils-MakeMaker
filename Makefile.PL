@@ -100,6 +100,12 @@ my $MM = WriteMakefile(
 
     ABSTRACT_FROM   => "lib/$PACKAGE_FILE.pm",
     AUTHOR          => 'Michael G Schwern <schwern@pobox.com>',
+    $^O =~/win/i ? (
+        dist => {
+            TAR      => 'ptar',
+            TARFLAGS => '-c -C -f',
+        },
+    ) : (),
 );
 
 if( !$Is_VMS && $MM->{PERL} =~ /\S\s+\S/ ) {
