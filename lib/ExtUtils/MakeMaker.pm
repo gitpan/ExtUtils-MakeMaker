@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.57_04';
+our $VERSION = '6.57_05';
 
 # Emulate something resembling CVS $Revision$
 (our $Revision = $VERSION) =~ s{_}{};
@@ -512,6 +512,7 @@ END
     if (defined $self->{CONFIGURE}) {
         if (ref $self->{CONFIGURE} eq 'CODE') {
             %configure_att = %{&{$self->{CONFIGURE}}};
+            _convert_compat_attrs(\%configure_att);
             $self = { %$self, %configure_att };
         } else {
             Carp::croak "Attribute 'CONFIGURE' to WriteMakefile() not a code reference\n";
