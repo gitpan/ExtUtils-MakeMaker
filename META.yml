@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               ExtUtils-MakeMaker
-version:            6.57_05
+version:            6.57_06
 abstract:           Create a module Makefile
 author:
     - Michael G Schwern <schwern@pobox.com>
@@ -20,7 +20,7 @@ resources:
     homepage:     http://makemaker.org
     license:      http://dev.perl.org/licenses/
     MailingList:  makemaker@perl.org
-    repository:   http://github.com/schwern/extutils-makemaker
+    repository:   http://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker
 no_index:
     directory:
         - t
@@ -28,7 +28,7 @@ no_index:
     package:
         - DynaLoader
         - in
-generated_by:       ExtUtils::MakeMaker version 6.57_05
+generated_by:       ExtUtils::MakeMaker version 6.57_06
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html
     version:  1.4
