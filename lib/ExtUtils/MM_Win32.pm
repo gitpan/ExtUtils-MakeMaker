@@ -27,7 +27,7 @@ use ExtUtils::MakeMaker qw( neatvalue );
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
 our @ISA = qw( ExtUtils::MM_Any ExtUtils::MM_Unix );
-our $VERSION = '6.57_06';
+our $VERSION = '6.57_07';
 
 $ENV{EMXSHELL} = 'sh'; # to run `commands`
 
@@ -487,9 +487,31 @@ sub oneliner {
 sub quote_literal {
     my($self, $text) = @_;
 
-    # I don't know if this is correct, but it seems to work on
-    # Win98's command.com
-    $text =~ s{"}{\\"}g;
+    # DOS batch processing is hilarious:
+    # Quotes need to be converted into triple quotes.
+    # Certain special characters need to be escaped with a caret if an odd
+    # number of quotes came before them.
+    my @text        = split '', $text;
+    my $quote_count = 0;
+    my %caret_chars = map { $_ => 1 } qw( < > | );
+    for my $char ( @text ) {
+        if ( $char eq '"' ) {
+            $quote_count++;
+            $char = '"""';
+        }
+        elsif ( $caret_chars{$char} and $quote_count % 2 ) {
+            $char = "^$char";
+        }
+        elsif ( $char eq "\\" ) {
+            $char = "\\\\";
+        }
+    }
+    $text = join '', @text;
+    
+    # There is a terribly confusing edge case here, where this will do entirely the wrong thing:
+    # perl -e "use Data::Dumper; @ARGV = '%PATH%'; print Dumper( \@ARGV );print qq{@ARGV};" --
+    # I have no idea how to fix this manually, much less programmatically.
+    # However as it is such a rare edge case i'll just leave this documentation here and hope it never happens.
 
     # dmake eats '{' inside double quotes and leaves alone { outside double
     # quotes; however it transforms {{ into { either inside and outside double

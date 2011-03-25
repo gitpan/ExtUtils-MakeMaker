@@ -1,10 +1,43 @@
+6.57_07  Fri, 25 Mar 2011 14:31:31 +1100
+    Enhancements
+    * Generates META.json and MYMETA.json in addition to
+      META.yml and MYMETA.yml (David Golden)
+    * MYMETA has the runtime requirements made priority over META_*
+      keys to allow generation of a correct META.* into the dist while
+      still generating an accurate MYMETA.* locally (Matt S Trout)
+    * Distributions should not depend on cc_runtime.h from core as it is
+      only needed for B::CC
+    * Now uses CPAN::Meta to generate META files.
+
+    Bug Fixes
+    * MYMETA.yml generation from META.yml actually works (Matt S Trout)
+    * All required META fields are generated, even if they must be filled
+      with "unknown" in place of real data (David Golden)
+
+    Test Fixes
+    * miniperl.t is no longer run outside of the perl core.  Its only relevant
+      to bleadperl and requires no backwards compatibility [rt.cpan.org 61868]
+
+    Cygwin
+    * Rebase behaviour was improved (Reini Urban)
+    * Build man pages (Reini Urban)
+
+    Win32
+    * Spot valid lib files on Win32 when .a and .lib are mixed.
+      (Christian Walde) [github #3]
+    * Extensive testing of ExtUtils::Liblist::Kid for Win32
+      (Christian Walde)
+    * Implemented proper emulation of DOS escaping rules in ExtUtils::MM_Win32
+      (Christian Walde)
+
+
 6.57_06  Wed Oct 06 13:49:00 EEST 2010
     Win32
     * Work around dmake's limitations on how long a "line" can be.
       [rt.cpan.org 61286]
     * ActivePerl 1007 can now see gcc. [rt.cpan.org 55752] (Christian Walde)
 
-    Improvements
+    Bug Fixes
     * Fix for AUTHOR and undocumented usage of MM->new() (Alexandr Ciornii)
 
 6.57_05  Sat Sep 11 23:24:00 EEST 2010

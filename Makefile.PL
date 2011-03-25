@@ -48,7 +48,6 @@ CHANGE_WARN
 my %prereq = ( );
 $prereq{'Test::Harness'} = 2.00 if $^O eq 'VMS';
 
-
 check_environment();
 
 
