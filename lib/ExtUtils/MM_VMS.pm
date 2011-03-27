@@ -15,7 +15,7 @@ BEGIN {
 
 use File::Basename;
 
-our $VERSION = '6.57_07';
+our $VERSION = '6.57_08';
 
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
@@ -1282,7 +1282,7 @@ sub perldepend {
 
     push @m, '
 $(OBJECT) : $(PERL_INC)EXTERN.h, $(PERL_INC)INTERN.h, $(PERL_INC)XSUB.h
-$(OBJECT) : $(PERL_INC)av.h, $(PERL_INC)cc_runtime.h, $(PERL_INC)config.h
+$(OBJECT) : $(PERL_INC)av.h, $(PERL_INC)config.h
 $(OBJECT) : $(PERL_INC)cop.h, $(PERL_INC)cv.h, $(PERL_INC)embed.h
 $(OBJECT) : $(PERL_INC)embedvar.h, $(PERL_INC)form.h
 $(OBJECT) : $(PERL_INC)gv.h, $(PERL_INC)handy.h, $(PERL_INC)hv.h
