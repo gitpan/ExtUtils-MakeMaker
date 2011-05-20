@@ -11,7 +11,7 @@ use 5.006;
 
 use strict;
 use warnings;
-our $VERSION = '6.57_10';
+our $VERSION = '6.57_11';
 
 use ExtUtils::MakeMaker::Config;
 use Cwd 'cwd';
@@ -259,8 +259,8 @@ sub _win32_ext {
     my %libs_seen;
     my @extralibs;
     my $cc         = $Config{cc} || '';
-    my $VC         = $cc =~ /^cl/i;
-    my $GC         = $cc =~ /^gcc/i;
+    my $VC         = $cc =~ /\bcl\b/i;
+    my $GC         = $cc =~ /\bgcc\b/i;
     my $libext     = _win32_lib_extensions();
     my @searchpath = ( '' );                               # from "-L/path" entries in $potential_libs
     my @libpath    = _win32_default_search_paths( $VC );

@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.57_10';
+our $VERSION = '6.57_11';
 
 use Carp;
 use File::Spec;
@@ -759,7 +759,24 @@ MAKE_FRAG
         $self->{META_ADD}   || {},
         $self->{META_MERGE} || {},
     );
-    my $meta       = CPAN::Meta->create( \%metadata, {lazy_validation => 1} );
+    
+    _fix_metadata_before_conversion( \%metadata );
+
+    # paper over validation issues, but still complain, necessary because
+    # there's no guarantee that the above will fix ALL errors
+    my $meta = eval { CPAN::Meta->create( \%metadata, { lazy_validation => 1 } ) };
+    warn $@ if $@ and 
+               $@ !~ /encountered CODE.*, but JSON can only represent references to arrays or hashes/;
+
+    # use the original metadata straight if the conversion failed
+    # or if it can't be stringified.
+    if( !$meta                                                  ||
+        !eval { $meta->as_string( { version => "1.4" } ) }      ||
+        !eval { $meta->as_string }
+    )
+    {
+        $meta = bless \%metadata, 'CPAN::Meta';
+    }
 
     my @write_metayml = $self->echo(
       $meta->as_string({version => "1.4"}), 'META_new.yml'
@@ -781,6 +798,58 @@ metafile : create_distdir
 MAKE_FRAG
 
 }
+
+=begin private
+
+=head3 _fix_metadata_before_conversion
+
+    _fix_metadata_before_conversion( \%metadata );
+
+Fixes errors in the metadata before it's handed off to CPAN::Meta for
+conversion. This hopefully results in something that can be used further
+on, no guarantee is made though.
+
+=end private
+
+=cut
+
+sub _fix_metadata_before_conversion {
+    my ( $metadata ) = @_;
+
+    my $bad_version = $metadata->{version} &&
+                      !CPAN::Meta::Validator->new->version( 'version', $metadata->{version} );
+
+    # just delete all invalid versions
+    if( $bad_version ) {
+        warn "Can't parse version '$metadata->{version}'\n";
+        $metadata->{version} = '';
+    }
+
+    my $validator = CPAN::Meta::Validator->new( $metadata );
+    return if $validator->is_valid;
+
+    # fix non-camelcase custom resource keys (only other trick we know)
+    for my $error ( $validator->errors ) {
+        my ( $key ) = ( $error =~ /Custom resource '(.*)' must be in CamelCase./ );
+        next if !$key;
+
+        # first try to remove all non-alphabetic chars
+        ( my $new_key = $key ) =~ s/[^_a-zA-Z]//g;
+
+        # if that doesn't work, uppercase first one
+        $new_key = ucfirst $new_key if !$validator->custom_1( $new_key );
+
+        # copy to new key if that worked
+        $metadata->{resources}{$new_key} = $metadata->{resources}{$key}
+          if $validator->custom_1( $new_key );
+
+        # and delete old one in any case
+        delete $metadata->{resources}{$key};
+    }
+
+    return;
+}
+
 
 =begin private
 
@@ -1196,12 +1265,16 @@ sub write_mymeta {
 
     return unless _has_cpan_meta();
 
+    _fix_metadata_before_conversion( $mymeta );
+    
+    # this can still blow up
+    # not sure if i should just eval this and skip file creation if it
+    # blows up
     my $meta_obj = CPAN::Meta->new( $mymeta, { lazy_validation => 1 } );
     $meta_obj->save( 'MYMETA.json' );
     $meta_obj->save( 'MYMETA.yml', { version => "1.4" } );
     return 1;
 }
-
 
 =head3 realclean (o)
 
@@ -1423,7 +1496,7 @@ sub init_INST {
     # perl has been built and installed. Setting INST_LIB allows
     # you to build directly into, say $Config{privlibexp}.
     unless ($self->{INST_LIB}){
-	if ($self->{PERL_CORE}) {
+        if ($self->{PERL_CORE}) {
             if (defined $Cross::platform) {
                 $self->{INST_LIB} = $self->{INST_ARCHLIB} = 
                   $self->catdir($self->{PERL_LIB},"..","xlib",
@@ -1432,9 +1505,9 @@ sub init_INST {
             else {
                 $self->{INST_LIB} = $self->{INST_ARCHLIB} = $self->{PERL_LIB};
             }
-	} else {
-	    $self->{INST_LIB} = $self->catdir($Curdir,"blib","lib");
-	}
+        } else {
+            $self->{INST_LIB} = $self->catdir($Curdir,"blib","lib");
+        }
     }
 
     my @parentdir = split(/::/, $self->{PARENT_NAME});

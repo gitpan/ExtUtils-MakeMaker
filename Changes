@@ -1,3 +1,18 @@
+6.57_11  Thu May 19 17:26:31 PDT 2011
+    Bug Fixes
+    * Changed CPAN::Meta to accept version objects. [github #16]
+    * Massage bad versions and warn the user about them. [github #15]
+    * Protect against CPAN::Meta dying during metafile validation
+      and generation.
+
+    VMS
+    * Fix prereq.t to work around "local %ENV = %ENV" bug
+
+    Win32
+    * Liblist::Kid can now recognize long compiler paths
+      (Christian Walde) [github #11]
+
+
 6.57_10  Sun, 03 Apr 2011 19:36:38 +1000
     Bug Fixes
     * Relaxed strictures on prerequisite versions.  Invalid versions now
