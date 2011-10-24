@@ -14,26 +14,26 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 3df3a9c906bc5c55c9ca23b0e23f710da3b930ea Changes
+SHA1 91036e66407c7d14e57a0d2a9686dce697c84b21 Changes
 SHA1 e382a97d33651de5953bec46a688232501865af6 INSTALL
-SHA1 2929b5eb03fbe5bda4af2436212bacbe5d1adcaa MANIFEST
+SHA1 e247d5709cf2db21ad6ce20098ce5021f319ef98 MANIFEST
 SHA1 5d04c11654204ac8a3f1966764baec9e961436d3 MANIFEST.SKIP
-SHA1 1016cdda8cbab8e89f1f56caee5167fe5efdffb7 META.json
-SHA1 a56095cb47d86fb88d697ea5728b843544738d61 META.yml
+SHA1 63816379f510ac49658ae0416a15c623cb34c87c META.json
+SHA1 2ec9147134d9b66e3e31116f2c2228992f11517d META.yml
 SHA1 671aaa5f926ddba0adf188f1898da5a595da2d42 Makefile.PL
 SHA1 2f8f45d02988e3454b6a79508e96fe8224101e0a NOTES
 SHA1 f41b4dcfb5755c1bf2149ec31ac5c1eedabfd4e2 PATCHING
 SHA1 0fae23ff1a81c9ce4b70c851252e9eeff8284704 README
 SHA1 f9af0c123c504c671b5fa21b5996637738a27c63 TODO
 SHA1 d7a96ce8d9c4c1df4916bf205ea4674e729bb1a1 bin/instmodsh
-SHA1 c86b45413e62f5b250f513373215ac9dcea3af22 bundled/CPAN-Meta-YAML/CPAN/Meta/YAML.pm
-SHA1 9f2d2f31609cc5baf09e8bb6e5b1d30629c5fa0c bundled/CPAN-Meta/CPAN/Meta.pm
-SHA1 5ee605e9acd8ebc47c923c5d2d3104b6dc2286d9 bundled/CPAN-Meta/CPAN/Meta/Converter.pm
-SHA1 3cc0e550d4d4c7dd68a7829a76806b131ab753cc bundled/CPAN-Meta/CPAN/Meta/Feature.pm
-SHA1 aa7f9ce90c753c9ca898660910333f99c182d297 bundled/CPAN-Meta/CPAN/Meta/History.pm
-SHA1 13f3b544264b8dd6258aa39b4e710736c9d04746 bundled/CPAN-Meta/CPAN/Meta/Prereqs.pm
-SHA1 73e752711bb3af33a4709cd1044099c396bf4b71 bundled/CPAN-Meta/CPAN/Meta/Spec.pm
-SHA1 d26e8c24862b8f88ab7cb935c76181f7694d5810 bundled/CPAN-Meta/CPAN/Meta/Validator.pm
+SHA1 a8753933ff1ae4e502607dea553ff40085767798 bundled/CPAN-Meta-YAML/CPAN/Meta/YAML.pm
+SHA1 2bd5af11dc49c276cdd945e73318d4716d8fabfe bundled/CPAN-Meta/CPAN/Meta.pm
+SHA1 81cba21f55046d7443e99dfd1c63e050138a0daa bundled/CPAN-Meta/CPAN/Meta/Converter.pm
+SHA1 69fdfe542864b2d28c745bdcae75e3621e3455cd bundled/CPAN-Meta/CPAN/Meta/Feature.pm
+SHA1 8e1986e5d0cead499c9866accce06638d0cb0350 bundled/CPAN-Meta/CPAN/Meta/History.pm
+SHA1 12919f78b037051430af9138e1818bd5aa1386af bundled/CPAN-Meta/CPAN/Meta/Prereqs.pm
+SHA1 0b93ef17c26febb04327d3304a5c248ac5a8449f bundled/CPAN-Meta/CPAN/Meta/Spec.pm
+SHA1 bad4dc841052e7da68389fc4b3f1ff717ab958a8 bundled/CPAN-Meta/CPAN/Meta/Validator.pm
 SHA1 6b270c27886aacde2453a67741ef5571b8d2499f bundled/ExtUtils-Command/ExtUtils/Command.pm
 SHA1 a79344e3682c3c342eec03e21bad7182fbb33919 bundled/ExtUtils-Install/ExtUtils/Install.pm
 SHA1 5408cf2f6172166bcf7f634ae541536b6ef2f9c6 bundled/ExtUtils-Install/ExtUtils/Installed.pm
@@ -43,7 +43,7 @@ SHA1 300161870d57f985ca0f6a15c783ef8b098af6a9 bundled/ExtUtils-Manifest/ExtUtils
 SHA1 48c4389d69e042dfe875e50e9905486a89d0d884 bundled/File-Copy-Recursive/File/Copy/Recursive.pm
 SHA1 82708cca239d592c3f4ffa12eb0e8779ac508731 bundled/File-Temp/File/Temp.pm
 SHA1 efd010b8513386ed088e0f84ed7efa689851b57b bundled/JSON-PP-Compat5006/JSON/PP/Compat5006.pm
-SHA1 1f3521bd31181c870e345846ddfdee7844db28e8 bundled/JSON-PP/JSON/PP.pm
+SHA1 7395d88628239472e42cd41ec91a48382279d2d3 bundled/JSON-PP/JSON/PP.pm
 SHA1 2a50165e883032553462bfb04660e9beb3617a0c bundled/JSON-PP/JSON/PP/Boolean.pm
 SHA1 5fc3a5a2d1f3596eea80f46e17d48d840543ead9 bundled/Parse-CPAN-Meta/Parse/CPAN/Meta.pm
 SHA1 a12be5d496da3e098692f42f7732e7e93eae5231 bundled/Scalar-List-Utils/List/Util.pm
@@ -55,34 +55,34 @@ SHA1 b8a611d6876074cb63cc803eee888ea9263c74be bundled/version/version.pm
 SHA1 56efadc9acd611265170a36607b8d533a612e4cb bundled/version/version.pod
 SHA1 4f2135736d7c15e5c867294fba1eaa29e50ab384 bundled/version/version/Internals.pod
 SHA1 27eeb07e42127fa48f4ac8e592e4851797416c2e bundled/version/version/vpp.pm
-SHA1 93ef4068b9ed5a27ac2a5e927bf00eb92ae01caa lib/ExtUtils/Command/MM.pm
-SHA1 caabcdf236f29e06e2dae9f0ae58aec40caef3b4 lib/ExtUtils/Liblist.pm
-SHA1 457ca966eedb4b4e16c9ce1e1158e242aee90d98 lib/ExtUtils/Liblist/Kid.pm
-SHA1 9ff52e209bdacbacff62e02cc09c6d0dc002319e lib/ExtUtils/MM.pm
-SHA1 e1098a2ee0ef72f0c337b82a12cd23f403a7c61a lib/ExtUtils/MM_AIX.pm
-SHA1 a516f995478a8dde1b80c2c16dd122a4263b08ea lib/ExtUtils/MM_Any.pm
-SHA1 82a65b411904abd01e77184fd290f5dd42e6ac36 lib/ExtUtils/MM_BeOS.pm
-SHA1 9cdc8492fd5c36a919d4ec402d5ad7c4cff440f4 lib/ExtUtils/MM_Cygwin.pm
-SHA1 f1bd63b9c09f5510ea568c2c390a14ec4aa7224e lib/ExtUtils/MM_DOS.pm
-SHA1 7f923693eed49c3b59b7c16fa50d9f8b09d8c8c2 lib/ExtUtils/MM_Darwin.pm
-SHA1 af49d6d125e2a05a879b599ad8fd7636af79b143 lib/ExtUtils/MM_MacOS.pm
-SHA1 a2044906a7004106c3467482da6accd048bb7cf8 lib/ExtUtils/MM_NW5.pm
-SHA1 e0974c2e6d20ae309355ae2f262ecf6518b0f9b0 lib/ExtUtils/MM_OS2.pm
-SHA1 26f87b8a5f32bbf1cd19f92dc0e46b54c8097d5a lib/ExtUtils/MM_QNX.pm
-SHA1 5956b277888ca118b0af44749fbee958f1f3a5d1 lib/ExtUtils/MM_UWIN.pm
-SHA1 7313df42c64375621ee1c456acdad2ed59ef61d5 lib/ExtUtils/MM_Unix.pm
-SHA1 9b05ff3be9ee01061ba48fb1d2b7375fabf126e6 lib/ExtUtils/MM_VMS.pm
-SHA1 71fe5aa5c4ca854bf749c9e1cb8b46b9486540cc lib/ExtUtils/MM_VOS.pm
-SHA1 af9e96d58153b640fbb12c9ab8f0529a48cc4400 lib/ExtUtils/MM_Win32.pm
-SHA1 b60ffb9c3b52d6de188e7b6355be5af237219672 lib/ExtUtils/MM_Win95.pm
-SHA1 69fa997dd00b0a05d72038b2a3f446c35f8ce270 lib/ExtUtils/MY.pm
-SHA1 69050fc5bb3a80f8224ab3cba222d3136458e0a3 lib/ExtUtils/MakeMaker.pm
-SHA1 1b1ba31f623bbb7ba0eac471aa6a13dac3d3ad1b lib/ExtUtils/MakeMaker/Config.pm
-SHA1 2f47c392d49b614830b998e22a7592f007636a46 lib/ExtUtils/MakeMaker/FAQ.pod
-SHA1 1d1db5776835ecb79327b698f9be89a84af24921 lib/ExtUtils/MakeMaker/Tutorial.pod
-SHA1 70452568d4d3e1bc5b9bf67259bca601d90af6e3 lib/ExtUtils/Mkbootstrap.pm
-SHA1 08a1c0dd903f2fd5969cae734dfbb0e60f64f6a4 lib/ExtUtils/Mksymlists.pm
-SHA1 d42b0b5c29c58cbc4d07482024198505d7066a75 lib/ExtUtils/testlib.pm
+SHA1 f6d8185d5d88c6cd67de622829024da5b5713bce lib/ExtUtils/Command/MM.pm
+SHA1 a16c8b1c6ace31c3d4822773533e352517190b80 lib/ExtUtils/Liblist.pm
+SHA1 bc897afc4ebc60b1265aad7715f751ecd53da5f8 lib/ExtUtils/Liblist/Kid.pm
+SHA1 53fed6ac560a9861aacc4363f411b5b4258b79d8 lib/ExtUtils/MM.pm
+SHA1 7401a1254b2067c5802a2c180d448c8fffe6e48b lib/ExtUtils/MM_AIX.pm
+SHA1 f3902d3be7179403aa425f8bb7d57a2ee5bcf2d1 lib/ExtUtils/MM_Any.pm
+SHA1 1a85bf05d4d152027f531ba462048b545cd25f8d lib/ExtUtils/MM_BeOS.pm
+SHA1 5dd233cbff158cf6ba3d5a34f55e6053ecf85d5a lib/ExtUtils/MM_Cygwin.pm
+SHA1 a81373bc1bb7de0835e4284bd2da3fe8fc90fd58 lib/ExtUtils/MM_DOS.pm
+SHA1 2ae0d36a4c247eab7555ff6eae3eb172d82204bd lib/ExtUtils/MM_Darwin.pm
+SHA1 71794b87f089aff3b5b7c0ffa7a05b8777e467ce lib/ExtUtils/MM_MacOS.pm
+SHA1 17e15e826f8fbacde316b80fd8beecfb8be6aee7 lib/ExtUtils/MM_NW5.pm
+SHA1 0f520d6aeacc62f516347e7e6a13a1669d5a754c lib/ExtUtils/MM_OS2.pm
+SHA1 2483eb670fd74dd4a43913ec2df3c386ad0d9883 lib/ExtUtils/MM_QNX.pm
+SHA1 fd0c1202861869602a7ca0ef8cf7219a59898bfa lib/ExtUtils/MM_UWIN.pm
+SHA1 cc3595eed6a87cba87af3b822e96429a4a951943 lib/ExtUtils/MM_Unix.pm
+SHA1 40f314879d7872a9f68fffdd6fb0a993ea7d37d7 lib/ExtUtils/MM_VMS.pm
+SHA1 fcebaf35314db4d224d7cc8f0a1d15db0ed000c9 lib/ExtUtils/MM_VOS.pm
+SHA1 d8821b6fbb3140c54bf2e2c3cb6d8c1a2daec9a4 lib/ExtUtils/MM_Win32.pm
+SHA1 5d48084add40f662746bc4a6b97cb131ef6aafb4 lib/ExtUtils/MM_Win95.pm
+SHA1 445357814dab4ebc6167ea2435c4d2bc82ecef50 lib/ExtUtils/MY.pm
+SHA1 c3132add4d38976290719dd6709540a3849f8da8 lib/ExtUtils/MakeMaker.pm
+SHA1 1416ee4b7351e944552fc1eba8b0a2ac52c26e04 lib/ExtUtils/MakeMaker/Config.pm
+SHA1 e461f8aa0e71b1714b08814a37f06a1fb5def8cb lib/ExtUtils/MakeMaker/FAQ.pod
+SHA1 9291dee60fb73cd7984d3d97a50c4e810b9640ab lib/ExtUtils/MakeMaker/Tutorial.pod
+SHA1 58627bb2491670ea888836bb6e9d9c1de02f1d94 lib/ExtUtils/Mkbootstrap.pm
+SHA1 bf9585e6ededf15700c8a919266c54827ddaf90a lib/ExtUtils/Mksymlists.pm
+SHA1 63215bd1fd552c0e017db2b8a959978ecef87023 lib/ExtUtils/testlib.pm
 SHA1 ba09c5e0a7fa97a5123c0920dcda155f188366db my/bundles.pm
 SHA1 167c0331396384b4744d1d4c85e4c2b808e9723a t/00compile.t
 SHA1 c078206ce8d006b170a7b331d9e206a117d0a8b6 t/FIRST_MAKEFILE.t
@@ -109,18 +109,19 @@ SHA1 cd247302d45f23fd688d304ea6286d9a461340b5 t/VERSION_FROM.t
 SHA1 3587980176fddd1f08ed8f5e8cd2e2b57e37377b t/WriteEmptyMakefile.t
 SHA1 4000cf6c0dd6a5df44370e0f93676575f0fe6d03 t/arch_check.t
 SHA1 57dbf8688ad852f13ae0c6c70b84efe15e50f7ae t/backwards.t
-SHA1 aaae126d8dad7a33e1c2aa0f8e5b79ae57dc50a1 t/basic.t
+SHA1 3c3c8a8ddf9cbc5ad5c93ec84e3c1712d6699895 t/basic.t
 SHA1 64518c8e3b616d4d21020ddc37e49b52c429496a t/build_man.t
 SHA1 c2ca1eae22bcf55c8580a5a900374a39f8d7374f t/cd.t
 SHA1 2cbb0fa7b102e52ce20f186be67bc0e87d3cc059 t/config.t
 SHA1 e0ea0250a2156460067dd023d6324b7c38bb0564 t/dir_target.t
+SHA1 b0d1b7755dbeecbe8cee91a394293ad51d85af99 t/echo.t
 SHA1 b4c208433f2709f69629a0b1582fc25c641e4f67 t/fix_libs.t
 SHA1 060c8ff96e21f6b7a267f6addaacacb10e498628 t/fixin.t
 SHA1 c48f1f4160381b37e7448a5d77ef0da4b2304472 t/hints.t
 SHA1 0f29cd698303aa95bebad358f5ac7dd63f149b44 t/installed_file.t
 SHA1 aadcd19a721b109e2c30899f0c8013ac558a04ce t/is_of_type.t
 SHA1 7683153feb6611e94bcd1e83c93ba3044c897aaa t/lib/MakeMaker/Test/NoXS.pm
-SHA1 a5f48a9398c52629ad45e377a16f4fb068005b35 t/lib/MakeMaker/Test/Setup/BFD.pm
+SHA1 8712a2ff9829442aad4bff38d993a97671bcccb1 t/lib/MakeMaker/Test/Setup/BFD.pm
 SHA1 12592b1cfe88ad8a3c674167cb13a63add559f81 t/lib/MakeMaker/Test/Setup/MPV.pm
 SHA1 a27914c70ce68ee2cf8ea647f9c57fb27f53b9f5 t/lib/MakeMaker/Test/Setup/PL_FILES.pm
 SHA1 56b665ab2ab612ff53b79e332d490cebaea20208 t/lib/MakeMaker/Test/Setup/Problem.pm
@@ -156,7 +157,7 @@ SHA1 4511566a61a98b89577425f1988df38ee7e9ad57 t/maketext_filter.t
 SHA1 fab9af4a9875df7b3b2edcc5ea9ac05a1b7040af t/meta_convert.t
 SHA1 1e29693afb2d9f1ea62747842a2677febecf6f80 t/metafile_data.t
 SHA1 524d1721d7f5bb892ce1509855736b7ed86bc743 t/metafile_file.t
-SHA1 66ea605569ff65f2660466b464f989ed37bff051 t/min_perl_version.t
+SHA1 6dc4023f91773c9f2aea165b5e4125b5b3ac627e t/min_perl_version.t
 SHA1 a99b8898663c9a77d619081dec20eb42a1b7b1bb t/miniperl.t
 SHA1 ec2c045c5468627857f77fcb6ae20bc42770134b t/oneliner.t
 SHA1 184eeb2bba44b25d8c724449596b437e134fc910 t/parse_abstract.t
@@ -172,7 +173,7 @@ SHA1 74d4827a1a438080e1c874f59447d5dea63dd13b t/problems.t
 SHA1 d7fb48fc44010f957c61ae24c0d7f4c27b783b0c t/prompt.t
 SHA1 0a813495e68547717a32482977d59b9552c16963 t/recurs.t
 SHA1 875f83122cd3c476f7cafa89a0b999e34051f2bf t/revision.t
-SHA1 400de97e2a5704e0bf03ffb1f8d411ca627de9dc t/several_authors.t
+SHA1 b00c9c9a0f527ec8fdb50be3dfdc704368beca26 t/several_authors.t
 SHA1 c7a3073eae39f70c4208e8b90afc7165119c69e9 t/split_command.t
 SHA1 bf7c08d2c3ff0941f6b5ccdb13d0db7d368dad79 t/test_boilerplate.t
 SHA1 da39a3ee5e6b4b0d3255bfef95601890afd80709 t/testdata/reallylongdirectoryname/arch1/Config.pm
@@ -183,7 +184,7 @@ SHA1 d6827a3e831117a1617b478b7dc66279982992ad t/xs.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2.0.18 (Darwin)
 
-iEYEARECAAYFAk6kp34ACgkQWMohlhD1QycB8QCeJrk3RN0RHO3J1D5K7pecQToF
-mnEAn3/m2Pp19IhBuILri6XedaQ8Q1PS
-=+V7E
+iEYEARECAAYFAk6kqroACgkQWMohlhD1QydCWACfWAYqQP3pGzxMwpZUyZ/OcxSo
+OvcAmwbKCQ4tDyR7Ef2cjiOAQB63gi3E
+=0dhJ
 -----END PGP SIGNATURE-----
