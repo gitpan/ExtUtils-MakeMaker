@@ -3,6 +3,9 @@ package my::bundles;
 use strict;
 use warnings;
 
+use File::Path;
+use File::Spec;
+
 
 =head1 NAME
 
@@ -28,10 +31,7 @@ inc/ as a flattened module directory that MakeMaker can install.
 
 =cut
 
-require lib;
 my $bundle_dir = "bundled";
-
-use File::Path;
 
 my %special_dist = (
     "Scalar-List-Utils" => sub {
@@ -47,27 +47,35 @@ my %special_dist = (
 );
 
 
-sub import {
+sub add_bundles_to_inc {
     opendir my $dh, $bundle_dir or die "Can't open bundles directory: $!";
-    my @bundles = map { "$bundle_dir/$_" } grep !/^\./, readdir $dh;
+    my @bundles = grep { -d $_ } map { "$bundle_dir/$_" } grep !/^\./, readdir $dh;
+
+    require lib;
     lib->import(@bundles);
+
+    return;
 }
 
 
 sub copy_bundles {
     my($src, $dest) = @_;
 
-    require File::Copy::Recursive;
+    # So we can use them to copy them.
+    add_bundles_to_inc();
 
     rmtree $dest;
     mkpath $dest;
 
     opendir my $bundle_dh, $src or die $!;
-    for my $dist (grep !/^\./, readdir $bundle_dh) {
+    for my $dist (grep !/^\./, grep { -d File::Spec->catdir($src, $_) } readdir $bundle_dh) {
         my $should_use = $special_dist{$dist} || \&should_use_dist;
 
         next unless $should_use->($dist);
 
+        # Don't require it unless we need it, allowing vendors to just delete
+        # the contents of bundle/
+        require File::Copy::Recursive;
         File::Copy::Recursive::rcopy_glob("$src/$dist/*", $dest) or
           die "Can't copy $src/$dist/* to $dest";
     }
