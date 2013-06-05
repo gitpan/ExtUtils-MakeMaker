@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.67_02';
+our $VERSION = '6.67_03';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -2028,6 +2028,22 @@ own.  META_MERGE will merge its value with the default.
 
 Unless you want to override the defaults, prefer META_MERGE so as to
 get the advantage of any future defaults.
+
+By default CPAN Meta specification C<1.4> is used. In order to use
+CPAN Meta specification C<2.0>, indicate with C<meta-spec> the version
+you want to use.
+
+  META_MERGE        => {
+
+    "meta-spec" => { version => 2 },
+
+    repository => {
+      type => 'git',
+      url => 'git://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker.git',
+      web => 'https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker',
+    },
+
+  },
 
 =item MIN_PERL_VERSION
 
