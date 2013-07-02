@@ -4,7 +4,7 @@
       "Michael G Schwern <schwern@pobox.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.6901, CPAN::Meta::Converter version 2.112621",
+   "generated_by" : "ExtUtils::MakeMaker version 6.6902, CPAN::Meta::Converter version 2.120351",
    "license" : [
       "perl_5"
    ],
@@ -28,7 +28,7 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "Data::Dumper" : 0
+            "Data::Dumper" : "0"
          }
       },
       "configure" : {
@@ -36,10 +36,10 @@
       },
       "runtime" : {
          "requires" : {
-            "DirHandle" : 0,
-            "File::Basename" : 0,
+            "DirHandle" : "0",
+            "File::Basename" : "0",
             "File::Spec" : "0.8",
-            "Pod::Man" : 0,
+            "Pod::Man" : "0",
             "perl" : "5.006"
          }
       }
@@ -58,5 +58,5 @@
       },
       "x_MailingList" : "makemaker@perl.org"
    },
-   "version" : "6.69_01"
+   "version" : "6.69_02"
 }
