@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.69_02';
+our $VERSION = '6.69_03';
 
 use Carp;
 use File::Spec;
@@ -578,6 +578,7 @@ clean :: clean_subdirs
 
     # Leave Makefile.old around for realclean
     push @m, <<'MAKE';
+	- $(NOECHO) $(RM_F) $(MAKEFILE_OLD)
 	- $(MV) $(FIRST_MAKEFILE) $(MAKEFILE_OLD) $(DEV_NULL)
 MAKE
 
@@ -1983,15 +1984,14 @@ sub init_VERSION {
         }
     }
 
-    # strip blanks
     if (defined $self->{VERSION}) {
-        $self->{VERSION} =~ s/^\s+//;
-        $self->{VERSION} =~ s/\s+$//;
-        if ( $self->{VERSION} !~ /^v?[\d_\.]+$/ ) {
+        if ( $self->{VERSION} !~ /^\s*v?[\d_\.]+\s*$/ ) {
           require version;
           my $normal = eval { version->parse( $self->{VERSION} ) };
           $self->{VERSION} = $normal if defined $normal;
         }
+        $self->{VERSION} =~ s/^\s+//;
+        $self->{VERSION} =~ s/\s+$//;
     }
     else {
         $self->{VERSION} = '';

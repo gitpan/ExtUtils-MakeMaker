@@ -9,7 +9,7 @@ require ExtUtils::MM_Unix;
 require ExtUtils::MM_Win32;
 our @ISA = qw( ExtUtils::MM_Unix );
 
-our $VERSION = '6.69_02';
+our $VERSION = '6.69_03';
 
 
 =head1 NAME
@@ -109,8 +109,25 @@ from C<ExtUtils::MM_Unix>.
 sub maybe_command {
     my ($self, $file) = @_;
 
-    if ($file =~ m{^/cygdrive/}i) {
-        return ExtUtils::MM_Win32->maybe_command($file);
+    my $prefix;
+    if (defined(&Cygwin::mount_flags)) {
+        my @flags = split(/,/, Cygwin::mount_flags('/cygwin'));
+        $prefix = pop(@flags);
+        if (! $prefix || ($prefix eq 'cygdrive')) {
+            $prefix = '/cygdrive';
+        }
+    } else {
+        $prefix = '/cygdrive';
+    }
+
+    if ($prefix eq '/') {
+        if ($file =~ m{^/[a-zA-Z]/}i) {
+            return ExtUtils::MM_Win32->maybe_command($file);
+        }
+    } else {
+        if ($file =~ m{^$prefix/}i) {
+            return ExtUtils::MM_Win32->maybe_command($file);
+        }
     }
 
     return $self->SUPER::maybe_command($file);
