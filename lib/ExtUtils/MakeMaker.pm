@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.69_04';
+our $VERSION = '6.69_05';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -574,7 +574,7 @@ END
         }
         if ($self->{PARENT}) {
             $self->{PARENT}->{CHILDREN}->{$newclass} = $self;
-            foreach my $opt (qw(POLLUTE PERL_CORE LINKTYPE)) {
+            foreach my $opt (qw(POLLUTE PERL_CORE LINKTYPE LD OPTIMIZE)) {
                 if (exists $self->{PARENT}->{$opt}
                     and not exists $self->{$opt})
                     {
