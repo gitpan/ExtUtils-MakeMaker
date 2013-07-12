@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.69_05';
+our $VERSION = '6.69_06';
 
 use Carp;
 use File::Spec;
@@ -611,7 +611,7 @@ NOOP_FRAG
 
     for my $dir (@{$self->{DIR}}) {
         my $subclean = $self->oneliner(sprintf <<'CODE', $dir);
-chdir '%s';  system '$(MAKE) clean' if -f '$(FIRST_MAKEFILE)';
+exit 0 unless chdir '%s';  system '$(MAKE) clean' if -f '$(FIRST_MAKEFILE)';
 CODE
 
         $clean .= "\t$subclean\n";

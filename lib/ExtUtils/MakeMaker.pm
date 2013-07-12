@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.69_05';
+our $VERSION = '6.69_06';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -1237,6 +1237,11 @@ C<TEST_VERBOSE> variable to true.
 
   make test TEST_VERBOSE=1
 
+If you want to run particular test files, set the C<TEST_FILES> variable.
+It is possible to use globbing with this mechanism.
+
+  make test TEST_FILES='t/foobar.t t/dagobah*.t'
+
 =head2 make testdb
 
 A useful variation of the above is the target C<testdb>. It runs the
@@ -2037,10 +2042,14 @@ you want to use.
 
     "meta-spec" => { version => 2 },
 
-    repository => {
-      type => 'git',
-      url => 'git://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker.git',
-      web => 'https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker',
+    resources => {
+
+      repository => {
+          type => 'git',
+          url => 'git://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker.git',
+          web => 'https://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker',
+      },
+
     },
 
   },
@@ -2340,6 +2349,9 @@ will C<die> instead of simply informing the user of the missing dependencies.
 
 It is I<extremely> rare to have to use C<PREREQ_FATAL>. Its use by module
 authors is I<strongly discouraged> and should never be used lightly.
+
+For dependencies that are required in order to run C<Makefile.PL>,
+see C<CONFIGURE_REQUIRES>.
 
 Module installation tools have ways of resolving unmet dependencies but
 to do that they need a F<Makefile>.  Using C<PREREQ_FATAL> breaks this.
@@ -2722,6 +2734,11 @@ details)
 does a realclean first and then the distcheck. Note that this is not
 needed to build a new distribution as long as you are sure that the
 MANIFEST file is ok.
+
+=item    make veryclean
+
+does a realclean first and then removes backup files such as C<*~>,
+C<*.bak>, C<*.old> and C<*.orig>
 
 =item    make manifest
 
