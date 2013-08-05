@@ -11,7 +11,7 @@ use 5.006;
 
 use strict;
 use warnings;
-our $VERSION = '6.73_05';
+our $VERSION = '6.73_06';
 
 use ExtUtils::MakeMaker::Config;
 use Cwd 'cwd';
@@ -425,7 +425,7 @@ sub _win32_lib_extensions {
     my @extensions;
     push @extensions, $Config{'lib_ext'} if $Config{'lib_ext'};
     push @extensions, '.dll.a' if grep { m!^\.a$! } @extensions;
-    push @extensions, '.lib';
+    push @extensions, '.lib' unless grep { m!^\.lib$! } @extensions;
     return \@extensions;
 }
 
