@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.73_08';
+our $VERSION = '6.73_09';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -587,7 +587,6 @@ END
         parse_args($self,@fm) if @fm;
     }
     else {
-        require Text::ParseWords;
         parse_args($self, _shellwords($ENV{PERL_MM_OPT} || ''),@ARGV);
     }
 
