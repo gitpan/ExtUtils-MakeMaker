@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.73_10';
+$VERSION = '6.73_11';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -583,7 +583,6 @@ sub init_dist {
 
     ($self->{DISTNAME} = $self->{NAME}) =~ s{::}{-}g unless $self->{DISTNAME};
     $self->{DISTVNAME} ||= $self->{DISTNAME}.'-'.$self->{VERSION};
-
 }
 
 =item dist (o)
@@ -601,6 +600,9 @@ sub dist {
     my($self, %attribs) = @_;
 
     my $make = '';
+    if ( $attribs{SUFFIX} && $attribs{SUFFIX} !~ m!^\.! ) {
+      $attribs{SUFFIX} = '.' . $attribs{SUFFIX};
+    }
     foreach my $key (qw(
             TAR TARFLAGS ZIP ZIPFLAGS COMPRESS SUFFIX SHAR
             PREOP POSTOP TO_UNIX
