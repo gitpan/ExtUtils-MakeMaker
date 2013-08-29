@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.74';
+our $VERSION = '6.75_01';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -275,7 +275,7 @@ sub full_setup {
     INC INCLUDE_EXT LDFROM LIB LIBPERL_A LIBS LICENSE
     LINKTYPE MAKE MAKEAPERL MAKEFILE MAKEFILE_OLD MAN1PODS MAN3PODS MAP_TARGET
     META_ADD META_MERGE MIN_PERL_VERSION BUILD_REQUIRES CONFIGURE_REQUIRES
-    MYEXTLIB NAME NEEDS_LINKING NOECHO NO_META NO_MYMETA
+    MYEXTLIB NAME NEEDS_LINKING NOECHO NO_META NO_MYMETA NO_PACKLIST NO_PERLLOCAL
     NORECURS NO_VC OBJECT OPTIMIZE PERL_MALLOC_OK PERL PERLMAINCC PERLRUN
     PERLRUNINST PERL_CORE
     PERL_SRC PERM_DIR PERM_RW PERM_RWX
@@ -1743,6 +1743,18 @@ For example, version 1.04 of Foo::Bar becomes Foo-Bar-1.04.
 On some OS's where . has special meaning VERSION_SYM may be used in
 place of VERSION.
 
+=item DLEXT
+
+Specifies the extension of the module's loadable object. For example:
+
+  DLEXT => 'unusual_ext', # Default value is $Config{so}
+
+NOTE: When using this option to alter the extension of a module's
+loadable object, it is also necessary that the module's pm file
+specifies the same change:
+
+  local $DynaLoader::dl_dlext = 'unusual_ext';
+
 =item DL_FUNCS
 
 Hashref of symbol names for routines to be made available as universal
@@ -2203,6 +2215,18 @@ Defaults to false.
 
 When true, suppresses the generation of MYMETA.yml and MYMETA.json module
 meta-data files during 'perl Makefile.PL'.
+
+Defaults to false.
+
+=item NO_PACKLIST
+
+When true, suppresses the writing of C<packlist> files for installs.
+
+Defaults to false.
+
+=item NO_PERLLOCAL
+
+When true, suppresses the appending of installations to C<perllocal>.
 
 Defaults to false.
 

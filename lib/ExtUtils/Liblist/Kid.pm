@@ -11,7 +11,7 @@ use 5.006;
 
 use strict;
 use warnings;
-our $VERSION = '6.74';
+our $VERSION = '6.75_01';
 
 use ExtUtils::MakeMaker::Config;
 use Cwd 'cwd';
@@ -82,6 +82,12 @@ sub _unix_os2_ext {
             push( @searchpath, $thislib );
             push( @extralibs,  "$ptype$thislib" );
             push( @ldloadlibs, "$rtype$thislib" );
+            next;
+        }
+
+        if ( $thislib =~ m!^-Wl,! ) {
+            push( @extralibs,  $thislib );
+            push( @ldloadlibs, $thislib );
             next;
         }
 
