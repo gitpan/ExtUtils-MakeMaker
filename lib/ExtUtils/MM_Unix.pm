@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.75_01';
+$VERSION = '6.75_02';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -2838,7 +2838,8 @@ pm_to_blib : $(FIRST_MAKEFILE) $(TO_INST_PM)
 pm_to_blib({\@ARGV}, '$autodir', q[\$(PM_FILTER)], '\$(PERM_DIR)')
 CODE
 
-    my @cmds = $self->split_command($pm_to_blib, %{$self->{PM}});
+    my @cmds = $self->split_command($pm_to_blib,
+                  map { ($_, $self->{PM}->{$_}) } sort keys %{$self->{PM}});
 
     $r .= join '', map { "\t\$(NOECHO) $_\n" } @cmds;
     $r .= qq{\t\$(NOECHO) \$(TOUCH) pm_to_blib\n};

@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.75_01';
+our $VERSION = '6.75_02';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -197,7 +197,7 @@ sub prompt ($;$) {  ## no critic
     else {
         $ans = <STDIN>;
         if( defined $ans ) {
-            chomp $ans;
+            $ans =~ s{\015?\012$}{};
         }
         else { # user hit ctrl-D
             print "\n";
