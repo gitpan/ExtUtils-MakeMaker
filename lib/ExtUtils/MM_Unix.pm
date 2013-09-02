@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.75_02';
+$VERSION = '6.75_03';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -471,7 +471,7 @@ PERL_ARCHIVE_AFTER = $self->{PERL_ARCHIVE_AFTER}
 
 TO_INST_PM = ".$self->wraplist(sort keys %{$self->{PM}})."
 
-PM_TO_BLIB = ".$self->wraplist(%{$self->{PM}})."
+PM_TO_BLIB = ".$self->wraplist(map { ($_ => $self->{PM}->{$_}) } sort keys %{$self->{PM}})."
 ";
 
     join('',@m);
@@ -3379,7 +3379,10 @@ sub test {
 
     my($self, %attribs) = @_;
     my $tests = $attribs{TESTS} || '';
-    if (!$tests && -d 't') {
+    if (!$tests && -d 't' && defined $attribs{RECURSIVE_TEST_FILES}) {
+        $tests = $self->find_tests_recursive;
+    }
+    elsif (!$tests && -d 't') {
         $tests = $self->find_tests;
     }
     # note: 'test.pl' name is also hardcoded in init_dirscan()

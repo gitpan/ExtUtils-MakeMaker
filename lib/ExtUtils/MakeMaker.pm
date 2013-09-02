@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.75_02';
+our $VERSION = '6.75_03';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -1100,6 +1100,13 @@ sub skipcheck {
 
 sub flush {
     my $self = shift;
+
+    # This needs a bit more work for more wacky OSen
+    my $type = 'GNU-style';
+    if ( $self->os_flavor_is('Win32') ) {
+      $type = $self->make . '-style';
+    }
+    print "Generating a $type Makefile\n";
 
     my $finalname = $self->{MAKEFILE};
     print "Writing $finalname for $self->{NAME}\n";
@@ -2735,7 +2742,15 @@ Anything put here will be passed to MY::postamble() if you have one.
 
 =item test
 
+Specify the targets for testing.
+
   {TESTS => 't/*.t'}
+
+C<RECURSIVE_TEST_FILES> can be used to include all directories
+recursively under C<t> that contain C<.t> files. It will be ignored if
+you provide your own C<TESTS> attribute, defaults to false.
+
+  {RECURSIVE_TEST_FILES=>1}
 
 =item tool_autosplit
 
