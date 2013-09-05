@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.75_03';
+our $VERSION = '6.75_04';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -1104,7 +1104,10 @@ sub flush {
     # This needs a bit more work for more wacky OSen
     my $type = 'GNU-style';
     if ( $self->os_flavor_is('Win32') ) {
-      $type = $self->make . '-style';
+      my $make = $self->make;
+      $make = +( File::Spec->splitpath( $make ) )[-1];
+      $make =~ s!\.exe$!!i;
+      $type = $make . '-style';
     }
     print "Generating a $type Makefile\n";
 
