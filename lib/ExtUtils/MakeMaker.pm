@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.76';
+our $VERSION = '6.77_01';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -592,6 +592,9 @@ END
 
 
     $self->{NAME} ||= $self->guess_name;
+
+    warn "Warning: NAME must be a package name\n"
+      unless $self->{NAME} =~ m!^[A-Z_a-z][0-9A-Z_a-z]*(?:::[0-9A-Z_a-z]+)*$!;
 
     ($self->{NAME_SYM} = $self->{NAME}) =~ s/\W+/_/g;
 
