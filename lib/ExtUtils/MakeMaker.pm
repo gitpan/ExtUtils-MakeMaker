@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.77_01';
+our $VERSION = '6.77_02';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -481,10 +481,24 @@ END
     foreach my $prereq (sort keys %$prereqs) {
         my $required_version = $prereqs->{$prereq};
 
-        my $installed_file = MM->_installed_file_for_module($prereq);
         my $pr_version = 0;
-        $pr_version = MM->parse_version($installed_file) if $installed_file;
-        $pr_version = 0 if $pr_version eq 'undef';
+        my $installed_file;
+
+        if ( $prereq eq 'perl' ) {
+          if ( defined $required_version && $required_version =~ /^v?[\d_\.]+$/
+               || $required_version !~ /^v?[\d_\.]+$/ ) {
+            require version;
+            my $normal = eval { version->parse( $required_version ) };
+            $required_version = $normal if defined $normal;
+          }
+          $installed_file = $prereq;
+          $pr_version = $];
+        }
+        else {
+          $installed_file = MM->_installed_file_for_module($prereq);
+          $pr_version = MM->parse_version($installed_file) if $installed_file;
+          $pr_version = 0 if $pr_version eq 'undef';
+        }
 
         # convert X.Y_Z alpha version #s to X.YZ for easier comparisons
         $pr_version =~ s/(\d+)\.(\d+)_(\d+)/$1.$2$3/;
