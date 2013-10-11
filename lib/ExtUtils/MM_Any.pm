@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.79_01';
+our $VERSION = '6.79_02';
 
 use Carp;
 use File::Spec;
@@ -532,7 +532,7 @@ clean :: clean_subdirs
 #                    $(INST_BIN) $(INST_SCRIPT)
 #                    $(INST_MAN1DIR) $(INST_MAN3DIR)
 #                    $(INST_LIBDIR) $(INST_ARCHLIBDIR) $(INST_AUTODIR)
-#                    $(INST_STATIC) $(INST_DYNAMIC) $(INST_BOOT)
+#                    $(INST_STATIC) $(INST_DYNAMIC)
 #                 );
 
 
@@ -727,7 +727,7 @@ sub dynamic {
 
     my($self) = shift;
     '
-dynamic :: $(FIRST_MAKEFILE) $(INST_DYNAMIC) $(INST_BOOT)
+dynamic :: $(FIRST_MAKEFILE) $(BOOTSTRAP) $(INST_DYNAMIC)
 	$(NOECHO) $(NOOP)
 ';
 }
@@ -2045,6 +2045,7 @@ Defines at least these macros.
   RM_RF             Remove a directory
   TOUCH             Update a file's timestamp
   TEST_F            Test for a file's existence
+  TEST_S            Test the size of a file
   CP                Copy a file
   MV                Move a file
   CHMOD             Change permissions on a file
@@ -2067,6 +2068,7 @@ sub init_tools {
     $self->{RM_F}     ||= $self->oneliner('rm_f',  ["-MExtUtils::Command"]);
     $self->{RM_RF}    ||= $self->oneliner('rm_rf', ["-MExtUtils::Command"]);
     $self->{TEST_F}   ||= $self->oneliner('test_f', ["-MExtUtils::Command"]);
+    $self->{TEST_S}   ||= $self->oneliner('test_s', ["-MExtUtils::Command::MM"]);
     $self->{FALSE}    ||= $self->oneliner('exit 1');
     $self->{TRUE}     ||= $self->oneliner('exit 0');
 
