@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.79_02';
+$VERSION = '6.79_03';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -959,8 +959,7 @@ MAKE
     push @m, <<'MAKE';
 	$(CHMOD) $(PERM_RWX) $@
 	$(NOECHO) $(RM_RF) $(BOOTSTRAP)
-	- $(TEST_S) $(BOOTSTRAP) && $(CP) $(BOOTSTRAP) $(INST_BOOT) && \
-	$(CHMOD) $(PERM_RW) $(INST_BOOT)
+	- $(CP_NONEMPTY) $(BOOTSTRAP) $(INST_BOOT) $(PERM_RW)
 MAKE
 
     return join('',@m);
