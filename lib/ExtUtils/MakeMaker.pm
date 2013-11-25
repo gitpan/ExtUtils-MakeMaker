@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.83_04';
+our $VERSION = '6.83_05';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -279,7 +279,7 @@ sub full_setup {
     MYEXTLIB NAME NEEDS_LINKING NOECHO NO_META NO_MYMETA NO_PACKLIST NO_PERLLOCAL
     NORECURS NO_VC OBJECT OPTIMIZE PERL_MALLOC_OK PERL PERLMAINCC PERLRUN
     PERLRUNINST PERL_CORE
-    PERL_SRC PERM_DIR PERM_RW PERM_RWX
+    PERL_SRC PERM_DIR PERM_RW PERM_RWX MAGICXS
     PL_FILES PM PM_FILTER PMLIBDIRS PMLIBPARENTDIRS POLLUTE PPM_INSTALL_EXEC
     PPM_INSTALL_SCRIPT PREREQ_FATAL PREREQ_PM PREREQ_PRINT PRINT_PREREQ
     SIGN SKIP TEST_REQUIRES TYPEMAPS UNINST VERSION VERSION_FROM XS XSOPT XSPROTOARG
@@ -316,7 +316,7 @@ sub full_setup {
 
  special_targets
  c_o xs_c xs_o
- top_targets blibdirs linkext dlsyms dynamic dynamic_bs
+ top_targets blibdirs linkext dlsyms dynamic_bs dynamic
  dynamic_lib static static_lib manifypods processPL
  installbin subdirs
  clean_subdirs clean realclean_subdirs realclean
@@ -2084,6 +2084,15 @@ Defaults to "unknown".
 'static' or 'dynamic' (default unless usedl=undef in
 config.sh). Should only be used to force static linking (also see
 linkext below).
+
+=item MAGICXS
+
+When this is set to C<1>, C<C_FILES>, C<O_FILES> and C<OBJECT> will
+be automagically derived from C<XS>.
+
+  * when XS is given, but neither C (C_FILES), values of %XS are sorted
+    into C/O_FILES
+  * when no OBJECT is given, but XS or C, derive OBJECT from O_FILES
 
 =item MAKE
 
