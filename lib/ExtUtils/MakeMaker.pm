@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.83_05';
+our $VERSION = '6.83_06';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -2087,12 +2087,7 @@ linkext below).
 
 =item MAGICXS
 
-When this is set to C<1>, C<C_FILES>, C<O_FILES> and C<OBJECT> will
-be automagically derived from C<XS>.
-
-  * when XS is given, but neither C (C_FILES), values of %XS are sorted
-    into C/O_FILES
-  * when no OBJECT is given, but XS or C, derive OBJECT from O_FILES
+When this is set to C<1>, C<OBJECT> will be automagically derived from C<XS>.
 
 =item MAKE
 
