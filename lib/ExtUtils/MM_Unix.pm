@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.84';
+$VERSION = '6.85_01';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -3504,12 +3504,15 @@ sub tool_xsubpp {
     # Make sure we pick up the new xsubpp if we're building perl.
     unshift @xsubpp_dirs, $self->{PERL_LIB} if $self->{PERL_CORE};
 
+    my $foundxsubpp = 0;
     foreach my $dir (@xsubpp_dirs) {
         $xsdir = $self->catdir($dir, 'ExtUtils');
         if( -r $self->catfile($xsdir, "xsubpp") ) {
+            $foundxsubpp = 1;
             last;
         }
     }
+    die "ExtUtils::MM_Unix::tool_xsubpp : Can't find xsubpp" if !$foundxsubpp;
 
     my $tmdir   = File::Spec->catdir($self->{PERL_LIB},"ExtUtils");
     my(@tmdeps) = $self->catfile($tmdir,'typemap');
