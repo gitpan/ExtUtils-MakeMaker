@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.85_01';
+$VERSION = '6.85_02';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -2980,6 +2980,17 @@ PPD_OUT
         else {
             $ppd_xml .= sprintf qq{        <INSTALL>%s</INSTALL>\n},
                   $self->{PPM_INSTALL_SCRIPT};
+        }
+    }
+
+    if ($self->{PPM_UNINSTALL_SCRIPT}) {
+        if ($self->{PPM_UNINSTALL_EXEC}) {
+            $ppd_xml .= sprintf qq{        <UNINSTALL EXEC="%s">%s</UNINSTALL>\n},
+                  $self->{PPM_UNINSTALL_EXEC}, $self->{PPM_UNINSTALL_SCRIPT};
+        }
+        else {
+            $ppd_xml .= sprintf qq{        <UNINSTALL>%s</UNINSTALL>\n},
+                  $self->{PPM_UNINSTALL_SCRIPT};
         }
     }
 
