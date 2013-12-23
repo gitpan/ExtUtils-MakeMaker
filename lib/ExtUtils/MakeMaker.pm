@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.85_02';
+our $VERSION = '6.85_03';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -605,6 +605,17 @@ END
         parse_args($self, _shellwords($ENV{PERL_MM_OPT} || ''),@ARGV);
     }
 
+    # RT#91540 PREREQ_FATAL not recognized on command line
+    if (%unsatisfied && $self->{PREREQ_FATAL}){
+        my $failedprereqs = join "\n", map {"    $_ $unsatisfied{$_}"}
+                            sort { $a cmp $b } keys %unsatisfied;
+        die <<"END";
+MakeMaker FATAL: prerequisites not found.
+$failedprereqs
+
+Please install these modules first and rerun 'perl Makefile.PL'.
+END
+    }
 
     $self->{NAME} ||= $self->guess_name;
 
