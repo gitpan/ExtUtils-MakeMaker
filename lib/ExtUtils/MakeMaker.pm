@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.85_04';
+our $VERSION = '6.85_05';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -1688,6 +1688,8 @@ A hash of modules that are needed to build your module but not run it.
 
 This will go into the C<build_requires> field of your CPAN Meta file.
 (F<META.yml> or F<META.json>).
+
+Defaults to C<<< { "ExtUtils::MakeMaker" => 0 } >>>
 
 The format is the same as PREREQ_PM.
 
