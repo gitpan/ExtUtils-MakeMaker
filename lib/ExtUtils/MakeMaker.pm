@@ -18,7 +18,7 @@ our @Overridable;
 my @Prepend_parent;
 my %Recognized_Att_Keys;
 
-our $VERSION = '6.86';
+our $VERSION = '6.87_01';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -2609,6 +2609,8 @@ speedup. It may seriously damage the resulting Makefile. Only use it
 if you really need it.
 
 =item TEST_REQUIRES
+
+Available in version 6.64 and above.
 
 A hash of modules that are needed to test your module but not run or
 build it.
