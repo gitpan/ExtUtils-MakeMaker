@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.87_02';
+$VERSION = '6.87_03';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -866,7 +866,7 @@ BOOTSTRAP =
 
     my $target = $Is{VMS} ? '$(MMS$TARGET)' : '$@';
 
-    return sprintf <<'MAKE_FRAG', ($target) x 5;
+    return sprintf <<'MAKE_FRAG', ($target) x 2;
 BOOTSTRAP = $(BASEEXT).bs
 
 # As Mkbootstrap might not write a file (if none is required)
