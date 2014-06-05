@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.99_01';
+$VERSION = '6.99_02';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -2753,7 +2753,7 @@ sub get_version
   $eval = $1 if $eval =~ m{^(.+)}s;
 	local $^W = 0;
 	my $result = eval($eval);  ## no critic
-	warn "Could not eval '$eval' in $parsefile: $@" if $@;
+	#warn "Could not eval '$eval' in $parsefile: $@" if $@;
 	$result;
 }
 
