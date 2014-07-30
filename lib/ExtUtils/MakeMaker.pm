@@ -19,7 +19,7 @@ my @Prepend_parent;
 my %Recognized_Att_Keys;
 our %macro_fsentity; # whether a macro is a filesystem name
 
-our $VERSION = '6.99_06';
+our $VERSION = '6.99_07';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -1171,7 +1171,8 @@ sub flush {
     print "Writing $finalname for $self->{NAME}\n";
 
     unlink($finalname, "MakeMaker.tmp", $Is_VMS ? 'Descrip.MMS' : ());
-    open(my $fh,">", "MakeMaker.tmp")
+    my $utf8 = ($] < 5.008 or !$Config{useperlio}) ? "" : ":utf8";
+    open(my $fh,">$utf8", "MakeMaker.tmp")
         or die "Unable to open MakeMaker.tmp: $!";
 
     for my $chunk (@{$self->{RESULT}}) {
