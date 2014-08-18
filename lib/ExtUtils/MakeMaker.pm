@@ -9,6 +9,7 @@ require Exporter;
 use ExtUtils::MakeMaker::Config;
 use Carp;
 use File::Path;
+my $CAN_DECODE = eval { require Encode::Locale; }; # 2 birds, 1 stone
 
 our $Verbose = 0;       # exported
 our @Parent;            # needs to be localized
@@ -19,7 +20,7 @@ my @Prepend_parent;
 my %Recognized_Att_Keys;
 our %macro_fsentity; # whether a macro is a filesystem name
 
-our $VERSION = '6.99_07';
+our $VERSION = '6.99_08';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -949,6 +950,7 @@ sub check_manifest {
 
 sub parse_args{
     my($self, @args) = @_;
+    @args = map { Encode::decode(locale => $_) } @args if $CAN_DECODE;
     foreach (@args) {
         unless (m/(.*?)=(.*)/) {
             ++$Verbose if m/^verb/;
@@ -1263,18 +1265,52 @@ sub neatvalue {
     return "{ ".join(', ',@m)." }";
 }
 
+sub _find_magic_vstring {
+    my $value = shift;
+    my $tvalue = '';
+    require B;
+    my $sv = B::svref_2object(\$value);
+    my $magic = ref($sv) eq 'B::PVMG' ? $sv->MAGIC : undef;
+    while ( $magic ) {
+        if ( $magic->TYPE eq 'V' ) {
+            $tvalue = $magic->PTR;
+            $tvalue =~ s/^v?(.+)$/v$1/;
+            last;
+        }
+        else {
+            $magic = $magic->MOREMAGIC;
+        }
+    }
+    return $tvalue;
+}
+
+
 # Look for weird version numbers, warn about them and set them to 0
 # before CPAN::Meta chokes.
 sub clean_versions {
     my($self, $key) = @_;
-
     my $reqs = $self->{$key};
+    require version;
     for my $module (keys %$reqs) {
-        my $version = $reqs->{$module};
-
-        if( !defined $version or $version !~ /^v?[\d_\.]+$/ ) {
-            carp "Unparsable version '$version' for prerequisite $module";
+        my $v = $reqs->{$module};
+        my $printable = _find_magic_vstring($v);
+        $v = $printable if length $printable;
+        my $version = eval {
+            local $SIG{__WARN__} = sub {
+              # simulate "use warnings FATAL => 'all'" for vintage perls
+              die @_;
+            };
+            version->parse($v)->stringify;
+        };
+        if( $@ || $reqs->{$module} eq '' ) {
+            if ( $] < 5.008 && $v !~ /^v?[\d_\.]+$/ ) {
+               $v = sprintf "v%vd", $v unless $v eq '';
+            }
+            carp "Unparsable version '$v' for prerequisite $module";
             $reqs->{$module} = 0;
+        }
+        else {
+            $reqs->{$module} = $version;
         }
     }
 }
@@ -3118,6 +3154,12 @@ If no $default is provided an empty string will be used instead.
 
 =back
 
+=head2 Supported versions of Perl
+
+Please note that while this module works on Perl 5.6, it is no longer
+being routinely tested on 5.6 - the earliest Perl version being routinely
+tested, and expressly supported, is 5.8.1. However, patches to repair
+any breakage on 5.6 are still being accepted.
 
 =head1 ENVIRONMENT
 
@@ -3155,6 +3197,13 @@ L<ExtUtils::ModuleMaker> and L<Module::Starter> are both modules to
 help you setup your distribution.
 
 L<CPAN::Meta> and L<CPAN::Meta::Spec> explain CPAN Meta files in detail.
+
+L<File::ShareDir::Install> makes it easy to install static, sometimes
+also referred to as 'shared' files. L<File::ShareDir> helps accessing
+the shared files after installation.
+
+L<Dist::Zilla> makes it easy for the module author to create MakeMaker-based
+distributions with lots of bells and whistles.
 
 =head1 AUTHORS
 

@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.99_07';
+$VERSION = '6.99_08';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -1195,10 +1195,6 @@ sub _fixin_replace_shebang {
             $shb .= ' ' . $arg if defined $arg;
             $shb .= "\n";
         }
-        $shb .= qq{
-eval 'exec $interpreter $arg -S \$0 \${1+"\$\@"}'
-    if 0; # not running under some shell
-} unless $Is{Win32};    # this won't work on win32, so don't
     }
     else {
         warn "Can't find $cmd in PATH, $file unchanged"
@@ -2655,23 +2651,35 @@ sub parse_abstract {
     local $/ = "\n";
     open(my $fh, '<', $parsefile) or die "Could not open '$parsefile': $!";
     my $inpod = 0;
+    my $pod_encoding;
     my $package = $self->{DISTNAME};
     $package =~ s/-/::/g;
     while (<$fh>) {
         $inpod = /^=(?!cut)/ ? 1 : /^=cut/ ? 0 : $inpod;
         next if !$inpod;
         chop;
+
+        if ( /^=encoding\s*(.*)$/i ) {
+            $pod_encoding = $1;
+        }
+
         if ( /^($package(?:\.pm)? \s+ -+ \s+)(.*)/x ) {
           $result = $2;
           next;
         }
         next unless $result;
+
         if ( $result && ( /^\s*$/ || /^\=/ ) ) {
           last;
         }
         $result = join ' ', $result, $_;
     }
     close $fh;
+
+    if ( $pod_encoding and !( $] < 5.008 or !$Config{useperlio} ) ) {
+        require Encode;
+        $result = Encode::decode($pod_encoding, $result);
+    }
 
     return $result;
 }
@@ -2732,35 +2740,23 @@ sub parse_version {
     return $result;
 }
 
-sub get_version
-{
-	my ($self, $parsefile, $sigil, $name) = @_;
-	my $eval = qq{
-		package ExtUtils::MakeMaker::_version;
-		no strict;
-		BEGIN { eval {
-			# Ensure any version() routine which might have leaked
-			# into this package has been deleted.  Interferes with
-			# version->import()
-			undef *version;
-			require version;
-			"version"->import;
-		} }
-
-		local $sigil$name;
-		\$$name=undef;
-		do {
-			$_
-		};
-		\$$name;
-	};
-  $eval = $1 if $eval =~ m{^(.+)}s;
-	local $^W = 0;
-	my $result = eval($eval);  ## no critic
-	#warn "Could not eval '$eval' in $parsefile: $@" if $@;
-	$result;
+sub get_version {
+    my ($self, $parsefile, $sigil, $name) = @_;
+    my $line = $_; # from the while() loop in parse_version
+    {
+        package ExtUtils::MakeMaker::_version;
+        undef *version; # in case of unexpected version() sub
+        eval {
+            require version;
+            version::->import;
+        };
+        no strict;
+        local *{$name};
+        local $^W = 0;
+        eval($line); ## no critic
+        return ${$name};
+    }
 }
-
 
 =item pasthru (o)
 
@@ -2964,7 +2960,7 @@ PPD_PERLVERS
     foreach my $prereq (sort keys %prereqs) {
         my $name = $prereq;
         $name .= '::' unless $name =~ /::/;
-        my $version = $prereqs{$prereq}+0;  # force numification
+        my $version = $prereqs{$prereq};
 
         my %attrs = ( NAME => $name );
         $attrs{VERSION} = $version if $version;
