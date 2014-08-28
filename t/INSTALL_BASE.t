@@ -10,16 +10,17 @@ use strict;
 use File::Path;
 use Config;
 my @INSTDIRS = ('../dummy-install', '../dummy  install');
-map { s/ //g } @INSTDIRS if $^O eq 'MSWin32'; # FIXME when MM_Win32 can handle this for dmake
 my $CLEANUP = 1;
 $CLEANUP &&= 1; # so always 1 or numerically 0
 
-use Test::More;
-plan $ENV{PERL_CORE} && $Config{'usecrosscompile'}
-    ? (skip_all => "no toolchain installed when cross-compiling")
-    : (tests => 3 + $CLEANUP + @INSTDIRS * (15 + $CLEANUP));
 use MakeMaker::Test::Utils;
 use MakeMaker::Test::Setup::BFD;
+use Test::More;
+use Config;
+use ExtUtils::MM;
+plan !MM->can_run(make()) && $ENV{PERL_CORE} && $Config{'usecrosscompile'}
+    ? (skip_all => "cross-compiling and make not available")
+    : (tests => 3 + $CLEANUP + @INSTDIRS * (15 + $CLEANUP));
 
 my $Is_VMS = $^O eq 'VMS';
 

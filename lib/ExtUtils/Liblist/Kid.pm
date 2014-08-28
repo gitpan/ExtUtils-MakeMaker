@@ -11,7 +11,7 @@ use 5.006;
 
 use strict;
 use warnings;
-our $VERSION = '6.99_08';
+our $VERSION = '6.99_09';
 
 use ExtUtils::MakeMaker::Config;
 use Cwd 'cwd';
@@ -49,7 +49,7 @@ sub _unix_os2_ext {
     # this is a rewrite of Andy Dougherty's extliblist in perl
 
     my ( @searchpath );    # from "-L/path" entries in $potential_libs
-    my ( @libpath ) = split " ", $Config{'libpth'};
+    my ( @libpath ) = split " ", $Config{'libpth'} || '';
     my ( @ldloadlibs, @bsloadlibs, @extralibs, @ld_run_path, %ld_run_path_seen );
     my ( @libs,       %libs_seen );
     my ( $fullname,   @fullname );
@@ -340,8 +340,8 @@ sub _win32_ext {
     return ( '', '', '', '', ( $give_libs ? \@libs : () ) ) unless @extralibs;
 
     # make sure paths with spaces are properly quoted
-    @extralibs = map { /\s/ ? qq["$_"] : $_ } @extralibs;
-    @libs      = map { /\s/ ? qq["$_"] : $_ } @libs;
+    @extralibs = map { qq["$_"] } @extralibs;
+    @libs      = map { qq["$_"] } @libs;
 
     my $lib = join( ' ', @extralibs );
 
