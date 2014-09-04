@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.99_09';
+our $VERSION = '6.99_10';
 
 use Carp;
 use File::Spec;
@@ -234,7 +234,7 @@ sub can_dep_space {
     return $cached_dep_space = 1 if $self->is_make_type('gmake');
     return $cached_dep_space = 0 if $self->is_make_type('dmake'); # only on W32
     return $cached_dep_space = 0 if $self->is_make_type('bsdmake');
-    return $cached_dep_space = 1; # assume yes, hope GNU make!
+    return $cached_dep_space = 0; # assume no
 }
 
 

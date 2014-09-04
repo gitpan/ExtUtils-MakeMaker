@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.99_09';
+$VERSION = '6.99_10';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -1910,8 +1910,18 @@ sub init_PERL {
 
     $self->{PERL} ||=
         $self->find_perl(5.0, \@perls, \@defpath, $Verbose );
-    # don't check if perl is executable, maybe they have decided to
-    # supply switches with perl
+
+    my $perl = $self->{PERL};
+    $perl =~ s/^"//;
+    my $perlflags = '';
+    my $stripped_perl;
+    while ($perl) {
+	($stripped_perl = $perl) =~ s/"$//;
+	last if -x $stripped_perl;
+	last unless $perl =~ s/(\s+\S+)$//;
+	$perlflags = $1.$perlflags;
+    }
+    $self->{PERL} = $stripped_perl;
 
     # When built for debugging, VMS doesn't create perl.exe but ndbgperl.exe.
     my $perl_name = 'perl';
@@ -1921,8 +1931,10 @@ sub init_PERL {
     # XXX This logic is flawed.  If "miniperl" is anywhere in the path
     # it will get confused.  It should be fixed to work only on the filename.
     # Define 'FULLPERL' to be a non-miniperl (used in test: target)
-    ($self->{FULLPERL} = $self->{PERL}) =~ s/\Q$miniperl\E$/$perl_name$Config{exe_ext}/i
-	unless $self->{FULLPERL};
+    unless ($self->{FULLPERL}) {
+      ($self->{FULLPERL} = $self->{PERL}) =~ s/\Q$miniperl\E$/$perl_name$Config{exe_ext}/i;
+      $self->{FULLPERL} = qq{"$self->{FULLPERL}"}.$perlflags;
+    }
 
     # Little hack to get around VMS's find_perl putting "MCR" in front
     # sometimes.
@@ -1940,6 +1952,7 @@ sub init_PERL {
 
         $self->{ABSPERL} = 'MCR '.$self->{ABSPERL} if $has_mcr;
     }
+    $self->{PERL} = qq{"$self->{PERL}"}.$perlflags;
 
     # Are we building the core?
     $self->{PERL_CORE} = $ENV{PERL_CORE} unless exists $self->{PERL_CORE};
@@ -1949,14 +1962,15 @@ sub init_PERL {
     foreach my $perl (qw(PERL FULLPERL ABSPERL)) {
         my $run  = $perl.'RUN';
 
-        $self->{$run}  = qq{"\$($perl)"};
+        $self->{$run}  = qq{\$($perl)};
 
         # Make sure perl can find itself before it's installed.
         $self->{$run} .= q{ "-I$(PERL_LIB)" "-I$(PERL_ARCHLIB)"}
           if $self->{UNINSTALLED_PERL} || $self->{PERL_CORE};
 
         $self->{$perl.'RUNINST'} =
-          sprintf q{$(%sRUN) "-I$(INST_ARCHLIB)" "-I$(INST_LIB)"}, $perl;
+          sprintf q{$(%sRUN)%s "-I$(INST_ARCHLIB)" "-I$(INST_LIB)"},
+	    $perl, $perlflags;
     }
 
     return 1;

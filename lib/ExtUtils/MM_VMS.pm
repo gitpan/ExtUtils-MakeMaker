@@ -15,7 +15,7 @@ BEGIN {
 
 use File::Basename;
 
-our $VERSION = '6.99_09';
+our $VERSION = '6.99_10';
 
 require ExtUtils::MM_Any;
 require ExtUtils::MM_Unix;
@@ -1893,6 +1893,7 @@ sub init_linker {
           $ENV{$shr} ? $ENV{$shr} : "Sys\$Share:$shr.$Config{'dlext'}";
     }
 
+    $self->{PERL_ARCHIVEDEP} ||= '';
     $self->{PERL_ARCHIVE_AFTER} ||= '';
 }
 

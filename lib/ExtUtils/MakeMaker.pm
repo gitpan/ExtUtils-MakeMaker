@@ -23,7 +23,7 @@ my %Recognized_Att_Keys;
 our %macro_fsentity; # whether a macro is a filesystem name
 our %macro_dep; # whether a macro is a dependency
 
-our $VERSION = '6.99_09';
+our $VERSION = '6.99_10';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -41,6 +41,7 @@ our @EXPORT_OK = qw($VERSION &neatvalue &mkbootstrap &mksymlists
 # purged.
 my $Is_VMS     = $^O eq 'VMS';
 my $Is_Win32   = $^O eq 'MSWin32';
+my $UNDER_CORE = $ENV{PERL_CORE};
 
 full_setup();
 
@@ -607,10 +608,7 @@ END
 
             $self->{$key} = $self->{PARENT}{$key};
 
-            unless ($Is_VMS && $key =~ /PERL$/) {
-                $self->{$key} = $self->catdir("..",$self->{$key})
-                  unless $self->file_name_is_absolute($self->{$key});
-            } else {
+            if ($Is_VMS && $key =~ /PERL$/) {
                 # PERL or FULLPERL will be a command verb or even a
                 # command with an argument instead of a full file
                 # specification under VMS.  So, don't turn the command
@@ -620,6 +618,14 @@ END
                 $cmd[1] = $self->catfile('[-]',$cmd[1])
                   unless (@cmd < 2) || $self->file_name_is_absolute($cmd[1]);
                 $self->{$key} = join(' ', @cmd);
+            } else {
+                my $value = $self->{$key};
+                # not going to test in FS so only stripping start
+                $value =~ s/^"// if $key =~ /PERL$/;
+                $value = $self->catdir("..", $value)
+                  unless $self->file_name_is_absolute($value);
+                $value = qq{"$value} if $key =~ /PERL$/;
+                $self->{$key} = $value;
             }
         }
         if ($self->{PARENT}) {
@@ -1280,6 +1286,7 @@ sub neatvalue {
 
 sub _find_magic_vstring {
     my $value = shift;
+    return $value if $UNDER_CORE;
     my $tvalue = '';
     require B;
     my $sv = B::svref_2object(\$value);
