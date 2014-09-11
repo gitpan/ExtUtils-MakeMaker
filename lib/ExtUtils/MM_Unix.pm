@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.99_11';
+$VERSION = '6.99_12';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -2748,7 +2748,7 @@ sub parse_version {
 
     if ( defined $result && $result !~ /^v?[\d_\.]+$/ ) {
       require version;
-      my $normal = eval { version->parse( $result ) };
+      my $normal = eval { version->new( $result ) };
       $result = $normal if defined $normal;
     }
     $result = "undef" unless defined $result;

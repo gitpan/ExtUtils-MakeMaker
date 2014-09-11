@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.99_11';
+our $VERSION = '6.99_12';
 
 use Carp;
 use File::Spec;
@@ -2119,7 +2119,7 @@ sub init_VERSION {
     if (defined $self->{VERSION}) {
         if ( $self->{VERSION} !~ /^\s*v?[\d_\.]+\s*$/ ) {
           require version;
-          my $normal = eval { version->parse( $self->{VERSION} ) };
+          my $normal = eval { version->new( $self->{VERSION} ) };
           $self->{VERSION} = $normal if defined $normal;
         }
         $self->{VERSION} =~ s/^\s+//;
