@@ -10,9 +10,9 @@ use ExtUtils::MakeMaker::Config;
 use ExtUtils::MakeMaker::version; # ensure we always have or fake version.pm
 use Carp;
 use File::Path;
-my $CAN_DECODE = eval { require Encode::Locale; }; # 2 birds, 1 stone
-eval { Encode::Locale::reinit('UTF-8') }
-  if $CAN_DECODE and $Encode::Locale::ENCODING_LOCALE eq 'US-ASCII';
+my $CAN_DECODE = eval { require ExtUtils::MakeMaker::Locale; }; # 2 birds, 1 stone
+eval { ExtUtils::MakeMaker::Locale::reinit('UTF-8') }
+  if $CAN_DECODE and $ExtUtils::MakeMaker::Locale::ENCODING_LOCALE eq 'US-ASCII';
 
 our $Verbose = 0;       # exported
 our @Parent;            # needs to be localized
@@ -24,7 +24,7 @@ my %Recognized_Att_Keys;
 our %macro_fsentity; # whether a macro is a filesystem name
 our %macro_dep; # whether a macro is a dependency
 
-our $VERSION = '6.99_12';
+our $VERSION = '6.99_13';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
