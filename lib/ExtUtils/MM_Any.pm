@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '6.99_15';
+our $VERSION = '6.99_16';
 
 use Carp;
 use File::Spec;
@@ -2848,7 +2848,7 @@ Used by perldepend() in MM_Unix and MM_VMS via _perl_header_files_fragment()
 sub _perl_header_files {
     my $self = shift;
 
-    my $header_dir = $self->{PERL_SRC} || $self->catdir($Config{archlibexp}, 'CORE');
+    my $header_dir = $self->{PERL_SRC} || $ENV{PERL_SRC} || $self->catdir($Config{archlibexp}, 'CORE');
     opendir my $dh, $header_dir
         or die "Failed to opendir '$header_dir' to find header files: $!";
 
