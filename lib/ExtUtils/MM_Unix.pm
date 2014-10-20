@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '6.99_17';
+$VERSION = '6.99_18';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -1952,11 +1952,11 @@ sub init_PERL {
       ($self->{FULLPERL} = $self->{PERL}) =~ s/\Q$miniperl\E$/$perl_name$Config{exe_ext}/i;
       $self->{FULLPERL} = qq{"$self->{FULLPERL}"}.$perlflags;
     }
+    # Can't have an image name with quotes, and findperl will have
+    # already escaped spaces.
+    $self->{FULLPERL} =~ tr/"//d if $Is{VMS};
 
-    # Little hack to get around VMS's find_perl putting "MCR" in front
-    # sometimes.
     $self->{ABSPERL} = $self->{PERL};
-    my $has_mcr = $self->{ABSPERL} =~ s/^MCR\s*//;
     if( $self->file_name_is_absolute($self->{ABSPERL}) ) {
         $self->{ABSPERL} = '$(PERL)';
     }
@@ -1966,10 +1966,12 @@ sub init_PERL {
         # Quote the perl command if it contains whitespace
         $self->{ABSPERL} = $self->quote_literal($self->{ABSPERL})
           if $self->{ABSPERL} =~ /\s/;
-
-        $self->{ABSPERL} = 'MCR '.$self->{ABSPERL} if $has_mcr;
     }
     $self->{PERL} = qq{"$self->{PERL}"}.$perlflags;
+
+    # Can't have an image name with quotes, and findperl will have
+    # already escaped spaces.
+    $self->{PERL} =~ tr/"//d if $Is{VMS};
 
     # Are we building the core?
     $self->{PERL_CORE} = $ENV{PERL_CORE} unless exists $self->{PERL_CORE};
@@ -1980,6 +1982,7 @@ sub init_PERL {
         my $run  = $perl.'RUN';
 
         $self->{$run}  = qq{\$($perl)};
+        $self->{$run}  = 'MCR ' . $self->{$run} if $Is{VMS};
 
         # Make sure perl can find itself before it's installed.
         $self->{$run} .= q{ "-I$(PERL_LIB)" "-I$(PERL_ARCHLIB)"}
@@ -2785,6 +2788,7 @@ sub get_version {
         no strict;
         local *{$name};
         local $^W = 0;
+        $line = $1 if $line =~ m{^(.+)}s;
         eval($line); ## no critic
         return ${$name};
     }
