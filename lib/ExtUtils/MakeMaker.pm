@@ -24,7 +24,7 @@ my %Recognized_Att_Keys;
 our %macro_fsentity; # whether a macro is a filesystem name
 our %macro_dep; # whether a macro is a dependency
 
-our $VERSION = '7.00';
+our $VERSION = '7.01_01';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -1192,12 +1192,13 @@ sub flush {
     unlink($finalname, "MakeMaker.tmp", $Is_VMS ? 'Descrip.MMS' : ());
     open(my $fh,">", "MakeMaker.tmp")
         or die "Unable to open MakeMaker.tmp: $!";
-    if ($] > 5.008 and $Config{useperlio}) {
-        binmode $fh, ':utf8';
-        binmode $fh, ':encoding(locale)' if $CAN_DECODE;
-    }
+    binmode $fh, ':encoding(locale)' if $CAN_DECODE;
 
     for my $chunk (@{$self->{RESULT}}) {
+        my $to_write = "$chunk\n";
+        if (!$CAN_DECODE && $] > 5.008) {
+            utf8::encode $to_write;
+        }
         print $fh "$chunk\n"
             or die "Can't write to MakeMaker.tmp: $!";
     }
