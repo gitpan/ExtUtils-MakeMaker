@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '7.01_05';
+$VERSION = '7.01_06';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -3473,6 +3473,8 @@ sub test {
     elsif (!$tests && -d 't') {
         $tests = $self->find_tests;
     }
+    # have to do this because nmake is broken
+    $tests =~ s!/!\\!g if $self->is_make_type('nmake');
     # note: 'test.pl' name is also hardcoded in init_dirscan()
     my(@m);
     push(@m,"

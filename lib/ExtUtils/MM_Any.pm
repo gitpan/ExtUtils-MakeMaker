@@ -1,7 +1,7 @@
 package ExtUtils::MM_Any;
 
 use strict;
-our $VERSION = '7.01_05';
+our $VERSION = '7.01_06';
 
 use Carp;
 use File::Spec;
@@ -2501,7 +2501,7 @@ sub test_via_harness {
     my($self, $perl, $tests) = @_;
 
     return qq{\t$perl "-MExtUtils::Command::MM" "-MTest::Harness" }.
-           qq{"-e" "undef *Test::Harness::Switches; test_harness(\$(TEST_VERBOSE), '\$(INST_LIB)', '\$(INST_ARCHLIB)')" "$tests"\n};
+           qq{"-e" "undef *Test::Harness::Switches; test_harness(\$(TEST_VERBOSE), '\$(INST_LIB)', '\$(INST_ARCHLIB)')" $tests\n};
 }
 
 =head3 test_via_script
