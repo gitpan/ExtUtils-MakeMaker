@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '7.01_04';
+$VERSION = '7.01_05';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -1930,6 +1930,7 @@ sub init_PERL {
 
     my $perl = $self->{PERL};
     $perl =~ s/^"//;
+    my $has_mcr = $perl =~ s/^MCR\s*//;
     my $perlflags = '';
     my $stripped_perl;
     while ($perl) {
@@ -1939,6 +1940,7 @@ sub init_PERL {
 	$perlflags = $1.$perlflags;
     }
     $self->{PERL} = $stripped_perl;
+    $self->{PERL} = 'MCR '.$self->{PERL} if $has_mcr || $Is{VMS};
 
     # When built for debugging, VMS doesn't create perl.exe but ndbgperl.exe.
     my $perl_name = 'perl';
@@ -1956,7 +1958,10 @@ sub init_PERL {
     # already escaped spaces.
     $self->{FULLPERL} =~ tr/"//d if $Is{VMS};
 
+    # Little hack to get around VMS's find_perl putting "MCR" in front
+    # sometimes.
     $self->{ABSPERL} = $self->{PERL};
+    $has_mcr = $self->{ABSPERL} =~ s/^MCR\s*//;
     if( $self->file_name_is_absolute($self->{ABSPERL}) ) {
         $self->{ABSPERL} = '$(PERL)';
     }
@@ -1966,6 +1971,8 @@ sub init_PERL {
         # Quote the perl command if it contains whitespace
         $self->{ABSPERL} = $self->quote_literal($self->{ABSPERL})
           if $self->{ABSPERL} =~ /\s/;
+
+        $self->{ABSPERL} = 'MCR '.$self->{ABSPERL} if $has_mcr;
     }
     $self->{PERL} = qq{"$self->{PERL}"}.$perlflags;
 
@@ -1982,7 +1989,6 @@ sub init_PERL {
         my $run  = $perl.'RUN';
 
         $self->{$run}  = qq{\$($perl)};
-        $self->{$run}  = 'MCR ' . $self->{$run} if $Is{VMS};
 
         # Make sure perl can find itself before it's installed.
         $self->{$run} .= q{ "-I$(PERL_LIB)" "-I$(PERL_ARCHLIB)"}
