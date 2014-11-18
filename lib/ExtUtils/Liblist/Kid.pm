@@ -11,7 +11,7 @@ use 5.006;
 
 use strict;
 use warnings;
-our $VERSION = '7.02';
+our $VERSION = '7.03_01';
 
 use ExtUtils::MakeMaker::Config;
 use Cwd 'cwd';
@@ -537,7 +537,7 @@ sub _vms_ext {
         }
         warn "Resolving directory $dir\n" if $verbose;
         if ( File::Spec->file_name_is_absolute( $dir ) ) {
-            $dir = $self->fixpath( $dir, 1 );
+            $dir = VMS::Filespec::vmspath( $dir );
         }
         else {
             $dir = $self->catdir( $cwd, $dir );

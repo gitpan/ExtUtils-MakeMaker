@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '7.02';
+$VERSION = '7.03_01';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -272,7 +272,8 @@ sub cflags {
     }
 
     for my $x (@ccextraflags) {
-      $self->{CCFLAGS} .= $cflags{$x} if exists $cflags{$x};
+      next unless exists $cflags{$x};
+      $self->{CCFLAGS} .= $cflags{$x} =~ m!^\s! ? $cflags{$x} : ' ' . $cflags{$x};
     }
 
     my $pollute = '';
@@ -2718,8 +2719,13 @@ sub parse_abstract {
     close $fh;
 
     if ( $pod_encoding and !( $] < 5.008 or !$Config{useperlio} ) ) {
-        require Encode;
-        $result = Encode::decode($pod_encoding, $result);
+        # Have to wrap in an eval{} for when running under PERL_CORE
+        # Encode isn't available during build phase and parsing
+        # ABSTRACT isn't important there
+        eval {
+          require Encode;
+          $result = Encode::decode($pod_encoding, $result);
+        }
     }
 
     return $result;
