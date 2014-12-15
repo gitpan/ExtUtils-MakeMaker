@@ -26,11 +26,12 @@ my $Is_VMS = $^O eq 'VMS';
 
 my $perl = which_perl();
 
-use File::Temp qw[tempdir];
-my $tmpdir = tempdir( DIR => 't', CLEANUP => $CLEANUP );
-chdir $tmpdir;
+chdir 't';
+perl_lib; # sets $ENV{PERL5LIB} relative to t/
 
-perl_lib;
+use File::Temp qw[tempdir];
+my $tmpdir = tempdir( DIR => '../t', CLEANUP => $CLEANUP );
+chdir $tmpdir;
 
 my $SPACEDIR = 'space dir';
 ok( setup_recurs($SPACEDIR), 'setup' );
@@ -45,6 +46,7 @@ ok( chdir(File::Spec->catdir($SPACEDIR, 'Big-Dummy')), "chdir'd to Big-Dummy") |
 
 for my $instdir (@INSTDIRS) {
   $instdir = File::Spec->rel2abs($instdir);
+  $instdir = VMS::Filespec::unixpath($instdir) if $Is_VMS;
   my @mpl_out = run(qq{$perl Makefile.PL "INSTALL_BASE=$instdir"});
 
   cmp_ok( $?, '==', 0, 'Makefile.PL exited with zero' ) ||

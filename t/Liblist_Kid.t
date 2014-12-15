@@ -27,6 +27,7 @@ package liblist_kid_test;
 use Test::More 'no_plan';
 use ExtUtils::MakeMaker::Config;
 use File::Spec;
+use Cwd;
 
 # similar to dispatching in EU::LL::Kid
 my $OS = $^O eq 'MSWin32' ? 'win32' : ($^O eq 'VMS' ? 'vms' : 'unix_os2');
@@ -37,18 +38,21 @@ exit;
 
 sub run {
     use_ok( 'ExtUtils::Liblist::Kid' );
-    move_to_os_test_data_dir();
+    my $old_dir = getcwd;
+    my $cleanup = move_to_os_test_data_dir();
     conf_reset();
     test_common();
     test_kid_unix_os2() if $OS eq 'unix_os2';
     test_kid_win32() if $OS eq 'win32';
+    chdir $old_dir;
+    cleanup_os_test_data_dir($cleanup) if $cleanup;
 }
 
 # This allows us to get a clean playing field and ensure that the current
 # system configuration does not affect the test results.
 
 sub conf_reset {
-    my @save_keys = qw{ so dlsrc osname perllibs };
+    my @save_keys = qw{ so dlsrc osname };
     my %save_config;
     @save_config{ @save_keys } = @Config{ @save_keys };
     delete $Config{$_} for keys %Config;
@@ -56,10 +60,10 @@ sub conf_reset {
     $Config{installarchlib} = 'lib';
     # The following are all used and always are defined in the real world.
     # Define them to something here to avoid spewing uninitialized value warnings.
+    $Config{perllibs}    = '';
     if ($^O eq 'VMS') {
         $Config{ldflags}     = '';
         $Config{dbgprefix}   = '';
-        $Config{perllibs}    = '';
         $Config{libc}        = '';
         $Config{ext_ext}     = '';
         $Config{lib_ext}     = '';
@@ -82,9 +86,22 @@ sub move_to_os_test_data_dir {
         unix_os2 => 't/liblist/unix_os2',
     );
     return if !$os_test_dirs{$OS};
-
+    my $need_cleanup;
+    unless (-d $os_test_dirs{$OS}) {
+	my $lib = File::Spec->catfile($os_test_dirs{$OS}, "libfoo.$Config{so}");
+	$need_cleanup = [ $lib, $os_test_dirs{$OS} ];
+	mkdir $os_test_dirs{$OS} or die "mkdir $os_test_dirs{$OS}: $!\n";
+	open my $fh, '>', $lib;
+    }
     chdir $os_test_dirs{$OS} or die "Could not change to liblist test dir '$os_test_dirs{$OS}': $!";
-    return;
+    return $need_cleanup;
+}
+
+sub cleanup_os_test_data_dir {
+    my ($cleanup) = @_;
+    my ($file, $dir) = @$cleanup;
+    unlink $file if -f $file;
+    rmdir $dir if -d $dir;
 }
 
 # Since liblist is object-based, we need to provide a mock object.

@@ -24,7 +24,7 @@ my %Recognized_Att_Keys;
 our %macro_fsentity; # whether a macro is a filesystem name
 our %macro_dep; # whether a macro is a dependency
 
-our $VERSION = '7.05_01';
+our $VERSION = '7.05_02';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -2370,7 +2370,14 @@ passed to subdirectory makes.
 
 =item PERL
 
-Perl binary for tasks that can be done by miniperl.
+Perl binary for tasks that can be done by miniperl. If it contains
+spaces or other shell metacharacters, it needs to be quoted in a way
+that protects them, since this value is intended to be inserted in a
+shell command line in the Makefile. E.g.:
+
+  # Perl executable lives in "C:/Program Files/Perl/bin"
+  # Normally you don't need to set this yourself!
+  $ perl Makefile.PL PERL='"C:/Program Files/Perl/bin/perl.exe" -w'
 
 =item PERL_CORE
 
