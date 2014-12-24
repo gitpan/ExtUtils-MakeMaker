@@ -11,7 +11,7 @@ use 5.006;
 
 use strict;
 use warnings;
-our $VERSION = '7.05_02';
+our $VERSION = '7.05_03';
 
 use ExtUtils::MakeMaker::Config;
 use Cwd 'cwd';
@@ -107,6 +107,7 @@ sub _unix_os2_ext {
 
         my ( $found_lib ) = 0;
         foreach my $thispth ( @searchpath, @libpath ) {
+
             # Try to find the full name of the library.  We need this to
             # determine whether it's a dynamically-loadable library or not.
             # This tends to be subject to various os-specific quirks.
@@ -259,10 +260,6 @@ sub _unix_os2_ext {
         return ( '', '', '', '', ( $give_libs ? \@libs : () ) );
     }
     else {
-        # make sure paths with spaces are properly quoted
-        @extralibs = map { qq["$_"] } @extralibs;
-        @ldloadlibs = map { qq["$_"] } @ldloadlibs;
-
         return ( "@extralibs", "@bsloadlibs", "@ldloadlibs", join( ":", @ld_run_path ), ( $give_libs ? \@libs : () ) );
     }
 }

@@ -15,7 +15,7 @@ use ExtUtils::MakeMaker qw($Verbose neatvalue);
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
-$VERSION = '7.05_02';
+$VERSION = '7.05_03';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 require ExtUtils::MM_Any;
@@ -680,8 +680,8 @@ sub dist_ci {
 ci :
 	$(PERLRUN) "-MExtUtils::Manifest=maniread" \\
 	  -e "@all = keys %{ maniread() };" \\
-	  -e "print(qq{Executing $(CI) @all\n}); system(qq{$(CI) @all});" \\
-	  -e "print(qq{Executing $(RCS_LABEL) ...\n}); system(qq{$(RCS_LABEL) @all});"
+	  -e "print(qq{Executing $(CI) @all\n}); system(qq{$(CI) @all}) == 0 or die qq{$!};" \\
+	  -e "print(qq{Executing $(RCS_LABEL) ...\n}); system(qq{$(RCS_LABEL) @all}) == 0 or die qq{$!};"
 };
 }
 
