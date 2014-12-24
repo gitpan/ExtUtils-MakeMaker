@@ -24,7 +24,7 @@ my %Recognized_Att_Keys;
 our %macro_fsentity; # whether a macro is a filesystem name
 our %macro_dep; # whether a macro is a dependency
 
-our $VERSION = '7.05_03';
+our $VERSION = '7.05_04';
 $VERSION = eval $VERSION;  ## no critic [BuiltinFunctions::ProhibitStringyEval]
 
 # Emulate something resembling CVS $Revision$
@@ -409,6 +409,7 @@ sub _has_cpan_meta_requirements {
     return eval {
       require CPAN::Meta::Requirements;
       CPAN::Meta::Requirements->VERSION(2.130);
+      require B; # CMR requires this, for core we have to too.
     };
 }
 
