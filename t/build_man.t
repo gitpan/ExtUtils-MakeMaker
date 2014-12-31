@@ -7,7 +7,7 @@ BEGIN {
 }
 
 use strict;
-use Test::More tests => 9;
+use Test::More tests => 10;
 
 use File::Spec;
 use File::Temp qw[tempdir];
@@ -26,28 +26,32 @@ chdir 't';
 perl_lib; # sets $ENV{PERL5LIB} relative to t/
 
 my $tmpdir = tempdir( DIR => '../t', CLEANUP => 1 );
+use Cwd; my $cwd = getcwd; END { chdir $cwd } # so File::Temp can cleanup
 chdir $tmpdir;
 
 ok( setup_recurs(), 'setup' );
 END {
-    ok( chdir File::Spec->updir );
-    ok( teardown_recurs(), 'teardown' );
+    ok chdir File::Spec->updir, 'chdir updir';
+    ok teardown_recurs(), 'teardown';
 }
 
 ok( chdir 'Big-Dummy', "chdir'd to Big-Dummy" ) ||
   diag("chdir failed: $!");
+my $README = 'README.pod';
+{ open my $fh, '>', $README or die "$README: $!"; }
 
-ok( my $stdout = tie *STDOUT, 'TieOut' );
+ok((my $stdout = tie *STDOUT, 'TieOut'), 'tie stdout');
 
 {
     local $Config{installman3dir} = File::Spec->catdir(qw(t lib));
-
     my $mm = WriteMakefile(
         NAME            => 'Big::Dummy',
         VERSION_FROM    => 'lib/Big/Dummy.pm',
     );
-
-    ok( keys %{ $mm->{MAN3PODS} } );
+    my %got = %{ $mm->{MAN3PODS} };
+    # because value too OS-specific
+    ok delete($got{'lib/Big/Dummy.pm'}), 'normal man3pod';
+    is_deeply \%got, {}, 'no extra man3pod';
 }
 
 {
@@ -56,10 +60,8 @@ ok( my $stdout = tie *STDOUT, 'TieOut' );
         VERSION_FROM    => 'lib/Big/Dummy.pm',
         INSTALLMAN3DIR  => 'none'
     );
-
-    is_deeply( $mm->{MAN3PODS}, {} );
+    is_deeply $mm->{MAN3PODS}, {}, 'suppress man3pod with "none"';
 }
-
 
 {
     my $mm = WriteMakefile(
@@ -67,10 +69,8 @@ ok( my $stdout = tie *STDOUT, 'TieOut' );
         VERSION_FROM    => 'lib/Big/Dummy.pm',
         MAN3PODS        => {}
     );
-
-    is_deeply( $mm->{MAN3PODS}, { } );
+    is_deeply $mm->{MAN3PODS}, {}, 'suppress man3pod with {}';
 }
-
 
 {
     my $mm = WriteMakefile(
@@ -78,6 +78,5 @@ ok( my $stdout = tie *STDOUT, 'TieOut' );
         VERSION_FROM    => 'lib/Big/Dummy.pm',
         MAN3PODS        => { "Foo.pm" => "Foo.1" }
     );
-
-    is_deeply( $mm->{MAN3PODS}, { "Foo.pm" => "Foo.1" } );
+    is_deeply $mm->{MAN3PODS}, { "Foo.pm" => "Foo.1" }, 'override man3pod';
 }

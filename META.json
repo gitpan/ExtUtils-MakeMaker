@@ -4,7 +4,7 @@
       "Michael G Schwern <schwern@pobox.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 7.0504, CPAN::Meta::Converter version 2.143240",
+   "generated_by" : "ExtUtils::MakeMaker version 7.0505, CPAN::Meta::Converter version 2.143240",
    "license" : [
       "perl_5"
    ],
@@ -22,7 +22,8 @@
       ],
       "package" : [
          "DynaLoader",
-         "in"
+         "in",
+         "version"
       ]
    },
    "prereqs" : {
@@ -45,19 +46,14 @@
          }
       }
    },
-   "release_status" : "testing",
+   "release_status" : "unstable",
    "resources" : {
-      "bugtracker" : {
-         "web" : "http://rt.cpan.org/NoAuth/Bugs.html?Dist=ExtUtils-MakeMaker"
-      },
       "homepage" : "https://metacpan.org/release/ExtUtils-MakeMaker",
       "license" : [
          "http://dev.perl.org/licenses/"
       ],
-      "repository" : {
-         "url" : "http://github.com/Perl-Toolchain-Gang/ExtUtils-MakeMaker"
-      },
       "x_MailingList" : "makemaker@perl.org"
    },
-   "version" : "7.05_04"
+   "version" : "7.05_05"
 }
+

@@ -15,12 +15,13 @@ $CLEANUP &&= 1; # so always 1 or numerically 0
 
 use MakeMaker::Test::Utils;
 use MakeMaker::Test::Setup::BFD;
-use Test::More;
 use Config;
 use ExtUtils::MM;
-plan !MM->can_run(make()) && $ENV{PERL_CORE} && $Config{'usecrosscompile'}
+use Test::More
+    !MM->can_run(make()) && $ENV{PERL_CORE} && $Config{'usecrosscompile'}
     ? (skip_all => "cross-compiling and make not available")
-    : (tests => 4 + $CLEANUP + @INSTDIRS * (15 + $CLEANUP));
+    : ();
+plan tests => 4 + $CLEANUP + @INSTDIRS * (15 + $CLEANUP);
 
 my $Is_VMS = $^O eq 'VMS';
 
@@ -31,6 +32,7 @@ perl_lib; # sets $ENV{PERL5LIB} relative to t/
 
 use File::Temp qw[tempdir];
 my $tmpdir = tempdir( DIR => '../t', CLEANUP => $CLEANUP );
+use Cwd; my $cwd = getcwd; END { chdir $cwd } # so File::Temp can cleanup
 chdir $tmpdir;
 
 my $SPACEDIR = 'space dir';

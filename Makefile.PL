@@ -52,13 +52,13 @@ if( $BUILDING_AS_PACKAGE ) {
     # burden vendors with having to update everything.
     %Extra_Prereqs = (
         'CPAN::Meta'               => '2.143240', # compat with CMR 2.130
-        'CPAN::Meta::YAML'         => '0.002',
+        'CPAN::Meta::YAML'         => '0.011', # CM 2.143240 needs
         'ExtUtils::Command'        => '1.16',
         'ExtUtils::Install'        => '1.52',
         'ExtUtils::Manifest'       => '1.65',
         'File::Temp'               => '0.22',
         'JSON::PP'                 => '2.27103',
-        'Parse::CPAN::Meta'        => '1.4400',
+        'Parse::CPAN::Meta'        => '1.4414', # required by above CPAN::Meta
         'Scalar::Util'             => '1.13',
         'version'                  => '0',
         'CPAN::Meta::Requirements' => '2.130', # updates to hooks et al
@@ -104,8 +104,10 @@ my $MM = WriteMakefile(
 
     META_MERGE => {
         no_index => {
-            package   => [ 'DynaLoader', 'in' ],    # "in" is a PAUSE misparse.
-            directory => [ 'bundled', 'my' ],
+            # Module::Metadata is inferring version from $version::VERSION
+            # "in" is a PAUSE misparse.
+            package   => [ qw(DynaLoader in version) ],
+            directory => [ qw(bundled my) ],
         },
         resources => {
             license     => 'http://dev.perl.org/licenses/',
